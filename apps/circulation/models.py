@@ -1,6 +1,6 @@
 from django.db import models
-from users.models import Utilisateur
-from documents.models import Document
+from apps.users.models import Utilisateur
+from apps.documents.models import Document
 # -*- coding: utf-8 -*-
 
 # Circulation documents

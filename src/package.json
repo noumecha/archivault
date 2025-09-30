@@ -72,6 +72,7 @@
     "eslint-plugin-import": "2.29.1",
     "eslint-plugin-prettier": "5.2.1",
     "fancy-log": "2.0.0",
+    "flag-icons": "^7.5.0",
     "gulp": "^5.0.1",
     "gulp-autoprefixer": "8.0.0",
     "gulp-dart-sass": "1.1.0",

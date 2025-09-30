@@ -4,17 +4,26 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from .models import Utilisateur, RoleUtilisateur
 from .serializers import GroupSerializer, UserSerializer
+from django.views.generic import TemplateView
+from web_project import TemplateLayout
+from web_project.template_helpers.theme import TemplateHelper
 
 # views for user management
 class UserView(TemplateView):
-    template_name = "users/list.html"
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        return context
 
 class UserProfileView(TemplateView):
-    template_name = "users/profile.html"
+    # Predefined function
+    def get_context_data(self, **kwargs):
+        # A function to init the global layout. It is defined in web_project/__init__.py file
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        return context
 
 # views for login & logout
 class LoginAPIView(APIView):

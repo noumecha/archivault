@@ -1,13 +1,11 @@
 from django.urls import path
-from . import views
+from .views import *
 
 urlpatterns = [
-    path('', views.UserView.as_view(), name='users'),
-    path('profile', views.UserProfileView.as_view(), name='user_profile'),
-    path('login/', views.LoginAPIView.as_view(), name='api-login'),
-    path('logout/', views.LogoutAPIView.as_view(), name='api-logout'),
-    path('users/', views.UserAPIView.as_view(), name='api-users'),
-    path('groups/', views.GroupAPIView.as_view(), name='api-groups'),
-    #path('login', views.LoginView.as_view(), name='login'),
-    #path('logout', views.LogoutView.as_view(), name='logout'),
+    path('', UserView.as_view(), name='users'),
+    path('profile', UserProfileView.as_view(template_name="users/user_profile.html"), name='user_profile'),
+    path('login/', LoginAPIView.as_view(), name='api-login'),
+    path('logout/', LogoutAPIView.as_view(), name='api-logout'),
+    path('users/', UserAPIView.as_view(template_name="user_list.html"), name='api-users'),
+    path('groups/', GroupAPIView.as_view(), name='api-groups'),
 ]

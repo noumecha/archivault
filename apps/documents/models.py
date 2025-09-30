@@ -1,6 +1,6 @@
 from django.db import models
-from administration.models import Cellule
-from users.models import Utilisateur
+from apps.administration.models import Cellule
+from apps.users.models import Utilisateur
 
 # Create your models here.
 class Theme(models.Model):

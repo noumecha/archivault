@@ -18,6 +18,8 @@ def get_crud_urls(view_class, prefix, name):
 urlpatterns = [
     *get_crud_urls(views.TypeDocumentView, "typedocument/typedocuments", "typedocument"),
     *get_crud_urls(views.DocumentView, "document/documents", "document"),
+    # Gestion types et thèmes
+    *get_crud_urls(views.DocumentView, "theme/themes", "themes"),
     # documents
     # path('', views.DocumentListView.as_view(), name='documents'),
     # path("all/", views.get_documents, name='get_documents'),

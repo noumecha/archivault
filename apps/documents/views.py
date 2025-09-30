@@ -142,6 +142,15 @@ class BaseCRUDView(TemplateView):
         return super().dispatch(request, *args, **kwargs)
 
 #occupant view
+class ThemeListView(BaseCRUDView):
+    model = TypeDocument
+    form_class = TypeDocumentsForm
+    list_route = 'typedocuments_list'
+    list_template = 'typedocuments_list.html'
+    partial_template = 'partials/typedocuments_partial.html'
+    context_object_name = 'typedocuments'
+    search_fields = ["libelle"]
+    
 class TypeDocumentView(BaseCRUDView):
     model = TypeDocument
     form_class = TypeDocumentsForm

@@ -79,6 +79,14 @@ INSTALLED_APPS = [
     'corsheaders',
     # autorelaod browser dev
     "django_browser_reload",
+    # project apps
+    'apps.documents',
+    'apps.circulation',
+    'apps.historique',
+    'apps.thematique',
+    'apps.rapports',
+    'apps.users',
+    'apps.administration',
 ]
 
 MIDDLEWARE = [
@@ -192,7 +200,6 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-
 STATICFILES_DIRS = [
     BASE_DIR / "src" / "assets",
 ]
@@ -211,8 +218,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 THEME_LAYOUT_DIR = THEME_LAYOUT_DIR
 THEME_VARIABLES = THEME_VARIABLES
-
-
 
 # Your stuff...
 # ------------------------------------------------------------------------------
