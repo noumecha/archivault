@@ -54,6 +54,15 @@ urlpatterns = [
 
     # Tables urls
     path("", include("apps.tables.urls")),
+    # apps urls
+    path('', include('apps.documents.urls')),
+    path('circulation', include('apps.circulation.urls')),
+    path('historique', include('apps.historique.urls')),
+    path('thematique', include('apps.thematique.urls')),
+    path('rapports', include('apps.rapports.urls')),
+    path('notifications/', include('apps.notifications.urls')),
+    # autoreload browser dev
+    path("__reload__/", include("django_browser_reload.urls"))
 ]
 
 handler404 = SystemView.as_view(template_name="pages_misc_error.html", status=404)

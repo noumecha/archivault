@@ -1,0 +1,84 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %} Gestion des types {% endblock title %}
+
+{% block content %}
+<div class="content">
+    <div class="row">
+        <div class="card p-3">
+            <div class="card-header">
+                <div class="row d-flex justify-content-between align-items-center">
+                    <div class="col-md-9 col-lg-9">
+                        <h3 class="">Lites des type de documents</h3>
+                        <p class="text-sm">
+                            Gérer des type de documents 
+                        </p>
+                    </div>
+                    <div class="col-md-3 col-lg-3 text-end">
+                        <button
+                            type="button"
+                            class="btn btn-lg btn-dark btn-primary text-white"
+                            data-bs-toggle="modal"
+                            data-action = "create"
+                            id="add-button"
+                            data-bs-target="#create-typedocument-modal"
+                        >
+                            <i class="fa fa-upload"></i> Ajouter
+                        </button>
+                    </div>
+                </div>
+                <form action="" class="row mt-3" id="typedocument-search-form">
+                    <div class="col-md-12 col-lg-12">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Rechercher un typedocument" name="searchFilter" id="searchFilter">
+                            <button class="btn btn-outline-primary" type="button" id="clearSearch">
+                                <i class="bx bx-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <div class="row">
+                    {% if messages %}
+                        {% for msg in messages %}
+                            <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show">
+                                {{ msg }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="container-flex" id="typedocument-table-container">
+            </div>
+        </div>
+        <!-- create or update typedocument -->
+        <div class="modal fade" id="create-typedocument-modal" tabindex="-1" aria-labelledby="exampleModalLabel">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content p-0">
+                    <form id="typedocumentForm">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Ajouter un nouveau type de document</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="typedocument-form-content">Chargement...</div>    
+                            <div class="alert alert-success" style="display: none;" id="form-success"></div>
+                            <div class="alert alert-danger" style="display: none;" id="form-error"></div>
+                            <input type="hidden" value="" name="id" id="update-id">
+                        </div>
+                        <div class="modal-footer flex-row-reverse">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                            <button type="submit" id="save-btn" class="btn">...</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+{% block extrajs %}
+    <script src="{% static 'assets/js/typedocuments.js' %}"></script>
+{% endblock %}

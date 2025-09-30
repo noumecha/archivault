@@ -1,0 +1,199 @@
+from django import forms
+from .models import Document, SousTypeDocument, Theme, TypeDocument, NiveauAccesDocument, RegleClassement
+from crispy_bootstrap5.bootstrap5 import FloatingField
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Row, Column, Fieldset, Field
+
+# form for regle de classement
+class RegleClassementsForm(forms.ModelForm):
+    class Meta:
+        model = RegleClassement
+
+        fields = (
+            'nom', 'description'
+        )
+
+        labels = {
+            "niveau" : "Titre du niveau d'accès",
+            "description" : "Description de la règle de classement",
+        }
+
+        widgets = {
+          
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(RegleClassementsForm, self).__init__(*args, **kwargs)
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("description"), css_class='form-group col-md-12 mb-0'),
+                css_class='form-row p-3 pt-0'
+            ),
+        )
+
+# form for nivea d'accès
+class NiveauAccesDocumentsForm(forms.ModelForm):
+    class Meta:
+        model = NiveauAccesDocument
+
+        fields = (
+            'niveau',
+        )
+
+        labels = {
+            "niveau" : "Titre du niveau d'accès",
+        }
+
+        widgets = {
+          
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(NiveauAccesDocumentsForm, self).__init__(*args, **kwargs)
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("niveau"), css_class='form-group col-md-12 mb-0'),
+                css_class='form-row p-3 pt-0'
+            ),
+        )
+
+# form for type Document
+class TypeDocumentsForm(forms.ModelForm):
+    class Meta:
+        model = TypeDocument
+
+        fields = (
+            'libelle',
+        )
+
+        labels = {
+            "libelle" : "Libellé du type de document",
+        }
+
+        widgets = {
+          
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(TypeDocumentsForm, self).__init__(*args, **kwargs)
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                css_class='form-row p-3 pt-0'
+            ),
+        )
+
+# form for theme
+class ThemesForm(forms.ModelForm):
+    class Meta:
+        model = Theme
+
+        fields = (
+            'libelle',
+        )
+
+        labels = {
+            "libelle" : "Libellé du Thème",
+        }
+
+        widgets = {
+          
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(ThemesForm, self).__init__(*args, **kwargs)
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                css_class='form-row p-3 pt-0'
+            ),
+        )
+
+# Sous Type Form
+class SousTypeDocumentsForm(forms.ModelForm):
+    class Meta:
+        model = SousTypeDocument
+
+        fields = (
+            'libelle', 'type_document'
+        )
+
+        labels = {
+            "libelle" : "Libellé du sour type",
+            "type_document" : "Type du Document",
+        }
+
+        widgets = {
+          
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(SousTypeDocumentsForm, self).__init__(*args, **kwargs)
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("type_document"), css_class="form-group col-md-12 mb-0 mt-1"),
+                css_class='form-row p-3 pt-0'
+            ),
+        )
+
+# form for document
+class DocumentsForm(forms.ModelForm):
+    class Meta:
+        model = Document
+
+        fields = (
+            "titre",
+            "fichier",
+            "type_document",
+            "sous_type",
+            "theme",
+            "cellule",
+            "etat",
+            "niveau_acces",
+            "profil_document",
+            "regles_classement",
+            "metadonnees",
+            "cree_par",
+        )
+
+        labels = {
+            "titre" : "Titre du Document",
+            "type_document" : "Type du Document",
+            "sous_type" : "sous type du Document",
+            "theme" : "Thème du Document",
+            "cellule" : "Cellule du Document",
+            "niveau_acces" : "Niveau accès du Document",
+            "profil_document" : "Profil du Document",
+            "regles_classement" : "Rèlges de classemnt",
+            "metadonnees" : "Métadonnées du Document",
+        }
+
+        widgets = {
+          
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(DocumentsForm, self).__init__(*args, **kwargs)
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("titre"), css_class='form-group col-md-12 mb-0'),
+                Column("fichier", css_class="form-group col-md-12 mb-0 mt-1"),
+                Column(FloatingField("type_document"), css_class="form-group col-md-6 mb-0 mt-1"),
+                Column(FloatingField("sous_type"), css_class="form-group col-md-6 mb-0 mt-1"),
+                Column(FloatingField("theme"), css_class="form-group col-md-6 mb-0 mt-1"),
+                Column(FloatingField("cellule"), css_class="form-group col-md-6 mb-0 mt-1"),
+                Column(FloatingField("niveau_acces"), css_class="form-group col-md-6 mb-0 mt-1"),
+                Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-0 mt-1"),
+                Column(FloatingField("regles_classement"), css_class="form-group col-md-12 mb-0 mt-1"),
+                Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-0 mt-1"),
+                css_class='form-row p-3 pt-0'
+            ),
+        )

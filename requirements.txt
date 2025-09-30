@@ -6,9 +6,8 @@ python-dotenv==1.0.1
 sqlparse==0.5.0
 typing_extensions==4.12.2
 whitenoise==6.7.0
-crispy_forms
-crispy_bootstrap5
-rest_framework
-rest_framework.authtoken
-corsheaders
-django_browser_reload
+django-crispy-forms
+crispy-bootstrap5
+djangorestframework
+django-cors-headers
+django-browser-reload
