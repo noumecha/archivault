@@ -15,7 +15,7 @@ class BaseCRUDView(TemplateView):
     list_template = None
     list_route = None
     partial_template = None
-    form_template = 'templates/layouts/form_template.html'
+    form_template = 'layout/form_template.html'
     context_object_name = 'objects'
     search_fields = []
     paginate_by = 20
