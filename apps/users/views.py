@@ -6,22 +6,17 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
-from .models import Utilisateur, RoleUtilisateur
+from .models import *
+from .forms import *
 from .serializers import GroupSerializer, UserSerializer
 from django.views.generic import TemplateView
 from web_project import TemplateLayout
 from web_project.template_helpers.theme import TemplateHelper
-
-# views for user management
-class UserView(TemplateView):
-    def get_context_data(self, **kwargs):
-        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
-        return context
+from config.views import *
 
 class UserProfileView(TemplateView):
     # Predefined function
     def get_context_data(self, **kwargs):
-        # A function to init the global layout. It is defined in web_project/__init__.py file
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
         return context
 
@@ -47,9 +42,23 @@ class LogoutAPIView(APIView):
         logout(request)
         return Response({'success': 'Déconnecé avec succès!'})
 
+# user CRUD view
+class UserView(BaseCRUDView):
+    model = Utilisateur
+    form_class = UtilisateurForm
+    list_route = 'user_list'
+    list_template = "user_list.html"
+    partial_template = "users/partials/users_partial.html"
+    context_object_name = 'users'
+    search_fields = ['username', 'first_name']
+
 class UserAPIView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        return context
 
     def get(self, request):
         users = Utilisateur.objects.all()

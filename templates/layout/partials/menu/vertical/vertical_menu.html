@@ -381,8 +381,8 @@
         <div class="text-truncate" data-i18n="Form Elements">Gestion des tilisateurs</div>
       </a>
       <ul class="menu-sub">
-        <li class="menu-item {% if '/users/' in request.path %}active{% endif %}">
-          <a href="{% url 'users' %}" class="menu-link">
+        <li class="menu-item {% if '/utilisateur/' in request.path %}active{% endif %}">
+          <a href="{% url 'utilisateur_list' %}" class="menu-link">
             <div class="text-truncate" data-i18n="Vertical Form">Listes</div>
           </a>
         </li>

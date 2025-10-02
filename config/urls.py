@@ -61,7 +61,7 @@ urlpatterns = [
     path('thematique', include('apps.thematique.urls')),
     path('rapports', include('apps.rapports.urls')),
     path('notifications/', include('apps.notifications.urls')),
-    path('users', include('apps.users.urls')),
+    path('', include('apps.users.urls')),
     # autoreload browser dev
     path("__reload__/", include("django_browser_reload.urls"))
 ]
