@@ -9,6 +9,9 @@ class HistoriqueCirculationDocument(models.Model):
     utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
     action = models.CharField(max_length=255)
     date_action = models.DateTimeField(auto_now_add=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.utilisateur} - {self.action} ({self.date_action})"

@@ -1,5 +1,5 @@
 from django.db import models
-from document.models import Document
+from documents.models import Document
 from users.models import Utilisateur
 
 # notifications/models.py
@@ -9,6 +9,9 @@ class Notification(models.Model):
     message = models.TextField()
     vue = models.BooleanField(default=False)
     date_envoi = models.DateTimeField(auto_now_add=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Notif to {self.utilisateur} | {self.document}"

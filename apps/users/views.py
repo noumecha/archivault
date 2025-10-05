@@ -48,7 +48,7 @@ class UserView(BaseCRUDView):
     form_class = UtilisateurForm
     list_route = 'user_list'
     list_template = "user_list.html"
-    partial_template = "users/partials/users_partial.html"
+    partial_template = "partials/users_partial.html"
     context_object_name = 'users'
     search_fields = ['username', 'first_name']
 

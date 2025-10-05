@@ -6,6 +6,9 @@ from apps.administration.models import Division
 # Rôles utilisateur
 class RoleUtilisateur(models.Model):
     nom = models.CharField(max_length=100)  # Ex: 'admin', 'superviseur', 'agent'
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.nom
@@ -13,6 +16,9 @@ class RoleUtilisateur(models.Model):
 # Profil utilisateur
 class ProfilUtilisateur(models.Model):
     nom = models.CharField(max_length=100)  # Ex: 'Gestionnaire', 'Agent Saisie'
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.nom
@@ -32,6 +38,9 @@ class Utilisateur(AbstractUser):
         related_name="utilisateur_permissions",  # <-- unique name
         blank=True
     )
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.get_full_name()

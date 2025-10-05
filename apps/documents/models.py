@@ -5,7 +5,8 @@ from apps.users.models import Utilisateur
 # Create your models here.
 class Theme(models.Model):
     libelle = models.CharField(max_length=255)
-    Date_creation = models.DateTimeField(auto_now=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -13,7 +14,8 @@ class Theme(models.Model):
 
 class TypeDocument(models.Model):
     libelle = models.CharField(max_length=255)
-    Date_creation = models.DateTimeField(auto_now=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -22,7 +24,8 @@ class TypeDocument(models.Model):
 class SousTypeDocument(models.Model):
     libelle = models.CharField(max_length=255)
     type_document = models.ForeignKey(TypeDocument, on_delete=models.CASCADE, related_name='sous_types')
-    Date_creation = models.DateTimeField(auto_now=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -36,7 +39,8 @@ class EtatDocument(models.TextChoices):
 
 class NiveauAccesDocument(models.Model):
     niveau = models.CharField(max_length=100)  # Ex: 'confidentiel', 'restreint'
-    Date_creation = models.DateTimeField(auto_now=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -50,7 +54,8 @@ class ProfilDoc(models.TextChoices):
 class RegleClassement(models.Model):
     nom = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    Date_creation = models.DateTimeField(auto_now=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -69,7 +74,8 @@ class Document(models.Model):
     regles_classement = models.ManyToManyField(RegleClassement, blank=True)
     metadonnees = models.JSONField(blank=True, null=True)
     cree_par = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='documents_crees')
-    Date_creation = models.DateTimeField(auto_now=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):

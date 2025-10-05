@@ -63,7 +63,7 @@ function ajaxModal(modalId, formnContainerId, formId, fetchUrl, selectItemId = n
                     $(formId).closest('form')[0].reset();
                     id = '#form-success-'+modalId.replace('#','')
                     showAlertMessage(data.message, id);
-                } else {                        
+                } else {
                     id = '#form-error-'+modalId.replace('#','')
                     showAlertMessage(data.errors, id)
                 }
@@ -88,20 +88,16 @@ function loadModal(modalId, formContainer, url) {
             btn.text('Mettre à jour')
             btn.addClass('btn-outline-success btn-outline-success')
         } else {
-            url = url + "form" 
+            url = url + "form"
             btn.text("Enregistrer")
             btn.addClass('btn-outline-primary btn-outline-primary')
         }
-        $.get(url, function (data) {
-            formContent.html(data.html);    
-            setSelect2('#id_Immeuble', 'Selectionnez un immeuble', modalId);
-        });
         url = ""
     });
 }
 
-// clearing search form 
-function clearSearch(clearButton, searchInput) {    
+// clearing search form
+function clearSearch(clearButton, searchInput) {
     $(clearButton).on('click', function() {
         $(searchInput).val('').trigger('change');
     });
@@ -126,6 +122,7 @@ function fetchDatas(url, formId = null, containerId) {
         type: 'GET',
         success: function (data) {
             if (data.success) {
+                console.log(data.html);
                 $(containerId).html(data.html);
             } else {
                 console.error("Error occurred while fetching data : ", data.message);
@@ -186,7 +183,7 @@ function showAlertMessage(msg, id) {
     setTimeout(() => msgBlock.fadeOut(), 5000);
 }
 
-// show message 
+// show message
 function showMessage() {
     container = $("#message-show")
     container.fadeIn().css('display', 'block');

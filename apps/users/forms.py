@@ -36,21 +36,14 @@ class UtilisateurForm(forms.ModelForm):
         }
     def __init__(self, *args, **kwargs):
         super(UtilisateurForm, self).__init__(*args, **kwargs)
+        self.fields['username'].help_text = None
         self.helper =  FormHelper()
         self.helper.layout = Layout(
             Row(
-                Fieldset(
-                    "Informations locataire",
-                    Row(
-                        Column(FloatingField("username"), css_class='overflow-hidden form-group col-md-6 mb-0'),
-                        Column(FloatingField("first_name"), css_class='overflow-hidden form-group col-md-6 mb-0'),
-                        Column(FloatingField("last_name"), css_class='overflow-hidden form-group col-md-6 mb-0'),
-                        Column(FloatingField("email"), css_class='overflow-hidden form-group col-md-6 mb-0'),
-                        css_class='form-row' 
-                        """ ,label_class='text-decoration-none' """
-                    ),
-                    css_class="line__text border p-2 pt-4",
-                ),
-                css_class="p-3 pt-0",
+                Column(FloatingField("username"), css_class='overflow-hidden form-group col-md-12 mb-0'),
+                Column(FloatingField("first_name"), css_class='overflow-hidden form-group col-md-12 mb-0'),
+                Column(FloatingField("last_name"), css_class='overflow-hidden form-group col-md-12 mb-0'),
+                Column(FloatingField("email"), css_class='overflow-hidden form-group col-md-12 mb-0'),
+                css_class='form-row'
             ),
         )
