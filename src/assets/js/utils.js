@@ -75,7 +75,6 @@ function ajaxModal(modalId, formnContainerId, formId, fetchUrl, selectItemId = n
 // function to load modal content
 function loadModal(modalId, formContainer, url) {
     const formContent = $(formContainer);
-    // Open modal and load form
     $(document).on('click', `[data-bs-target="${modalId}"]`, function () {
         action = $(this).data('action')
         const id = $(this).data('id')
@@ -92,6 +91,10 @@ function loadModal(modalId, formContainer, url) {
             btn.text("Enregistrer")
             btn.addClass('btn-outline-primary btn-outline-primary')
         }
+        $.get(url, function (data) {
+            formContent.html(data.html);
+            console.log(formContent)
+        });
         url = ""
     });
 }
@@ -122,7 +125,6 @@ function fetchDatas(url, formId = null, containerId) {
         type: 'GET',
         success: function (data) {
             if (data.success) {
-                console.log(data.html);
                 $(containerId).html(data.html);
             } else {
                 console.error("Error occurred while fetching data : ", data.message);

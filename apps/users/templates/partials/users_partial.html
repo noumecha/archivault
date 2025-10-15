@@ -22,24 +22,23 @@
         </tr>
     </thead>
     <tbody class="table-border-bottom-0">
-        {% for utilisateur in utilisateurs %}
+        {% for utilisateur in users %}
             <tr>
                 <td>
-                    <i class="ri-suitcase-2-line ri-22px text-danger me-4"></i>
-                    <span>{{ utilisateur.first_name }}</span>
+                    {{ utilisateur.first_name|default_if_none:"-" }}
                 </td>
                 <td>
-                    {{ utilisateur.last_name }}
+                    {{ utilisateur.last_name|default_if_none:"-" }}
                 </td>
                 <td>
-                    {{ utilisateur.username }}
+                    {{ utilisateur.username|default_if_none:"-" }}
                 </td>
                 <td>
-                    {{ utilisateur.email }}
+                    {{ utilisateur.email|default_if_none:"-" }}
                 </td>
                 <td>
                     <span class="badge rounded-pill bg-label-primary me-1">
-                        {{ utilisateur.user_role }}
+                        {{ utilisateur.user_role|default_if_none:"-" }}
                     </span>
                 </td>
                 <td>
@@ -53,7 +52,7 @@
                         <div class="modal fade" id="delete-utilisateur-modal-{{ utilisateur.id }}" tabindex="-1" aria-labelledby="exampleModalLabel">
                             <div class="modal-dialog">
                                 <div class="modal-content p-0">
-                                    <form action="{% url 'baux:utilisateur_delete' utilisateur.id %}" method="post" id="delete-utilisateur-form">
+                                    <form action="{% url 'utilisateur_delete' utilisateur.id %}" method="post" id="delete-utilisateur-form">
                                         {% csrf_token %}
                                         <div class="modal-header">
                                             <h5 class="modal-title">Suppression d'un utilisateur</h5>

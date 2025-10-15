@@ -145,10 +145,10 @@ class BaseCRUDView(TemplateView):
             obj = get_object_or_404(self.model, pk=pk)
             obj.delete()
             messages.success(request, f"{self.model._meta.verbose_name} supprimé avec succès!")
-            return redirect(f'baux:{self.list_route}')
+            return redirect(f'archivault:{self.list_route}')
         except obj.DoesNotExist:
             messages.success(request, f"{self.model._meta.verbose_name} non trouvé !")
-            return redirect(f'baux:{self.list_route}')
+            return redirect(f'archivault:{self.list_route}')
     
     def partial_form_view(self, request):
         if request.method == 'POST':

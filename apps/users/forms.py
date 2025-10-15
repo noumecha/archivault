@@ -1,5 +1,7 @@
 from django.contrib.auth.forms import AuthenticationForm
 from django import forms
+from django.contrib.auth.models import Group
+from django.core.exceptions import ValidationError
 from .models import *
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from crispy_forms.bootstrap import InlineRadios, PrependedText
@@ -15,6 +17,27 @@ class LoginForm(AuthenticationForm):
 
 # users form
 class UtilisateurForm(forms.ModelForm):
+    # Password fields
+    password1 = forms.CharField(
+        label="Mot de passe",
+        widget=forms.PasswordInput(attrs={'placeholder': 'Mot de passe'}),
+        required=False,
+    )
+    password2 = forms.CharField(
+        label="Confirmation mot de passe",
+        widget=forms.PasswordInput(attrs={'placeholder': 'Confirmez le mot de passe'}),
+        required=False,
+    )
+    
+    # Django groups/roles management
+    groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.all(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Groupes Django",
+        help_text="Sélectionnez les groupes auxquels l'utilisateur appartient"
+    )
+    
     class Meta:
         model = Utilisateur
 
@@ -23,27 +46,145 @@ class UtilisateurForm(forms.ModelForm):
             'first_name',
             'last_name',
             'email',
+            'role',
+            'profil',
+            'division',
+            'is_active',
+            'is_staff',
+            'groups',
         )
         labels = {
-            'username' : "login utilisateur",
-            'first_name' : "Prenom utilisateur",
-            'last_name' : "Nom utilisateur",
-            'email' : "Email utilisateur",
+            'username': "Login utilisateur",
+            'first_name': "Prénom utilisateur",
+            'last_name': "Nom utilisateur",
+            'email': "Email utilisateur",
+            'role': "Rôle",
+            'profil': "Profil",
+            'division': "Division",
+            'is_active': "Compte actif",
+            'is_staff': "Accès admin",
         }
         
         widgets = {
-            'Date_delivrance_cni'  :  forms.TextInput(attrs={'type': 'date'}),
+            'Date_delivrance_cni': forms.TextInput(attrs={'type': 'date'}),
         }
+    
     def __init__(self, *args, **kwargs):
         super(UtilisateurForm, self).__init__(*args, **kwargs)
         self.fields['username'].help_text = None
-        self.helper =  FormHelper()
+        
+        # Make password required only for new users
+        if not self.instance.pk:
+            self.fields['password1'].required = True
+            self.fields['password2'].required = True
+            self.fields['password1'].help_text = "Le mot de passe doit contenir au moins 8 caractères"
+        
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3'
+        self.helper.field_class = 'col-md-9'
+        
         self.helper.layout = Layout(
-            Row(
-                Column(FloatingField("username"), css_class='overflow-hidden form-group col-md-12 mb-0'),
-                Column(FloatingField("first_name"), css_class='overflow-hidden form-group col-md-12 mb-0'),
-                Column(FloatingField("last_name"), css_class='overflow-hidden form-group col-md-12 mb-0'),
-                Column(FloatingField("email"), css_class='overflow-hidden form-group col-md-12 mb-0'),
-                css_class='form-row'
+            Fieldset(
+                'Informations personnelles',
+                Row(
+                    Column(FloatingField("username"), css_class='form-group col-md-6 mb-3'),
+                    Column(FloatingField("email"), css_class='form-group col-md-6 mb-3'),
+                    css_class='form-row'
+                ),
+                Row(
+                    Column(FloatingField("first_name"), css_class='form-group col-md-6 mb-3'),
+                    Column(FloatingField("last_name"), css_class='form-group col-md-6 mb-3'),
+                    css_class='form-row'
+                ),
             ),
+            Fieldset(
+                'Mot de passe',
+                Row(
+                    Column(FloatingField("password1"), css_class='form-group col-md-6 mb-3'),
+                    Column(FloatingField("password2"), css_class='form-group col-md-6 mb-3'),
+                    css_class='form-row'
+                ),
+            ),
+            Fieldset(
+                'Rôles et permissions',
+                Row(
+                    Column(FloatingField("role"), css_class='form-group col-md-6 mb-3'),
+                    Column(FloatingField("profil"), css_class='form-group col-md-6 mb-3'),
+                    css_class='form-row'
+                ),
+                Row(
+                    Column(FloatingField("division"), css_class='form-group col-md-12 mb-3'),
+                    css_class='form-row'
+                ),
+                Row(
+                    Column(
+                        Field("groups", css_class='form-check-input'),
+                        css_class='form-group col-md-12 mb-3'
+                    ),
+                    css_class='form-row'
+                ),
+            ),
+            Fieldset(
+                'Statut du compte',
+                Row(
+                    Column(
+                        Field("is_active", css_class='form-check-input'),
+                        css_class='form-group col-md-6 mb-3'
+                    ),
+                    Column(
+                        Field("is_staff", css_class='form-check-input'),
+                        css_class='form-group col-md-6 mb-3'
+                    ),
+                    css_class='form-row'
+                ),
+            ),
+            ButtonHolder(
+                Submit('submit', 'Enregistrer', css_class='btn btn-primary'),
+                Button('cancel', 'Annuler', css_class='btn btn-secondary', onclick='window.history.back();'),
+            )
         )
+    
+    def clean_password2(self):
+        """Validate that the two password fields match."""
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
+        
+        if password1 or password2:
+            if password1 != password2:
+                raise ValidationError("Les deux mots de passe ne correspondent pas.")
+            
+            # Validate password strength
+            if len(password1) < 8:
+                raise ValidationError("Le mot de passe doit contenir au moins 8 caractères.")
+        
+        return password2
+    
+    def clean_email(self):
+        """Validate email uniqueness."""
+        email = self.cleaned_data.get('email')
+        if email:
+            # Check if email exists for other users
+            users = Utilisateur.objects.filter(email=email)
+            if self.instance.pk:
+                users = users.exclude(pk=self.instance.pk)
+            if users.exists():
+                raise ValidationError("Un utilisateur avec cet email existe déjà.")
+        return email
+    
+    def save(self, commit=True):
+        """Save the user with password handling."""
+        user = super().save(commit=False)
+        
+        # Handle password
+        password = self.cleaned_data.get('password1')
+        if password:
+            user.set_password(password)
+        
+        if commit:
+            user.save()
+            # Save many-to-many relationships (groups)
+            self.save_m2m()
+        
+        return user
