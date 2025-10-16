@@ -118,6 +118,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.my_setting",
                 "config.context_processors.environment",
+                "config.context_processors.layout_context",
             ],
             "libraries": {
                 "theme": "web_project.template_tags.theme",
@@ -250,3 +251,7 @@ CSRF_TRUSTED_ORIGINS = ['https://your-domain.com']  # adjust
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'login'
+
+# managing files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

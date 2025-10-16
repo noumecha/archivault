@@ -23,13 +23,7 @@ urlpatterns = [
     *get_crud_urls(NiveauAccesDocumentView, "niveauaccess/niveauaccesss", "niveauaccess"),
     *get_crud_urls(ThemeListView, "theme/themes", "themes"),
     # documents
-    # path('', views.DocumentListView.as_view(), name='documents'),
-    # path("all/", views.get_documents, name='get_documents'),
-    # path("form/", views.document_form_view, name='document_form'), # load form
-    # path("edit/<int:pk>", views.document_form_view, name='document_update'),
-    # path("update/<int:pk>", views.update_documents, name='update_document'),
-    # path("delete/<int:pk>", views.document_delete_view, name='document_delete'),
-    path('nouveau/', DocumentCreateView.as_view(), name="create"),
-    path('upload/', DocumentUploadAPI.as_view(), name='api-upload'),
-    path('types/<int:type_id>/sous-types/', SousTypesAPIView.as_view(), name='api-sous-types'),
+    path('upload/', DocumentCreateMultipleView.as_view(), name='upload_document'),
+    path('documents/list/', DocumentListView.as_view(), name='list_document'),
+    path('edit/<int:pk>/', DocumentUpdateView.as_view(), name='edit_document'),
 ]

@@ -1,0 +1,112 @@
+{% extends layout_path %}
+
+{% load static %}
+{% load i18n %}
+
+{% load string_filters %}
+
+{% block title %}Listes des documents archivés{% endblock %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a href="{% url 'index' %}"><i class="ri-arrow-left-line"></i> Retour</a>
+      <h3>Documents</h3>
+      <a href="{% url 'upload_document' %}" class="btn btn-primary">Nouveau upload</a>
+    </div>
+
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card p-3 mb-3">
+          <form method="get">
+            <div class="form-group">
+              <input name="q" value="{{ q }}" class="form-control" placeholder="Recherche titre...">
+            </div>
+            <div class="form-group mt-2">
+              <label>Type</label>
+              <select name="type" class="form-control">
+                <option value="">Tous</option>
+                {% for t in types %}
+                <option value="{{ t.id }}" {% if selected_type|stringformat:"s" == t.id|stringformat:"s" %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group mt-2">
+              <label>Thème</label>
+              <select name="theme" class="form-control">
+                <option value="">Tous</option>
+                {% for th in themes %}
+                <option value="{{ th.id }}" {% if selected_theme|stringformat:"s" == th.id|stringformat:"s" %}selected{% endif %}>{{ th }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group mt-2">
+              <label>Extension (ex: pdf, docx, jpg)</label>
+              <input name="ext" value="{{ ext }}" class="form-control">
+            </div>
+            <div class="mt-3 text-right">
+              <button class="btn btn-primary">Filtrer</button>
+              <a href="{% url 'list_document' %}" class="btn btn-link">Réinitialiser</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-md-9">
+        <div class="row">
+          {% for doc in documents %}
+          <div class="col-6 col-sm-4 col-md-3 mb-4">
+            <div class="card h-100">
+              <a href="{{ doc.fichier.url }}" target="_blank" style="text-decoration:none;color:inherit;">
+                {% comment %} thumbnail preview: si image -> mini preview, sinon icone ext {% endcomment %}
+                {% with ext=doc.fichier.name|slice:"-4:" %}
+                {% endwith %}
+                {% if doc.fichier.name|lower|endswith:".jpg" or doc.fichier.name|lower|endswith:".jpeg" or doc.fichier.name|lower|endswith:".png" or doc.fichier.name|lower|endswith:".gif" %}
+                  <img src="{{ doc.fichier.url }}" class="card-img-top" style="max-height:150px;object-fit:cover">
+                {% else %}
+                  <div class="d-flex align-items-center justify-content-center" style="height:150px;">
+                    <div class="text-center">
+                      <strong>{{ doc.fichier.name|slice:"-4:"|upper }}</strong><br/>
+                      <small>{{ doc.titre }}</small>
+                    </div>
+                  </div>
+                {% endif %}
+              </a>
+              <div class="card-body p-2">
+                <h6 class="card-title mb-1" style="font-size:0.9rem;"><a href="{% url 'edit_document' doc.pk %}">{{ doc.titre }}</a></h6>
+                <p class="mb-0" style="font-size:0.8rem;">{{ doc.type_document }}</p>
+                <small class="text-muted">{{ doc.Date_creation|date:"d/m/Y H:i" }}</small>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <p>Aucun document trouvé.</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?{% if q %}q={{ q }}&{% endif %}{% if selected_type %}type={{ selected_type }}&{% endif %}{% if selected_theme %}theme={{ selected_theme }}&{% endif %}page={{ page_obj.previous_page_number }}">Précédent</a></li>
+            {% endif %}
+            {% for num in paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock content %}
+{% block extra_js %}
+    <script src="{% static 'js/document.js' %}"></script>
+{% endblock %}

@@ -28,7 +28,7 @@ class UtilisateurForm(forms.ModelForm):
         widget=forms.PasswordInput(attrs={'placeholder': 'Confirmez le mot de passe'}),
         required=False,
     )
-    
+
     # Django groups/roles management
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
@@ -37,7 +37,7 @@ class UtilisateurForm(forms.ModelForm):
         label="Groupes Django",
         help_text="Sélectionnez les groupes auxquels l'utilisateur appartient"
     )
-    
+
     class Meta:
         model = Utilisateur
 
@@ -64,27 +64,27 @@ class UtilisateurForm(forms.ModelForm):
             'is_active': "Compte actif",
             'is_staff': "Accès admin",
         }
-        
+
         widgets = {
             'Date_delivrance_cni': forms.TextInput(attrs={'type': 'date'}),
         }
-    
+
     def __init__(self, *args, **kwargs):
         super(UtilisateurForm, self).__init__(*args, **kwargs)
         self.fields['username'].help_text = None
-        
+
         # Make password required only for new users
         if not self.instance.pk:
             self.fields['password1'].required = True
             self.fields['password2'].required = True
             self.fields['password1'].help_text = "Le mot de passe doit contenir au moins 8 caractères"
-        
+
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-md-3'
         self.helper.field_class = 'col-md-9'
-        
+
         self.helper.layout = Layout(
             Fieldset(
                 'Informations personnelles',
@@ -139,28 +139,24 @@ class UtilisateurForm(forms.ModelForm):
                     ),
                     css_class='form-row'
                 ),
-            ),
-            ButtonHolder(
-                Submit('submit', 'Enregistrer', css_class='btn btn-primary'),
-                Button('cancel', 'Annuler', css_class='btn btn-secondary', onclick='window.history.back();'),
             )
         )
-    
+
     def clean_password2(self):
         """Validate that the two password fields match."""
         password1 = self.cleaned_data.get('password1')
         password2 = self.cleaned_data.get('password2')
-        
+
         if password1 or password2:
             if password1 != password2:
                 raise ValidationError("Les deux mots de passe ne correspondent pas.")
-            
+
             # Validate password strength
             if len(password1) < 8:
                 raise ValidationError("Le mot de passe doit contenir au moins 8 caractères.")
-        
+
         return password2
-    
+
     def clean_email(self):
         """Validate email uniqueness."""
         email = self.cleaned_data.get('email')
@@ -172,19 +168,19 @@ class UtilisateurForm(forms.ModelForm):
             if users.exists():
                 raise ValidationError("Un utilisateur avec cet email existe déjà.")
         return email
-    
+
     def save(self, commit=True):
         """Save the user with password handling."""
         user = super().save(commit=False)
-        
+
         # Handle password
         password = self.cleaned_data.get('password1')
         if password:
             user.set_password(password)
-        
+
         if commit:
             user.save()
             # Save many-to-many relationships (groups)
             self.save_m2m()
-        
+
         return user

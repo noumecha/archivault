@@ -1,5 +1,5 @@
 from django.views.generic import ListView
-from django.views.generic import CreateView, TemplateView
+from django.views.generic import CreateView, ListView, UpdateView, TemplateView, View
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,9 +11,13 @@ from django.urls import reverse_lazy
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.core.paginator import Paginator
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib import messages
 from config.views import BaseCRUDView
+from django.db import transaction
+from web_project import TemplateLayout
+import os
+from django.utils.text import slugify
 
 #occupant view
 class RegleClassementView(BaseCRUDView):
@@ -83,124 +87,96 @@ class DocumentView(BaseCRUDView):
         "cree_par",
     ]
 
-# documents view
+# managing doucments
+class DocumentCreateMultipleView(ListView):
+    template_name = "upload_multiple.html"
+    form_class = UploadMultipleForm
+
+    def get(self, request):
+        form = self.form_class()
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        form = self.form_class(request.POST, request.FILES)
+        files = request.FILES.getlist('fichiers')
+        if not files:
+            messages.error(request, "Aucun fichier sélectionné.")
+            return render(request, self.template_name, {"form": form})
+
+        if form.is_valid():
+            data = form.cleaned_data
+            created = []
+            with transaction.atomic():
+                for f in files:
+                    # créer un titre lisible à partir du nom de fichier
+                    name = os.path.splitext(f.name)[0]
+                    titre = name.replace('_', ' ').replace('-', ' ').strip()
+                    # slug unique si besoin
+                    doc = Document.objects.create(
+                        titre=titre,
+                        fichier=f,
+                        type_document=data.get("type_document"),
+                        sous_type=data.get("sous_type"),
+                        theme=data.get("theme"),
+                        cellule=data.get("cellule"),
+                        etat=data.get("etat") or Document._meta.get_field('etat').default,
+                        niveau_acces=data.get("niveau_acces"),
+                        profil_document=data.get("profil_document") or Document._meta.get_field('profil_document').default,
+                        #cree_par=request.user if request.user.is_authenticated else None,
+                        metadonnees=data.get("metadonnees") or None,
+                    )
+                    if data.get("regles_classement"):
+                        doc.regles_classement.set(data.get("regles_classement"))
+                    created.append(doc)
+            messages.success(request, f"{len(created)} document(s) créés.")
+            return redirect("list_document")
+        else:
+            return render(request, self.template_name, {"form": form})
+
+
 class DocumentListView(ListView):
     model = Document
-    template_name = "documents/list.html"
-    context_object_name = 'documents'
-    paginate_by = 10
+    template_name = "list.html"
+    context_object_name = "documents"
+    paginate_by = 24
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('type_document', 'theme', 'cellule')
+        q = self.request.GET.get('q')
+        type_id = self.request.GET.get('type')
+        theme_id = self.request.GET.get('theme')
+        extension = self.request.GET.get('ext')
+        if q:
+            qs = qs.filter(titre__icontains=q)
+        if type_id:
+            qs = qs.filter(type_document_id=type_id)
+        if theme_id:
+            qs = qs.filter(theme_id=theme_id)
+        if extension:
+            qs = qs.filter(fichier__iendswith='.' + extension.lstrip('.'))
+        return qs.order_by('-Date_creation')
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['documents'] = Document.objects.all()
-        context["form"] = DocumentsForm()
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx['types'] = TypeDocument.objects.all()
+        ctx['themes'] = Theme.objects.all()
+        ctx['selected_type'] = self.request.GET.get('type', '')
+        ctx['selected_theme'] = self.request.GET.get('theme', '')
+        ctx['q'] = self.request.GET.get('q', '')
+        ctx['ext'] = self.request.GET.get('ext', '')
+        return ctx
 
-    def post(self, request, *args, **kwargs):
-        document_form = DocumentsForm(request.POST)
-        if document_form.is_valid():
-            document_form.save()
-            return JsonResponse({
-                'success': True,
-                'message' : 'Document enregistré avec succès'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'message' : f"Erreur lors de l\'enregistrement du document : {str(document_form.errors)}",
-            })
 
-# getting documents
-def get_documents(request, **kwargs):
-    if request.method == 'GET':
-        #query = request.GET.get('searchFilter', '').strip()
-        documents = Document.objects.get_queryset()
-        #documents = Document.objects.filter()
-        # applying filters
-        if request.GET.get('type'):
-            documents = documents.filter(type_document_id=request.GET.get('type'))
-        if request.GET.get('theme'):
-            documents = documents.filter(theme_id=request.GET.get('theme'))
-        if request.GET.get('statut'):
-            documents = documents.filter(etat=request.GET.get('statut'))
-        if request.GET.get('searchFilter'):
-            documents = documents.filter(titre__contains=request.GET.get('searchFilter'))
-        datas = render_to_string(
-            'partials/documents_partial.html',
-            {'documents': documents},
-            request=request
-        )
-        return JsonResponse({'success': True, 'html': datas})
-    return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)
-
-# update documents
-def update_documents(request, **kwargs):
-        pk = kwargs.get('pk', None)
-        if pk:
-            document = get_object_or_404(Document, pk=pk)
-            document_form = DocumentsForm(request.POST, instance=document)
-            if document_form.is_valid():
-                document = document_form.save()
-                return JsonResponse({
-                    'success': True,
-                    'message' : 'Document mis à jour avec succès'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message' : f"Erreur lors de la mise à jour du document : {str(document_form.errors)}",
-                })
-        else:
-            return JsonResponse({'success': False, 'message': 'Document non trouvé'}, status=404)
-
-# manage document deletion
-def document_delete_view(request, pk):
-    try:
-        document = get_object_or_404(Document, pk=pk)
-        document.delete()
-        messages.success(request, "Document supprimé avec succès!")
-        return redirect('documents:documents')
-    except Document.DoesNotExist:
-        messages.success(request, "Document non trouvé !")
-        return redirect('documents:documents')
-
-def document_form_view(request, pk=None):
-    if pk:
-        document = get_object_or_404(Document, pk=pk) if pk else None
-        form = DocumentsForm(instance=document)
-    else:
-        form = DocumentsForm()
-    html = render_to_string('layouts/form.html', {'form': form}, request=request)
-    return JsonResponse({'success': True, 'html': html})
-
-class DocumentCreateView(CreateView):
+class DocumentUpdateView(UpdateView):
     model = Document
     form_class = DocumentsForm
-    template_name = 'layouts/form.html'
-    success_url = reverse_lazy('documents:list')
+    template_name = "edit.html"
+    success_url = reverse_lazy("documents:list")
+
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, {})
+        return context
 
     def form_valid(self, form):
-        form.instance.cree_par = self.request.user
+        messages.success(self.request, "Document mis à jour.")
         return super().form_valid(form)
-
-class DocumentUploadAPI(APIView):
-    def post(self, request):
-        form = DocumentsForm(request.POST, request.FILES)
-        if form.is_valid():
-            document = form.save(commit=False)
-            document.cree_par = request.user
-            document.save()
-            return Response({
-                'status' : 'success',
-                'id': document.id
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'status' : 'error',
-            'errors' : form.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
-
-class SousTypesAPIView(APIView):
-    def get(self, request, type_id):
-        sous_types = SousTypeDocument.objects.filter(type_document_id=type_id)
-        serializer = SousTypeDocumentSerializer(sous_types, many=True)
-        return Response(serializer.data)

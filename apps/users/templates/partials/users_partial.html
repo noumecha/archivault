@@ -45,8 +45,23 @@
               <div class="dropdown">
                   <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
                   <div class="dropdown-menu">
-                      <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i>Modifier</a>
-                      <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i>Supprimer</a>
+                    <a
+                      class="dropdown-item primary"
+                      href="#"
+                      data-bs-target="#create-utilisateur-modal"
+                      data-bs-toggle="modal"
+                      data-action = "update"
+                      data-id="{{ utilisateur.id }}"
+                    >
+                      <i class="ri-pencil-line me-1"></i>Modifier
+                    </a>
+                    <a href="#"
+                      class="dropdown-item btn-success delete-utilisateur"
+                      data-bs-target="#delete-utilisateur-modal-{{ utilisateur.id }}"
+                      data-bs-toggle="modal"
+                    >
+                      <i class="ri-delete-bin-6-line me-1"></i>Supprimer
+                    </a>
                   </div>
                   <!-- delete utilisateur -->
                   <div class="modal fade" id="delete-utilisateur-modal-{{ utilisateur.id }}" tabindex="-1" aria-labelledby="exampleModalLabel">

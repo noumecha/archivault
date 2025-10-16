@@ -1,0 +1,27 @@
+{% extends layout_path %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Modificatin d'un document{% endblock %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-4">
+  <h3>Modifier le document</h3>
+  <div class="card p-3">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form }}
+      <div class="text-right mt-3">
+        <a href="{% url 'list_document' %}" class="btn btn-secondary">Retour</a>
+        <button class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock content %}
+{% block extra_js %}
+    <script src="{% static 'js/document.js' %}"></script>
+{% endblock %}

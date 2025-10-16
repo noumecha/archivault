@@ -154,6 +154,66 @@ class SousTypeDocumentsForm(forms.ModelForm):
         )
 
 # form for document
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+class UploadMultipleForm(forms.Form):
+    """fichiers = forms.FileField(
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        required=False
+    )"""
+    fichiers =  MultipleFileField(label='Select files', required=False)
+    # autres champs
+    type_document = forms.ModelChoiceField(queryset=TypeDocument.objects.all(), required=False)
+    sous_type = forms.ModelChoiceField(queryset=SousTypeDocument.objects.all(), required=False)
+    theme = forms.ModelChoiceField(queryset=Theme.objects.all(), required=False)
+    cellule = forms.ModelChoiceField(queryset=Cellule.objects.all(), required=False)
+    etat = forms.ChoiceField(choices=EtatDocument.choices, required=False)
+    niveau_acces = forms.ModelChoiceField(queryset=NiveauAccesDocument.objects.all(), required=False)
+    profil_document = forms.ChoiceField(choices=ProfilDoc.choices, required=False)
+    regles_classement = forms.ModelMultipleChoiceField(queryset=RegleClassement.objects.all(), required=False)
+    metadonnees = forms.CharField(widget=forms.Textarea, required=False)
+
+    class Meta:
+        widgets = {
+            #'fichiers': forms.ClearableFileInput(attrs={'multiple': True}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['fichiers'].widget.attrs.update({'multiple': True})
+        self.fields['fichiers'].widget.allow_multiple_selected = True  # 👈 correction clé
+
+        self.helper = FormHelper()
+        self.helper.form_show_labels = False
+        self.helper.layout = Layout(
+            Row(
+                Column("fichiers", css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("type_document"), css_class="form-group col-md-6 mb-2"),
+                Column(FloatingField("sous_type"), css_class="form-group col-md-6 mb-2"),
+                Column(FloatingField("theme"), css_class="form-group col-md-6 mb-2"),
+                Column(FloatingField("cellule"), css_class="form-group col-md-6 mb-2"),
+                Column(FloatingField("niveau_acces"), css_class="form-group col-md-6 mb-2"),
+                Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-2"),
+                Column(FloatingField("regles_classement"), css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-2"),
+            )
+        )
+
+
 class DocumentsForm(forms.ModelForm):
     class Meta:
         model = Document

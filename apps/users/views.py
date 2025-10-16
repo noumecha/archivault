@@ -112,7 +112,7 @@ class LogoutAPIView(APIView):
 class UserView(BaseCRUDView):
     model = Utilisateur
     form_class = UtilisateurForm
-    list_route = 'user_list'
+    list_route = 'utilisateur_list'
     list_template = "user_list.html"
     partial_template = "partials/users_partial.html"
     context_object_name = 'users'
