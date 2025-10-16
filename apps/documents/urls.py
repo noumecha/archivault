@@ -1,7 +1,7 @@
 from django.urls import path
-from . import views
+from .views import *
 
-# crud urls helper 
+# crud urls helper
 def get_crud_urls(view_class, prefix, name):
     """ Helper function to generate CRUD URLs for a view class """
     #name = view_class.model._meta.model_name
@@ -16,10 +16,11 @@ def get_crud_urls(view_class, prefix, name):
 
 
 urlpatterns = [
-    *get_crud_urls(views.TypeDocumentView, "typedocument/typedocuments", "typedocument"),
-    *get_crud_urls(views.DocumentView, "document/documents", "document"),
+    *get_crud_urls(TypeDocumentView, "typedocument/typedocuments", "typedocument"),
+    *get_crud_urls(DocumentView, "document/documents", "document"),
+    *get_crud_urls(RegleClassementView, "regleclassement/regleclassements", "regleclassement"),
     # Gestion types et thèmes
-    *get_crud_urls(views.DocumentView, "theme/themes", "themes"),
+    *get_crud_urls(DocumentView, "theme/themes", "themes"),
     # documents
     # path('', views.DocumentListView.as_view(), name='documents'),
     # path("all/", views.get_documents, name='get_documents'),
@@ -27,7 +28,7 @@ urlpatterns = [
     # path("edit/<int:pk>", views.document_form_view, name='document_update'),
     # path("update/<int:pk>", views.update_documents, name='update_document'),
     # path("delete/<int:pk>", views.document_delete_view, name='document_delete'),
-    path('nouveau/', views.DocumentCreateView.as_view(), name="create"),
-    path('upload/', views.DocumentUploadAPI.as_view(), name='api-upload'),
-    path('types/<int:type_id>/sous-types/', views.SousTypesAPIView.as_view(), name='api-sous-types'),
+    path('nouveau/', DocumentCreateView.as_view(), name="create"),
+    path('upload/', DocumentUploadAPI.as_view(), name='api-upload'),
+    path('types/<int:type_id>/sous-types/', SousTypesAPIView.as_view(), name='api-sous-types'),
 ]

@@ -7,7 +7,7 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from django.core.paginator import Paginator
 
-#generic view for basic operation 
+#generic view for basic operation
 class BaseCRUDView(TemplateView):
     model = None
     form_class = None
@@ -25,7 +25,7 @@ class BaseCRUDView(TemplateView):
         context[self.context_object_name] = self.model.objects.all()
         context["form"] = self.form_class
         return context
-    
+
     def get_queryset(self, search_query=None):
         queryset = self.model.objects.all().order_by('-Date_creation')
         if search_query and self.search_fields:
@@ -34,7 +34,7 @@ class BaseCRUDView(TemplateView):
                 q_objects |= Q(**{f"{field}__icontains": search_query})
             queryset = queryset.filter(q_objects).order_by('-Date_creation')
         return queryset[:100]
-    
+
     def get_form_view(self, request, pk=None):
         instance = get_object_or_404(self.model, pk=pk) if pk else None
         form = self.form_class(instance=instance)
@@ -47,25 +47,25 @@ class BaseCRUDView(TemplateView):
             "formsets": formsets
         }, request=request)
         return JsonResponse({'success': True, 'html':html})
-    
+
     def get_list_data(self, request):
         search_query = request.GET.get('search', '').strip()
         queryset = self.get_queryset(search_query)
         paginator = Paginator(queryset, 25)
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-        
+
         html = render_to_string(
-            self.partial_template, 
+            self.partial_template,
             {
                 self.context_object_name: page_obj,
                 'page_obj': page_obj,
                 'paginator': paginator
-            }, 
+            },
             request=request
         )
         return JsonResponse({
-            'success': True, 
+            'success': True,
             'html': html,
             'has_next': page_obj.has_next(),
             'has_previous': page_obj.has_previous(),
@@ -106,7 +106,7 @@ class BaseCRUDView(TemplateView):
             'errors' : form.errors,
             'html' : html
         })
-    
+
     def update(self, request, **kwargs):
         pk = kwargs.get('pk')
         if not pk:
@@ -139,17 +139,17 @@ class BaseCRUDView(TemplateView):
             'messages': f"Erreur lors de la mise à jour",
             'html' : html
         })
-    
+
     def delete(self, request, pk):
         try:
             obj = get_object_or_404(self.model, pk=pk)
             obj.delete()
             messages.success(request, f"{self.model._meta.verbose_name} supprimé avec succès!")
-            return redirect(f'archivault:{self.list_route}')
+            return redirect(self.list_route)
         except obj.DoesNotExist:
             messages.success(request, f"{self.model._meta.verbose_name} non trouvé !")
-            return redirect(f'archivault:{self.list_route}')
-    
+            return redirect(self.list_route)
+
     def partial_form_view(self, request):
         if request.method == 'POST':
             form = self.form_class(request.POST)
@@ -162,7 +162,7 @@ class BaseCRUDView(TemplateView):
                 })
             html = render_to_string(self.form_template, {'form': form}, request=request)
             return JsonResponse({
-                'success': False, 
+                'success': False,
                 'html': html
             })
         else:
@@ -183,4 +183,3 @@ class BaseCRUDView(TemplateView):
         elif action == 'partial_form':
             return self.partial_form_view(request)
         return super().dispatch(request, *args, **kwargs)
-        

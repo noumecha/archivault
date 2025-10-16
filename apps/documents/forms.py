@@ -1,8 +1,8 @@
 from django import forms
-from .models import Document, SousTypeDocument, Theme, TypeDocument, NiveauAccesDocument, RegleClassement
+from .models import *
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Row, Column, Fieldset, Field
+from crispy_forms.layout import Layout, Row, Column
 
 # form for regle de classement
 class RegleClassementsForm(forms.ModelForm):
@@ -10,16 +10,16 @@ class RegleClassementsForm(forms.ModelForm):
         model = RegleClassement
 
         fields = (
-            'nom', 'description'
+            'nom', 'description_regleclassement'
         )
 
         labels = {
             "niveau" : "Titre du niveau d'accès",
-            "description" : "Description de la règle de classement",
+            "description_regleclassement" : "Description de la règle de classement",
         }
 
         widgets = {
-          
+            "description_regleclassement": forms.Textarea(attrs={'cols': '20', 'rows': '5'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -28,9 +28,9 @@ class RegleClassementsForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
-                Column(FloatingField("description"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("description_regleclassement"), css_class='form-group col-md-12 mb-0'),
                 css_class='form-row p-3 pt-0'
-            ),
+            )
         )
 
 # form for nivea d'accès
@@ -39,15 +39,16 @@ class NiveauAccesDocumentsForm(forms.ModelForm):
         model = NiveauAccesDocument
 
         fields = (
-            'niveau',
+            'niveau',"description_niveauaccess"
         )
 
         labels = {
             "niveau" : "Titre du niveau d'accès",
+            "description_niveauaccess" : "Description"
         }
 
         widgets = {
-          
+
         }
 
     def __init__(self, *args, **kwargs):
@@ -56,6 +57,7 @@ class NiveauAccesDocumentsForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("niveau"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("description_niveauaccess"), css_class='form-group col-md-12 mb-0'),
                 css_class='form-row p-3 pt-0'
             ),
         )
@@ -66,15 +68,16 @@ class TypeDocumentsForm(forms.ModelForm):
         model = TypeDocument
 
         fields = (
-            'libelle',
+            'libelle',"description_typedocument"
         )
 
         labels = {
             "libelle" : "Libellé du type de document",
+            "description_typedocument" : "Description"
         }
 
         widgets = {
-          
+
         }
 
     def __init__(self, *args, **kwargs):
@@ -83,6 +86,7 @@ class TypeDocumentsForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("description_typedocument"), css_class='form-group col-md-12 mb-0'),
                 css_class='form-row p-3 pt-0'
             ),
         )
@@ -94,14 +98,16 @@ class ThemesForm(forms.ModelForm):
 
         fields = (
             'libelle',
+            "description_theme"
         )
 
         labels = {
             "libelle" : "Libellé du Thème",
+            "description_theme" : "Description"
         }
 
         widgets = {
-          
+
         }
 
     def __init__(self, *args, **kwargs):
@@ -110,6 +116,7 @@ class ThemesForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("description_theme"), css_class='form-group col-md-12 mb-0'),
                 css_class='form-row p-3 pt-0'
             ),
         )
@@ -120,16 +127,18 @@ class SousTypeDocumentsForm(forms.ModelForm):
         model = SousTypeDocument
 
         fields = (
-            'libelle', 'type_document'
+            'libelle', 'type_document',
+            "description_soustypedocument"
         )
 
         labels = {
             "libelle" : "Libellé du sour type",
+            "description_soustypedocument" : "Description",
             "type_document" : "Type du Document",
         }
 
         widgets = {
-          
+
         }
 
     def __init__(self, *args, **kwargs):
@@ -138,6 +147,7 @@ class SousTypeDocumentsForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("description_soustypedocument"), css_class='form-group col-md-12 mb-0'),
                 Column(FloatingField("type_document"), css_class="form-group col-md-12 mb-0 mt-1"),
                 css_class='form-row p-3 pt-0'
             ),
@@ -176,7 +186,7 @@ class DocumentsForm(forms.ModelForm):
         }
 
         widgets = {
-          
+
         }
 
     def __init__(self, *args, **kwargs):

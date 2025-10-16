@@ -5,6 +5,7 @@ from apps.users.models import Utilisateur
 # Create your models here.
 class Theme(models.Model):
     libelle = models.CharField(max_length=255)
+    description = models.TextField(blank=True, name='description_theme')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
@@ -14,6 +15,7 @@ class Theme(models.Model):
 
 class TypeDocument(models.Model):
     libelle = models.CharField(max_length=255)
+    description = models.TextField(blank=True, name='description_typedocument')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
@@ -23,6 +25,7 @@ class TypeDocument(models.Model):
 
 class SousTypeDocument(models.Model):
     libelle = models.CharField(max_length=255)
+    description = models.TextField(blank=True, name='description_soustypedocument')
     type_document = models.ForeignKey(TypeDocument, on_delete=models.CASCADE, related_name='sous_types')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
@@ -39,6 +42,7 @@ class EtatDocument(models.TextChoices):
 
 class NiveauAccesDocument(models.Model):
     niveau = models.CharField(max_length=100)  # Ex: 'confidentiel', 'restreint'
+    description = models.TextField(blank=True, name='description_niveauaccess')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
@@ -53,7 +57,7 @@ class ProfilDoc(models.TextChoices):
 
 class RegleClassement(models.Model):
     nom = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, name='description_regleclassement')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
