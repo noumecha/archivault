@@ -61,13 +61,18 @@
             <div class="text-truncate" data-i18n="Vertical Form">Listes</div>
           </a>
         </li>
-        <li class="menu-item {% if '/utilisateur/' in request.path %}active{% endif %}">
-          <a href="{% url 'utilisateur_list' %}" class="menu-link">
+        <li class="menu-item {% if '/typedocument/typedocuments/' in request.path %}active{% endif %}">
+          <a href="{% url 'typedocument_list' %}" class="menu-link">
             <div class="text-truncate" data-i18n="Vertical Form">Types</div>
           </a>
         </li>
-        <li class="menu-item {% if '/utilisateur/' in request.path %}active{% endif %}">
-          <a href="{% url 'utilisateur_list' %}" class="menu-link">
+        <li class="menu-item {% if '/soustypedocument/soustypedocuments/' in request.path %}active{% endif %}">
+          <a href="{% url 'soustypedocument_list' %}" class="menu-link">
+            <div class="text-truncate" data-i18n="Vertical Form">Sous Types</div>
+          </a>
+        </li>
+        <li class="menu-item {% if '/theme/themes/' in request.path %}active{% endif %}">
+          <a href="{% url 'themes_list' %}" class="menu-link">
             <div class="text-truncate" data-i18n="Vertical Form">Thèmes</div>
           </a>
         </li>
@@ -76,9 +81,9 @@
             <div class="text-truncate" data-i18n="Vertical Form">Règles de classement</div>
           </a>
         </li>
-        <li class="menu-item {% if '/utilisateur/' in request.path %}active{% endif %}">
-          <a href="{% url 'utilisateur_list' %}" class="menu-link">
-            <div class="text-truncate" data-i18n="Vertical Form">Profiles</div>
+        <li class="menu-item {% if '/niveauaccess/niveauaccesss/' in request.path %}active{% endif %}">
+          <a href="{% url 'niveauaccess_list' %}" class="menu-link">
+            <div class="text-truncate" data-i18n="Vertical Form">Niveau d'accès</div>
           </a>
         </li>
       </ul>

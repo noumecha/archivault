@@ -25,23 +25,41 @@ class RegleClassementView(BaseCRUDView):
     context_object_name = 'reglesclassements'
     search_fields = ["nom","description_regleclassement"]
 
+class NiveauAccesDocumentView(BaseCRUDView):
+    model = NiveauAccesDocument
+    form_class = NiveauAccesDocumentsForm
+    list_route = 'niveauaccess_list'
+    list_template = 'niveauaccesss_list.html'
+    partial_template = 'partials/niveauaccesss_partial.html'
+    context_object_name = 'niveauaccesss'
+    search_fields = ["niveau","description_niveauaccess"]
+
+class SousTypeDocumentView(BaseCRUDView):
+    model = SousTypeDocument
+    form_class = SousTypeDocumentsForm
+    list_route = 'soustypedocument_list'
+    list_template = 'soustypedocument_list.html'
+    partial_template = 'partials/soustypedocument_partial.html'
+    context_object_name = 'soustypedocuments'
+    search_fields = ["libelle","description_soustypedocument"]
+
 class ThemeListView(BaseCRUDView):
-    model = TypeDocument
-    form_class = TypeDocumentsForm
-    list_route = 'typedocuments_list'
-    list_template = 'typedocuments_list.html'
-    partial_template = 'partials/typedocuments_partial.html'
-    context_object_name = 'typedocuments'
-    search_fields = ["libelle"]
+    model = Theme
+    form_class = ThemesForm
+    list_route = 'themes_list'
+    list_template = 'themes_list.html'
+    partial_template = 'partials/themes_partial.html'
+    context_object_name = 'themes'
+    search_fields = ["libelle","description_theme"]
 
 class TypeDocumentView(BaseCRUDView):
     model = TypeDocument
     form_class = TypeDocumentsForm
-    list_route = 'typedocuments_list'
+    list_route = 'typedocument_list'
     list_template = 'typedocuments_list.html'
     partial_template = 'partials/typedocuments_partial.html'
     context_object_name = 'typedocuments'
-    search_fields = ["libelle"]
+    search_fields = ["libelle","description_typedocument"]
 
 class DocumentView(BaseCRUDView):
     model = Document

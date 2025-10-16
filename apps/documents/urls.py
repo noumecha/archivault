@@ -17,10 +17,11 @@ def get_crud_urls(view_class, prefix, name):
 
 urlpatterns = [
     *get_crud_urls(TypeDocumentView, "typedocument/typedocuments", "typedocument"),
+    *get_crud_urls(SousTypeDocumentView, "soustypedocument/soustypedocuments", "soustypedocument"),
     *get_crud_urls(DocumentView, "document/documents", "document"),
     *get_crud_urls(RegleClassementView, "regleclassement/regleclassements", "regleclassement"),
-    # Gestion types et thèmes
-    *get_crud_urls(DocumentView, "theme/themes", "themes"),
+    *get_crud_urls(NiveauAccesDocumentView, "niveauaccess/niveauaccesss", "niveauaccess"),
+    *get_crud_urls(ThemeListView, "theme/themes", "themes"),
     # documents
     # path('', views.DocumentListView.as_view(), name='documents'),
     # path("all/", views.get_documents, name='get_documents'),
