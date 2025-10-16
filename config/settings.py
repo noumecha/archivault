@@ -38,7 +38,6 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     SECRET_KEY = "".join(random.choice(string.ascii_lowercase) for i in range(32))
 
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", 'True').lower() in ['true', 'yes', '1']
 
@@ -70,7 +69,7 @@ INSTALLED_APPS = [
     "apps.forms",
     "apps.form_layouts",
     "apps.tables",
-    # crispy forms 
+    # crispy forms
     'crispy_forms',
     'crispy_bootstrap5',
     # Tooling API-GEN
@@ -101,6 +100,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # autorelaod browser dev
     'django_browser_reload.middleware.BrowserReloadMiddleware',
+    'apps.users.middleware.JWTAuthMiddleware',
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -132,6 +132,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# token managemment
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -164,12 +172,12 @@ else:
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ),
 }
 
 # Password validation
@@ -233,3 +241,12 @@ THEME_VARIABLES = THEME_VARIABLES
 # crispy boostrap5 settings
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# For cookies: you probably want to set this in production
+SESSION_COOKIE_SECURE = True    # require HTTPS in prod
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ['https://your-domain.com']  # adjust
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'index'
+LOGOUT_REDIRECT_URL = 'login'

@@ -155,7 +155,7 @@ function submitForm(formId, url, fetchUrl) {
                     // fetchDatas(fetchUrl)
                 } else {
                     console.error("Error occurred on submit : ", data.message)
-                    showAlertMessage(data.message, '#form-error')
+                    showAlertMessage(data.errors, '#form-error')
                 }
             }
         });

@@ -1,6 +1,7 @@
 from django.views.generic import TemplateView
 from web_project import TemplateLayout
-
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 """
 This file is a view controller for multiple pages as a module.
@@ -16,3 +17,7 @@ class DashboardsView(TemplateView):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
 
         return context
+
+    @method_decorator(login_required(login_url="/login/"))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)

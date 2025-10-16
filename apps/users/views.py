@@ -5,42 +5,108 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.authtoken.models import Token
 from .models import *
 from .forms import *
 from .serializers import GroupSerializer, UserSerializer
-from django.views.generic import TemplateView
 from web_project import TemplateLayout
-from web_project.template_helpers.theme import TemplateHelper
 from config.views import *
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.conf import settings
+from django.shortcuts import render, redirect
+from rest_framework_simplejwt.tokens import RefreshToken
 
-class UserProfileView(TemplateView):
-    # Predefined function
+# login view
+
+class LoginView(View):
+    template_name = "login.html"
+
     def get_context_data(self, **kwargs):
-        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        context = TemplateLayout.init(self, {})
         return context
 
-# views for login & logout
-class LoginAPIView(APIView):
-    permission_classes = [] # public
-    def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
+    def get(self, request):
+        if request.user.is_authenticated:
+            return redirect("index")
+        return render(request, self.template_name)
 
-        user = authenticate(username=username, password=password)
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key})
-        return Response({'error' : 'Identifiants invalides', 'status' : status.HTTP_401_UNAUTHORIZED})
+    def post(self, request):
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+        print(user)
+        if user is not None:
+            # ✅ Création des tokens JWT
+            refresh = RefreshToken.for_user(user)
+            access = str(refresh.access_token)
+
+            response = redirect("index")
+            # ✅ Cookies sécurisés
+            response.set_cookie(
+                "access_token", access,
+                httponly=True, secure=not settings.DEBUG,
+                samesite="Lax", max_age=60*15
+            )
+            response.set_cookie(
+                "refresh_token", str(refresh),
+                httponly=True, secure=not settings.DEBUG,
+                samesite="Lax", max_age=60*60*24*7
+            )
+            login(request, user)
+            return response
+
+        return render(request, self.template_name, {"error": "Identifiants invalides"})
+
+class LogoutView(View):
+    def get(self, request):
+        logout(request)
+        response = redirect('login')
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        return response
+
+# api view
+class LoginAPIView(TokenObtainPairView):
+    """
+    Authentifie l’utilisateur et crée les cookies JWT (access + refresh).
+    """
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            data = response.data
+            access = data.get('access')
+            refresh = data.get('refresh')
+
+            # ✅ Crée la réponse finale avec cookies sécurisés
+            res = Response({'message': 'Connexion réussie'}, status=status.HTTP_200_OK)
+            res.set_cookie(
+                'access_token',
+                access,
+                httponly=True,
+                secure=not settings.DEBUG,
+                samesite='Lax',
+                max_age=60 * 15  # 15 min
+            )
+            res.set_cookie(
+                'refresh_token',
+                refresh,
+                httponly=True,
+                secure=not settings.DEBUG,
+                samesite='Lax',
+                max_age=60 * 60 * 24 * 7  # 7 jours
+            )
+            return res
+        return response
 
 class LogoutAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
+    """
+    Supprime les cookies JWT.
+    """
     def post(self, request):
-        request.auth.delete()
-        logout(request)
-        return Response({'success': 'Déconnecé avec succès!'})
+        res = Response({'message': 'Déconnexion réussie'}, status=status.HTTP_200_OK)
+        res.delete_cookie('access_token')
+        res.delete_cookie('refresh_token')
+        return res
 
 # user CRUD view
 class UserView(BaseCRUDView):
@@ -52,19 +118,6 @@ class UserView(BaseCRUDView):
     context_object_name = 'users'
     search_fields = ['username', 'first_name']
 
-class UserAPIView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_context_data(self, **kwargs):
-        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
-        return context
-
-    def get(self, request):
-        users = Utilisateur.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
-
 class GroupAPIView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -73,3 +126,18 @@ class GroupAPIView(APIView):
         groups = RoleUtilisateur.objects.all()
         serializer = GroupSerializer(groups, many=True)
         return Response(serializer.data)
+
+# users views
+class UserProfileView(TemplateView):
+    template_name = "user_profile.html"
+
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        return context
+
+class UserPasswordView(TemplateView):
+    template_name = "user_password_update.html"
+
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        return context

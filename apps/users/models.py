@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from apps.administration.models import Division
-# -*- coding: utf-8 -*-
 
 # Rôles utilisateur
 class RoleUtilisateur(models.Model):

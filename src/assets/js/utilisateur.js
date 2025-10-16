@@ -1,6 +1,4 @@
 $(function () {
-
-    console.log("works!");
     // initialize modals for utilisateur
     loadModal('#create-utilisateur-modal', '#utilisateur-form-content', '/utilisateur/utilisateurs/') // for create or update
     submitForm('#utilisateurForm', '/utilisateur/utilisateurs/', '/utilisateur/utilisateurs/all/') // save to db
