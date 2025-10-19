@@ -24,10 +24,10 @@
     <div class="card-body text-center">
       {% if document %}
         {% if document.fichier|lower|endswith:".pdf" %}
-          <object data="{{ MEDIA_URL }}{{ document.fichier }}" type="application/pdf" width="100%" height="600px">
+          <object data="/media/{{ document.fichier }}" type="application/pdf" width="100%" height="600px">
             <p>
               Impossible d’afficher le PDF.
-              <a href="{{ MEDIA_URL }}{{ document.fichier }}" target="_blank">Ouvrir le document ici</a>.
+              <a href="/media/{{ document.fichier }}" target="_blank">Ouvrir le document ici</a>.
             </p>
           </object>
         {% elif document.fichier|lower|endswith:".jpg" or document.fichier|lower|endswith:".jpeg" or document.fichier|lower|endswith:".png" %}
