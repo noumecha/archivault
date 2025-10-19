@@ -192,13 +192,23 @@ class UploadMultipleForm(forms.Form):
             #'fichiers': forms.ClearableFileInput(attrs={'multiple': True}),
         }
 
+        labels = {
+            "type_document" : "Type du Document",
+            "sous_type" : "sous type du Document",
+            "theme" : "Thème du Document",
+            "cellule" : "Cellule du Document",
+            "niveau_acces" : "Niveau accès du Document",
+            "profil_document" : "Profil du Document",
+            "regles_classement" : "Rèlges de classemnt",
+            "metadonnees" : "Métadonnées du Document",
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['fichiers'].widget.attrs.update({'multiple': True})
         self.fields['fichiers'].widget.allow_multiple_selected = True  # 👈 correction clé
 
         self.helper = FormHelper()
-        self.helper.form_show_labels = False
         self.helper.layout = Layout(
             Row(
                 Column("fichiers", css_class="form-group col-md-12 mb-2"),
@@ -230,7 +240,7 @@ class DocumentsForm(forms.ModelForm):
             "profil_document",
             "regles_classement",
             "metadonnees",
-            "cree_par",
+            #"cree_par",
         )
 
         labels = {

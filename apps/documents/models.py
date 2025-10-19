@@ -71,7 +71,7 @@ class Document(models.Model):
     type_document = models.ForeignKey(TypeDocument, on_delete=models.SET_NULL, null=True)
     sous_type = models.ForeignKey(SousTypeDocument, on_delete=models.SET_NULL, null=True, blank=True)
     theme = models.ForeignKey(Theme, on_delete=models.SET_NULL, null=True)
-    cellule = models.ForeignKey(Cellule, on_delete=models.SET_NULL, null=True)
+    cellule = models.ForeignKey(Cellule, on_delete=models.SET_NULL, null=True, blank=True)
     etat = models.CharField(max_length=20, choices=EtatDocument.choices, default=EtatDocument.EN_ATTENTE)
     niveau_acces = models.ForeignKey(NiveauAccesDocument, on_delete=models.SET_NULL, null=True)
     profil_document = models.CharField(max_length=20, choices=ProfilDoc.choices, default=ProfilDoc.CONSULTATIF)

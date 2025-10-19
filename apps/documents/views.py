@@ -171,12 +171,15 @@ class DocumentUpdateView(UpdateView):
     model = Document
     form_class = DocumentsForm
     template_name = "edit.html"
-    success_url = reverse_lazy("documents:list")
+    success_url = reverse_lazy("list_document")
 
     def get_context_data(self, **kwargs):
-        context = TemplateLayout.init(self, {})
+        context = super().get_context_data(**kwargs)
+        layout_context = TemplateLayout.init(self, {})
+        context.update(layout_context)
+        context['document'] = self.object
         return context
 
     def form_valid(self, form):
-        messages.success(self.request, "Document mis à jour.")
+        messages.success(self.request, "✅ Document mis à jour avec succès.")
         return super().form_valid(form)
