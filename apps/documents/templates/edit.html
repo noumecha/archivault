@@ -24,7 +24,12 @@
     <div class="card-body text-center">
       {% if document %}
         {% if document.fichier|lower|endswith:".pdf" %}
-          <iframe src="/media/{{ document.fichier }}" width="100%" height="500px" class="rounded border"></iframe>
+          <object data="{{ MEDIA_URL }}{{ document.fichier }}" type="application/pdf" width="100%" height="600px">
+            <p>
+              Impossible d’afficher le PDF.
+              <a href="{{ MEDIA_URL }}{{ document.fichier }}" target="_blank">Ouvrir le document ici</a>.
+            </p>
+          </object>
         {% elif document.fichier|lower|endswith:".jpg" or document.fichier|lower|endswith:".jpeg" or document.fichier|lower|endswith:".png" %}
           <img src="/media/{{ document.fichier }}" alt="{{ document.titre }}" class="img-fluid rounded shadow-sm" style="max-height: 500px;">
         {% elif document.fichier|lower|endswith:".mp4" or document.fichier|lower|endswith:".webm" %}
