@@ -2,11 +2,11 @@
 
 <!DOCTYPE html>
 
-<html lang="en" 
-  class="light-style layout-menu-fixed {{content_layout_class}}" 
+<html lang="en"
+  class="light-style layout-menu-fixed {{content_layout_class}}"
   data-assets-path="{% static '/' %}"
-  data-base-url="{{url}}" 
-  data-framework="django" 
+  data-base-url="{{url}}"
+  data-framework="django"
   data-template="vertical-menu-free"
 >
 
@@ -29,7 +29,6 @@
     <!--Page CSS-->
     {% block page_css %}{% endblock page_css %}
 
-
     <!-- Include the scripts partial (required ) -->
     {% include "./partials/scripts_includes.html" %}
 
@@ -48,7 +47,7 @@
 
     <!--Page Javascript-->
     {% block page_js %} {% endblock page_js %}
-    
+
     <!-- extra js code -->
     {% block extra_js %}{% endblock %}
 

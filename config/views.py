@@ -14,15 +14,20 @@ class BaseCRUDView(TemplateView):
     formset_class = None
     list_template = None
     list_route = None
-    partial_template = None
+    #partial_template = None
     form_template = 'layout/form_template.html'
+    # template elements
+    headers = []
+    fields = []
+    delete_url = ""
+    partial_template = 'layout/partials/crud_table.html'
     context_object_name = 'objects'
     search_fields = []
+    # pagination
     paginate_by = 20
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
-        context[self.context_object_name] = self.model.objects.all()
         context["form"] = self.form_class
         return context
 
@@ -54,13 +59,17 @@ class BaseCRUDView(TemplateView):
         paginator = Paginator(queryset, 25)
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-
         html = render_to_string(
             self.partial_template,
             {
                 self.context_object_name: page_obj,
+                'objects' : page_obj,
                 'page_obj': page_obj,
-                'paginator': paginator
+                'paginator': paginator,
+                'headers': self.headers,
+                'fields': self.fields,
+                'delete_url': self.delete_url,
+                'object_name': self.model._meta.verbose_name.title(),
             },
             request=request
         )
@@ -70,7 +79,7 @@ class BaseCRUDView(TemplateView):
             'has_next': page_obj.has_next(),
             'has_previous': page_obj.has_previous(),
             'current_page': page_obj.number,
-            'total_pages': paginator.num_pages
+            'total_pages': paginator.num_pages,
         })
 
     def post(self, request, *args, **kwargs):

@@ -42,18 +42,18 @@
 
     <!-- documents -->
     <li class="menu-header fw-medium mt-7">
-      <span class="menu-header-text">Documents</span>
+      <span class="menu-header-text">Gestion des documents</span>
     </li>
     <li class="menu-item {% if '/upload/' in request.path %}active open{% endif %}">
       <a href="{% url 'upload_document' %}" class="menu-link">
-        <i class="menu-icon tf-icons ri-lifebuoy-line"></i>
+        <i class="menu-icon tf-icons ri-sticky-note-add-line"></i>
         <div class="text-truncate" data-i18n="utilisateurs">Ajouter</div>
       </a>
     </li>
     <li class="menu-item {% if '/documents/' in request.path %}active open{% endif %}">
       <a href="javascript:void(0)" class="menu-link menu-toggle">
-        <i class="menu-icon tf-icons ri-box-3-line"></i>
-        <div class="text-truncate" data-i18n="Form Elements">Gestion des documents</div>
+        <i class="menu-icon tf-icons ri-file-list-3-fill"></i>
+        <div class="text-truncate" data-i18n="Form Elements">Documents</div>
       </a>
       <ul class="menu-sub">
         <li class="menu-item {% if '/documents/list/' in request.path %}active{% endif %}">
@@ -76,11 +76,6 @@
             <div class="text-truncate" data-i18n="Vertical Form">Thèmes</div>
           </a>
         </li>
-        <li class="menu-item {% if '/regleclassement/regleclassements/' in request.path %}active{% endif %}">
-          <a href="{% url 'regleclassement_list' %}" class="menu-link">
-            <div class="text-truncate" data-i18n="Vertical Form">Règles de classement</div>
-          </a>
-        </li>
         <li class="menu-item {% if '/niveauaccess/niveauaccesss/' in request.path %}active{% endif %}">
           <a href="{% url 'niveauaccess_list' %}" class="menu-link">
             <div class="text-truncate" data-i18n="Vertical Form">Niveau d'accès</div>
@@ -95,14 +90,14 @@
     </li>
     <li class="menu-item">
       <a href="" class="menu-link">
-        <i class="menu-icon tf-icons ri-lifebuoy-line"></i>
+        <i class="menu-icon tf-icons ri-profile-line"></i>
         <div class="text-truncate" data-i18n="utilisateurs">Profil</div>
       </a>
     </li>
     <li class="menu-item {% if '/form/' in request.path %}active open{% endif %}">
       <a href="javascript:void(0)" class="menu-link menu-toggle">
-        <i class="menu-icon tf-icons ri-box-3-line"></i>
-        <div class="text-truncate" data-i18n="Form Elements">Gestion des utilisateurs</div>
+        <i class="menu-icon tf-icons ri-group-line"></i>
+        <div class="text-truncate" data-i18n="Form Elements">Utilisateurs</div>
       </a>
       <ul class="menu-sub">
         <li class="menu-item {% if '/utilisateur/' in request.path %}active{% endif %}">
@@ -116,6 +111,29 @@
           </a>
         </li>
       </ul>
+    </li>
+
+    <!-- Administration menu -->
+    <li class="menu-header fw-medium mt-7">
+      <span class="menu-header-text">Eléments Administratifs</span>
+    </li>
+    <li class="menu-item {% if '/cellule/' in request.path %}active open{% endif %}">
+      <a href="{% url 'cellule_list' %}" class="menu-link">
+        <i class="menu-icon tf-icons ri-building-line"></i>
+        <div class="text-truncate" data-i18n="cellules">Cellules</div>
+      </a>
+    </li>
+    <li class="menu-item {% if '/division/' in request.path %}active open{% endif %}">
+      <a href="{% url 'division_list' %}" class="menu-link">
+        <i class="menu-icon tf-icons ri-building-2-line"></i>
+        <div class="text-truncate" data-i18n="cellules">Division</div>
+      </a>
+    </li>
+    <li class="menu-item {% if '/ministere/' in request.path %}active open{% endif %}">
+      <a href="{% url 'ministere_list' %}" class="menu-link">
+        <i class="menu-icon tf-icons ri-government-line"></i>
+        <div class="text-truncate" data-i18n="cellules">Ministere</div>
+      </a>
     </li>
   </ul>
 </aside>

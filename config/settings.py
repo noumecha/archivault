@@ -120,8 +120,10 @@ TEMPLATES = [
                 "config.context_processors.environment",
                 "config.context_processors.layout_context",
             ],
+            # templates tags librairies
             "libraries": {
                 "theme": "web_project.template_tags.theme",
+                "utils_tags": "config.templatetags.utils_tags",
             },
             "builtins": [
                 "django.templatetags.static",

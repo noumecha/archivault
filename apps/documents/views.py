@@ -20,15 +20,6 @@ import os
 from django.utils.text import slugify
 
 #occupant view
-class RegleClassementView(BaseCRUDView):
-    model = RegleClassement
-    form_class = RegleClassementsForm
-    list_route = 'regleclassement_list'
-    list_template = 'reglesclassements_list.html'
-    partial_template = 'partials/reglesclassements_partial.html'
-    context_object_name = 'reglesclassements'
-    search_fields = ["nom","description_regleclassement"]
-
 class NiveauAccesDocumentView(BaseCRUDView):
     model = NiveauAccesDocument
     form_class = NiveauAccesDocumentsForm

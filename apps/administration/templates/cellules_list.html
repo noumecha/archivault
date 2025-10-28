@@ -3,7 +3,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Règles de classement{% endblock %}
+{% block title %}Cellules{% endblock %}
 
 {% load crispy_forms_tags %}
 
@@ -13,9 +13,9 @@
         <div class="card-header">
             <div class="row d-flex justify-content-between align-items-center">
                 <div class="col-md-8 col-lg-8">
-                    <h3 class="">Listes des règles de classements</h3>
+                    <h3 class="">Listes des Cellules</h3>
                     <p class="text-sm">
-                        Gérer les règles de classements
+                        Gérer les Cellules
                     </p>
                 </div>
                 <div class="col-md-4 col-lg-4 text-end">
@@ -25,16 +25,16 @@
                         data-bs-toggle="modal"
                         data-action = "create"
                         id="add-button"
-                        data-bs-target="#create-regleclassement-modal"
+                        data-bs-target="#create-cellule-modal"
                     >
-                        <i class="menu-icon tf-icons bx bx-file"></i> Ajouter
+                        <i class="menu-icon ri-add-line"></i> Ajouter
                     </button>
                 </div>
             </div>
-            <form action="" class="row mt-3" id="regleclassement-search-form">
+            <form action="" class="row mt-3" id="cellule-search-form">
                 <div class="col-md-12 col-lg-12">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Rechercher un regleclassement" name="search" id="search">
+                        <input type="text" class="form-control" placeholder="Rechercher un cellule" name="search" id="search">
                         <button class="btn btn-outline-primary" type="button" id="clearSearch">
                             <i class="ri-close-line"></i>
                         </button>
@@ -52,21 +52,21 @@
             </div>
         </div>
 
-        <div class="container-flex" id="regleclassement-table-container">
+        <div class="container-flex" id="cellule-table-container">
         </div>
     </div>
-    <!-- create or update regleclassement -->
-    <div class="modal fade" id="create-regleclassement-modal" tabindex="-1" aria-labelledby="exampleModalLabel">
+    <!-- create or update cellule -->
+    <div class="modal fade" id="create-cellule-modal" tabindex="-1" aria-labelledby="exampleModalLabel">
         <div class="modal-dialog modal-lg">
             <div class="modal-content p-0">
-                <form id="regleclassementForm">
+                <form id="celluleForm">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title">Enregistrement des informations sur une regle classement</h5>
+                        <h5 class="modal-title">Enregistrement des informations sur une cellule </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div id="regleclassement-form-content">Chargement...</div>
+                        <div id="cellule-form-content">Chargement...</div>
                         <div class="alert alert-success" style="display: none;" id="form-success"></div>
                         <div class="alert alert-danger" style="display: none;" id="form-error"></div>
                         <input type="hidden" value="" name="id" id="update-id">
@@ -81,5 +81,5 @@
     </div>
 {% endblock %}
 {% block extra_js %}
-    <script src="{% static 'js/regleclassements.js' %}"></script>
+    <script src="{% static 'js/cellule.js' %}"></script>
 {% endblock %}

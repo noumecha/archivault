@@ -4,35 +4,6 @@ from crispy_bootstrap5.bootstrap5 import FloatingField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column
 
-# form for regle de classement
-class RegleClassementsForm(forms.ModelForm):
-    class Meta:
-        model = RegleClassement
-
-        fields = (
-            'nom', 'description_regleclassement'
-        )
-
-        labels = {
-            "niveau" : "Titre du niveau d'accès",
-            "description_regleclassement" : "Description de la règle de classement",
-        }
-
-        widgets = {
-            "description_regleclassement": forms.Textarea(attrs={'cols': '20', 'rows': '5'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super(RegleClassementsForm, self).__init__(*args, **kwargs)
-        self.helper =  FormHelper()
-        self.helper.layout = Layout(
-            Row(
-                Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
-                Column(FloatingField("description_regleclassement"), css_class='form-group col-md-12 mb-0'),
-                css_class='form-row p-3 pt-0'
-            )
-        )
-
 # form for nivea d'accès
 class NiveauAccesDocumentsForm(forms.ModelForm):
     class Meta:
@@ -138,7 +109,7 @@ class SousTypeDocumentsForm(forms.ModelForm):
         }
 
         widgets = {
-
+            "description_soustypedocument" : forms.Textarea(attrs={'rows': 5, 'col': 10}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -184,7 +155,6 @@ class UploadMultipleForm(forms.Form):
     etat = forms.ChoiceField(choices=EtatDocument.choices, required=False)
     niveau_acces = forms.ModelChoiceField(queryset=NiveauAccesDocument.objects.all(), required=False)
     profil_document = forms.ChoiceField(choices=ProfilDoc.choices, required=False)
-    regles_classement = forms.ModelMultipleChoiceField(queryset=RegleClassement.objects.all(), required=False)
     metadonnees = forms.CharField(widget=forms.Textarea, required=False)
 
     class Meta:
@@ -238,7 +208,6 @@ class DocumentsForm(forms.ModelForm):
             "etat",
             "niveau_acces",
             "profil_document",
-            "regles_classement",
             "metadonnees",
             #"cree_par",
         )
@@ -251,7 +220,6 @@ class DocumentsForm(forms.ModelForm):
             "cellule" : "Cellule du Document",
             "niveau_acces" : "Niveau accès du Document",
             "profil_document" : "Profil du Document",
-            "regles_classement" : "Rèlges de classemnt",
             "metadonnees" : "Métadonnées du Document",
         }
 
@@ -272,7 +240,6 @@ class DocumentsForm(forms.ModelForm):
                 Column(FloatingField("cellule"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("niveau_acces"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-0 mt-1"),
-                Column(FloatingField("regles_classement"), css_class="form-group col-md-12 mb-0 mt-1"),
                 Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-0 mt-1"),
                 css_class='form-row p-3 pt-0'
             ),

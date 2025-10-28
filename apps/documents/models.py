@@ -55,16 +55,6 @@ class ProfilDoc(models.TextChoices):
     MODIFIABLE = 'modifiable', 'Modifiable'
     IMPRIMABLE = 'imprimable', 'Imprimable'
 
-class RegleClassement(models.Model):
-    nom = models.CharField(max_length=255)
-    description = models.TextField(blank=True, name='description_regleclassement')
-    # timestamp
-    Date_creation = models.DateTimeField(auto_now_add=True)
-    Date_miseajour = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.nom
-
 class Document(models.Model):
     titre = models.CharField(max_length=255)
     fichier = models.FileField(upload_to='documents/')
@@ -75,7 +65,6 @@ class Document(models.Model):
     etat = models.CharField(max_length=20, choices=EtatDocument.choices, default=EtatDocument.EN_ATTENTE)
     niveau_acces = models.ForeignKey(NiveauAccesDocument, on_delete=models.SET_NULL, null=True)
     profil_document = models.CharField(max_length=20, choices=ProfilDoc.choices, default=ProfilDoc.CONSULTATIF)
-    regles_classement = models.ManyToManyField(RegleClassement, blank=True)
     metadonnees = models.JSONField(blank=True, null=True)
     cree_par = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='documents_crees')
     # timestamp
