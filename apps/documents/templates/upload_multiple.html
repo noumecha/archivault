@@ -14,7 +14,18 @@
         <h3>Uploader des documents</h3>
         <a href="{% url 'list_document' %}" class="btn btn-primary"><i class="ri-file-list-line"></i>liste</a>
       </div>
-
+      <div class="row">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="
+                      alert {% if 'error' in msg.tags %}alert-danger{% else %}alert-success{% endif %}
+                      col-12 text-center mt-3"
+                      style="display:none;" id="message-show">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+      </div>
     <form id="upload-form" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="card p-3">
@@ -35,8 +46,9 @@
           {{ form.niveau_acces|as_crispy_field }}
           {{ form.profil_document|as_crispy_field }}
           {{ form.metadonnees|as_crispy_field }}
+          {{ form.responsable_document|as_crispy_field }}
         </div>
-
+        <hr/>
         <div class="text-right mt-3">
           <a href="{% url 'list_document' %}" class="btn btn-secondary">Annuler</a>
           <button id="submit-btn" class="btn btn-primary">Enregistrer</button>

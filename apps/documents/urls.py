@@ -25,4 +25,6 @@ urlpatterns = [
     path('upload/', DocumentCreateMultipleView.as_view(), name='upload_document'),
     path('documents/list/', DocumentListView.as_view(), name='list_document'),
     path('edit/<int:pk>/', DocumentUpdateView.as_view(), name='edit_document'),
+    path('delete/<int:pk>/', DocumentDeleteView.as_view(), name='delete_document'),
+
 ]

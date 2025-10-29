@@ -112,10 +112,6 @@ function clearSearch(clearButton, searchInput) {
 function filteringDatas(searchInputSelector, url, formId, containerId) {
   $(searchInputSelector).on('change keyup', function (e) {
     e.preventDefault();
-    selectors = searchInputSelector.split(',');
-    selectors.forEach(s => {
-      console.log(`value selector : ${$(s).val()}`);
-    });
     // clear any previous timeout
     clearTimeout($(this).data('timer'));
     $(this).data('timer', setTimeout(fetchDatas(url, formId, containerId), 500));
@@ -210,6 +206,7 @@ function showAlertMessage(msg, id) {
 
 // show message
 function showMessage() {
+  console.log('works');
   container = $('#message-show');
   container.fadeIn().css('display', 'block');
   setTimeout(() => container.fadeOut(), 5000);

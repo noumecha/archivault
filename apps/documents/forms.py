@@ -1,5 +1,6 @@
 from django import forms
 from .models import *
+from apps.users.models import RoleUtilisateur, Utilisateur
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column
@@ -142,11 +143,7 @@ class MultipleFileField(forms.FileField):
         return result
 
 class UploadMultipleForm(forms.Form):
-    """fichiers = forms.FileField(
-        widget=forms.ClearableFileInput(attrs={'multiple': True}),
-        required=False
-    )"""
-    fichiers =  MultipleFileField(label='Select files', required=False)
+    fichiers =  MultipleFileField(label='Selectionner un ou plusieurs fichiers...', required=False)
     # autres champs
     type_document = forms.ModelChoiceField(queryset=TypeDocument.objects.all(), required=False)
     sous_type = forms.ModelChoiceField(queryset=SousTypeDocument.objects.all(), required=False)
@@ -156,10 +153,29 @@ class UploadMultipleForm(forms.Form):
     niveau_acces = forms.ModelChoiceField(queryset=NiveauAccesDocument.objects.all(), required=False)
     profil_document = forms.ChoiceField(choices=ProfilDoc.choices, required=False)
     metadonnees = forms.CharField(widget=forms.Textarea, required=False)
+    responsable_document = forms.ModelChoiceField(queryset=Utilisateur.objects.filter(role='responsable'), required=False)
 
     class Meta:
+        model = Document
+
+        fields = (
+
+        )
+
+        labels = {
+            "titre" : "Titre du Document",
+            "type_document" : "Type du Document",
+            "sous_type" : "sous type du Document",
+            "theme" : "Thème du Document",
+            "cellule" : "Cellule du Document",
+            "niveau_acces" : "Niveau accès du Document",
+            "profil_document" : "Profil du Document",
+            "metadonnees" : "Métadonnées du Document",
+            'responsable_document' : "Responsable",
+        }
+
         widgets = {
-            #'fichiers': forms.ClearableFileInput(attrs={'multiple': True}),
+
         }
 
         labels = {
@@ -171,13 +187,13 @@ class UploadMultipleForm(forms.Form):
             "profil_document" : "Profil du Document",
             "regles_classement" : "Rèlges de classemnt",
             "metadonnees" : "Métadonnées du Document",
+            'responsable_document' : "Responsable",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['fichiers'].widget.attrs.update({'multiple': True})
-        self.fields['fichiers'].widget.allow_multiple_selected = True  # 👈 correction clé
-
+        self.fields['fichiers'].widget.allow_multiple_selected = True
         self.helper = FormHelper()
         self.helper.layout = Layout(
             Row(
@@ -190,6 +206,7 @@ class UploadMultipleForm(forms.Form):
                 Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-2"),
                 Column(FloatingField("regles_classement"), css_class="form-group col-md-12 mb-2"),
                 Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("responsable_document"), css_class="form-group col-md-12 mb-2"),
             )
         )
 
@@ -209,7 +226,7 @@ class DocumentsForm(forms.ModelForm):
             "niveau_acces",
             "profil_document",
             "metadonnees",
-            #"cree_par",
+            'responsable_document',
         )
 
         labels = {
@@ -221,6 +238,7 @@ class DocumentsForm(forms.ModelForm):
             "niveau_acces" : "Niveau accès du Document",
             "profil_document" : "Profil du Document",
             "metadonnees" : "Métadonnées du Document",
+            'responsable_document' : "Responsable",
         }
 
         widgets = {
@@ -241,6 +259,7 @@ class DocumentsForm(forms.ModelForm):
                 Column(FloatingField("niveau_acces"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-0 mt-1"),
+                Column(FloatingField("responsable_document"), css_class="form-group col-md-12 mb-2"),
                 css_class='form-row p-3 pt-0'
             ),
         )

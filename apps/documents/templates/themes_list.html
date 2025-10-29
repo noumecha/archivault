@@ -12,24 +12,31 @@
 
         <div class="card-header">
             <div class="row d-flex justify-content-between align-items-center">
-                <div class="col-md-8 col-lg-8">
-                    <h3 class="">Listes des thèmes</h3>
-                    <p class="text-sm">
-                        Gérer les thèmes
-                    </p>
-                </div>
-                <div class="col-md-4 col-lg-4 text-end">
-                    <button
-                        type="button"
-                        class="btn btn-lg btn-dark btn-primary text-white"
-                        data-bs-toggle="modal"
-                        data-action = "create"
-                        id="add-button"
-                        data-bs-target="#create-theme-modal"
-                    >
-                        <i class="menu-icon ri-add-line"></i> Ajouter
-                    </button>
-                </div>
+              <div class="col-md-8 col-lg-8">
+                  <h3 class="">Listes des thèmes</h3>
+                  <p class="text-sm">
+                      Gérer les thèmes
+                  </p>
+              </div>
+              <div class="col-md-4 col-lg-4 text-end">
+                <button
+                  type="button"
+                  class="btn"
+                  id="refresh-button"
+                >
+                  <i class="menu-icon ri-restart-line"></i> Rafraîchir
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-lg btn-dark btn-primary text-white"
+                  data-bs-toggle="modal"
+                  data-action = "create"
+                  id="add-button"
+                  data-bs-target="#create-theme-modal"
+                >
+                  <i class="menu-icon ri-add-line"></i> Ajouter
+                </button>
+              </div>
             </div>
             <form action="" class="row mt-3" id="theme-search-form">
                 <div class="col-md-12 col-lg-12">

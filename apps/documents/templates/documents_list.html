@@ -1,7 +1,7 @@
 {% extends "layouts/base.html" %}
 {% load static %}
 
-{% block title %} Gestion des documents {% endblock title %}
+{% block title %}documents{% endblock title %}
 
 {% block content %}
 <div class="content">
@@ -28,6 +28,15 @@
                         </button>
                     </div>
                 </div>
+                <div class="row">
+                    {% if messages %}
+                        {% for msg in messages %}
+                            <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show">
+                                {{ msg }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
                 <form action="" class="row mt-3" id="document-search-form">
                     <div class="col-md-12 col-lg-12">
                         <div class="input-group">
@@ -38,15 +47,6 @@
                         </div>
                     </div>
                 </form>
-                <div class="row">
-                    {% if messages %}
-                        {% for msg in messages %}
-                            <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show">
-                                {{ msg }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
             </div>
 
             <div class="container-flex" id="document-table-container">

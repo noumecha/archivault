@@ -1,4 +1,6 @@
 $(function () {
+  // Show success/error messages
+  showMessage();
   const dropArea = document.getElementById('drop-area');
   const fileInput = document.getElementById('file-input');
   const browseBtn = document.getElementById('browse-btn');

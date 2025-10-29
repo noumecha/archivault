@@ -83,6 +83,14 @@
               <div class="card-body p-2">
                 <h6 class="card-title mb-1" style="font-size:0.9rem;"><a href="{% url 'edit_document' doc.pk %}">{{ doc.titre }}</a></h6>
                 <p class="mb-0" style="font-size:0.8rem;">{{ doc.type_document }}</p>
+                <!-- 🏷️ Ajout badge selon le profil -->
+                {% if doc.profil_document == 'consultatif' %}
+                  <span class="badge bg-secondary">Consultatif</span>
+                {% elif doc.profil_document == 'imprimable' %}
+                  <span class="badge bg-info text-dark">Imprimable</span>
+                {% elif doc.profil_document == 'modifiable' %}
+                  <span class="badge bg-success">Modifiable</span>
+                {% endif %}
                 <small class="text-muted">{{ doc.Date_creation|date:"d/m/Y H:i" }}</small>
               </div>
             </div>

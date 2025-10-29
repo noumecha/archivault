@@ -1,6 +1,6 @@
 from django.db import models
 from apps.administration.models import Cellule
-from apps.users.models import Utilisateur
+from apps.users.models import Utilisateur, RoleUtilisateur
 
 # Create your models here.
 class Theme(models.Model):
@@ -56,7 +56,7 @@ class ProfilDoc(models.TextChoices):
     IMPRIMABLE = 'imprimable', 'Imprimable'
 
 class Document(models.Model):
-    titre = models.CharField(max_length=255)
+    titre = models.CharField(max_length=255, unique=True)
     fichier = models.FileField(upload_to='documents/')
     type_document = models.ForeignKey(TypeDocument, on_delete=models.SET_NULL, null=True)
     sous_type = models.ForeignKey(SousTypeDocument, on_delete=models.SET_NULL, null=True, blank=True)
@@ -66,7 +66,16 @@ class Document(models.Model):
     niveau_acces = models.ForeignKey(NiveauAccesDocument, on_delete=models.SET_NULL, null=True)
     profil_document = models.CharField(max_length=20, choices=ProfilDoc.choices, default=ProfilDoc.CONSULTATIF)
     metadonnees = models.JSONField(blank=True, null=True)
-    cree_par = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='documents_crees')
+    cree_par = models.ForeignKey('users.Utilisateur', on_delete=models.SET_NULL, null=True, related_name='documents_crees')
+    modifier_par = models.ForeignKey('users.Utilisateur', on_delete=models.SET_NULL, null=True, related_name='documents_maj')
+    responsable_document = models.ForeignKey(
+        'users.Utilisateur',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documents_responsables',
+        limit_choices_to={'role': 'responsable'}
+    )
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)

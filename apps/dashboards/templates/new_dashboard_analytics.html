@@ -1,0 +1,164 @@
+{% extends layout_path %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Dashboard - Statistiques globales{% endblock title %}
+
+{% block vendor_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'vendor/libs/apex-charts/apex-charts.css' %}" />
+{% endblock vendor_css %}
+
+{% block vendor_js %}
+{{ block.super }}
+<script src="{% static 'vendor/libs/apex-charts/apexcharts.js' %}"></script>
+{% endblock vendor_js %}
+
+{% block page_js %}
+{{ block.super }}
+<script src="{% static 'js/dashboards-analytics.js' %}"></script>
+{% endblock page_js %}
+
+{% block content %}
+<div class="row gy-6">
+
+  <!-- Carte principale -->
+  <div class="col-md-12 col-lg-4">
+    <div class="card">
+      <div class="card-body text-nowrap">
+        <h5 class="card-title mb-0 flex-wrap text-nowrap">
+          Bienvenue {{ request.user.get_full_name|default:request.user.username }} 🎉
+        </h5>
+        <p class="mb-2">Résumé global du système</p>
+        <h4 class="text-primary mb-0">{{ total_docs }}</h4>
+        <p class="mb-2">Documents enregistrés</p>
+        <a href="{% url 'list_document' %}" class="btn btn-sm btn-primary">Voir les documents</a>
+      </div>
+      <img src="{% static 'img/illustrations/trophy.png' %}" class="position-absolute bottom-0 end-0 me-5 mb-5" width="83" alt="view sales">
+    </div>
+  </div>
+  <!--/ Carte principale -->
+
+  <!-- Statistiques principales -->
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title m-0 me-2">Statistiques des documents</h5>
+      </div>
+      <div class="card-body pt-lg-10">
+        <div class="row g-6">
+          <div class="col-md-3 col-6">
+            <div class="d-flex align-items-center">
+              <div class="avatar">
+                <div class="avatar-initial bg-success rounded shadow-xs">
+                  <i class="ri-checkbox-circle-line ri-24px"></i>
+                </div>
+              </div>
+              <div class="ms-3">
+                <p class="mb-0">Validés</p>
+                <h5 class="mb-0">{{ docs_valides }}</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="d-flex align-items-center">
+              <div class="avatar">
+                <div class="avatar-initial bg-danger rounded shadow-xs">
+                  <i class="ri-close-circle-line ri-24px"></i>
+                </div>
+              </div>
+              <div class="ms-3">
+                <p class="mb-0">Rejetés</p>
+                <h5 class="mb-0">{{ docs_rejetes }}</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="d-flex align-items-center">
+              <div class="avatar">
+                <div class="avatar-initial bg-warning rounded shadow-xs">
+                  <i class="ri-time-line ri-24px"></i>
+                </div>
+              </div>
+              <div class="ms-3">
+                <p class="mb-0">En attente</p>
+                <h5 class="mb-0">{{ docs_attente }}</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="d-flex align-items-center">
+              <div class="avatar">
+                <div class="avatar-initial bg-info rounded shadow-xs">
+                  <i class="ri-user-line ri-24px"></i>
+                </div>
+              </div>
+              <div class="ms-3">
+                <p class="mb-0">Utilisateurs</p>
+                <h5 class="mb-0">{{ utilisateurs }}</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documents par cellule -->
+  <div class="col-xl-4 col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-1">Répartition par cellule</h5>
+      </div>
+      <div class="card-body pt-lg-2">
+        <ul class="list-group list-group-flush">
+          {% for c in by_cellule %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ c.cellule__nom|default:"Non défini" }}
+            <span class="badge bg-primary rounded-pill">{{ c.total }}</span>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted text-center">Aucune donnée disponible</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documents récents -->
+  <div class="col-xl-8 col-md-6">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title m-0">Derniers documents ajoutés</h5>
+      </div>
+      <div class="card-body">
+        <table class="table table-striped align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Titre</th>
+              <th>Type</th>
+              <th>Créé par</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in latest_docs %}
+            <tr>
+              <td>{{ doc.titre }}</td>
+              <td>{{ doc.type_document.nom|default:"-" }}</td>
+              <td>{{ doc.cree_par.get_full_name|default:doc.cree_par.username|default:"-" }}</td>
+              <td>{{ doc.Date_creation|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">Aucun document disponible</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

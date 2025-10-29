@@ -10,20 +10,25 @@ from django.core.paginator import Paginator
 
 #generic view for basic operation
 class BaseCRUDView(TemplateView):
+    # model and form
     model = None
     form_class = None
     formset_class = None
-    list_template = None
+    # query and routes
+    search_fields = []
+    paginate_by = 20
     list_route = None
-    form_template = 'layout/form_template.html'
-    headers = []
     fields = []
     filters = []
     delete_url = ""
+    # templates
+    headers = []
     partial_template = 'layout/partials/crud_table.html'
+    list_template = None
+    form_template = 'layout/form_template.html'
+    # names and objects
     context_object_name = 'objects'
-    search_fields = []
-    paginate_by = 20
+    object_name = None
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
@@ -104,16 +109,6 @@ class BaseCRUDView(TemplateView):
             queryset = queryset.filter(q_objects)
         return queryset.order_by('-Date_creation')[:100]
 
-    #def get_queryset(self, search_query=None):
-    #    queryset = self.model.objects.all().order_by('-Date_creation')
-    #    print(search_query)
-    #    if search_query and self.search_fields:
-    #        q_objects = Q()
-    #        for field in self.search_fields:
-    #            q_objects |= Q(**{f"{field}__icontains": search_query})
-    #        queryset = queryset.filter(q_objects).order_by('-Date_creation')
-    #    return queryset[:100]
-
     def get_form_view(self, request, pk=None):
         instance = get_object_or_404(self.model, pk=pk) if pk else None
         form = self.form_class(instance=instance)
@@ -143,7 +138,7 @@ class BaseCRUDView(TemplateView):
                 'headers': self.headers,
                 'fields': self.fields,
                 'delete_url': self.delete_url,
-                'object_name': self.model._meta.verbose_name.title(),
+                'object_name': self.object_name or self.model._meta.verbose_name.title(),
             },
             request=request
         )

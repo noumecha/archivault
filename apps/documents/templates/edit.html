@@ -14,6 +14,16 @@
 
 <div class="container py-4">
 
+  <div class="row">
+      {% if messages %}
+          {% for msg in messages %}
+              <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show">
+                  {{ msg }}
+              </div>
+          {% endfor %}
+      {% endif %}
+  </div>
+
   <h3 class="mb-4">Modifier le document</h3>
 
   <!-- ✅ Aperçu du document -->
@@ -49,7 +59,7 @@
     </div>
   </div>
 
-  <!-- ✅ Formulaire de mise à jour -->
+  <!-- Formulaire de mise à jour -->
   <div class="card p-3 shadow-sm">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
@@ -60,6 +70,21 @@
       </div>
     </form>
   </div>
+  <hr>
+  <!-- Supprimer le document -->
+  <div class="card p-3 shadow-sm">
+    <div class="card-title">
+      <h5 class="text-danger">Supprimer définitivement le document</h5>
+    </div>
+    {% if user.is_superuser or user.role == 'admin' %}
+    <form action="{% url 'delete_document' document.pk %}" method="post" class="d-inline" onsubmit="return confirm('Confirmer la suppression ?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Supprimer</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
 </div>
 {% endblock content %}
 

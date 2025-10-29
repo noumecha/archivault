@@ -20,6 +20,13 @@
                 </div>
                 <div class="col-md-4 col-lg-4 text-end">
                     <button
+                      type="button"
+                      class="btn"
+                      id="refresh-button"
+                    >
+                      <i class="menu-icon ri-restart-line"></i> Rafraîchir
+                    </button>
+                    <button
                         type="button"
                         class="btn btn-lg btn-dark btn-primary text-white"
                         data-bs-toggle="modal"
@@ -34,12 +41,26 @@
             <form action="" class="row mt-3" id="soustypedocument-search-form">
                 <div class="col-md-12 col-lg-12">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Rechercher un soustypedocument" name="search" id="search">
+                        <input type="text" class="form-control" placeholder="Rechercher un sous type de document" name="search" id="search">
                         <button class="btn btn-outline-primary" type="button" id="clearSearch">
                             <i class="ri-close-line"></i>
                         </button>
                     </div>
                 </div>
+                {% for filter in filters %}
+                  <div class="col-md-6 col-lg-6 d-flex mt-2 gap-2">
+                    <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
+                      <option value="">-- {{ filter.name|capfirst }} --</option>
+                      {% for item in filter.items %}
+                        {% if item.value %}
+                          <option value="{{ item.value }}">{{ item.label }}</option>
+                        {% else %}
+                          <option value="{{ item.id }}">{{ item }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
+                {% endfor %}
             </form>
             <div class="row">
                 {% if messages %}
