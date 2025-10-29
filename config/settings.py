@@ -249,7 +249,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 SESSION_COOKIE_SECURE = True    # require HTTPS in prod
 CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = ['https://your-domain.com']  # adjust
-
+AUTH_USER_MODEL = 'users.Utilisateur'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'login'

@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .models import *
+from apps.administration.models import *
 from .forms import *
 from .serializers import GroupSerializer, UserSerializer
 from web_project import TemplateLayout
@@ -114,9 +115,15 @@ class UserView(BaseCRUDView):
     form_class = UtilisateurForm
     list_route = 'utilisateur_list'
     list_template = "user_list.html"
-    partial_template = "partials/users_partial.html"
+    filters = [
+        ('cellule', Cellule),
+        ('role', RoleUtilisateur),
+    ]
     context_object_name = 'users'
     search_fields = ['username', 'first_name']
+    headers = ["Nom", "Prenom", "Role", "Email"]
+    fields = ['username', 'first_name', 'role', 'email']
+    delete_url = "utilisateur_delete"
 
 class GroupAPIView(APIView):
     authentication_classes = [TokenAuthentication]

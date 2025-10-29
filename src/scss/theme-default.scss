@@ -2,8 +2,28 @@
 @import './_theme/common';
 @import './_theme/_theme';
 
-$primary-color: #0C795A;// #8c57ff
+$primary-color: #0c795a; // #8c57ff
 $body-bg: #f4f5fa;
+
+// custom
+/* remove margin left from bootstrap offset-md-3 */
+.form-group .offset-md-3 {
+  margin-left: 0;
+}
+
+// for spinner
+.spin {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// body
 
 body {
   background: $body-bg;

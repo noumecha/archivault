@@ -21,6 +21,13 @@
                 <div class="col-md-4 col-lg-4 text-end">
                     <button
                         type="button"
+                        class="btn"
+                        id="refresh-button"
+                    >
+                      <i class="menu-icon ri-restart-line"></i> Rafraîchir
+                    </button>
+                    <button
+                        type="button"
                         class="btn btn-lg btn-dark btn-primary text-white"
                         data-bs-toggle="modal"
                         data-action = "create"
@@ -31,15 +38,29 @@
                     </button>
                 </div>
             </div>
-            <form action="" class="row mt-3" id="utilisateur-search-form">
+            <form action="" class="row d-flex mt-3" id="utilisateur-search-form">
                 <div class="col-md-12 col-lg-12">
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Rechercher un utilisateur" name="search" id="search">
                         <button class="btn btn-outline-primary" type="button" id="clearSearch">
-                            <i class="bx bx-x"></i>
+                            <i class="menu-icon ri-close-line"></i>
                         </button>
                     </div>
                 </div>
+                {% for filter in filters %}
+                  <div class="col-md-6 col-lg-6 d-flex mt-2 gap-2">
+                    <select name="{{ filter.name }}" class="form-select" id="id-{{ filter.name }}">
+                      <option value="">-- {{ filter.name|capfirst }} --</option>
+                      {% for item in filter.items %}
+                        {% if item.value %}
+                          <option value="{{ item.value }}">{{ item.label }}</option>
+                        {% else %}
+                          <option value="{{ item.id }}">{{ item }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
+                {% endfor %}
             </form>
             <div class="row">
                 {% if messages %}
@@ -51,7 +72,6 @@
                 {% endif %}
             </div>
         </div>
-
         <div class="container-flex" id="utilisateur-table-container">
         </div>
     </div>
@@ -73,7 +93,7 @@
                     </div>
                     <div class="modal-footer flex-row-reverse">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                        <button type="submit" id="save-btn" class="btn">...</button>
+                        <button type="submit" id="save-btn" class="btn text-lowercase">...</button>
                     </div>
                 </form>
             </div>

@@ -109,29 +109,52 @@ function clearSearch(clearButton, searchInput) {
 }
 
 // function for filter actualites dynamically with filters
-function filteringDatas(filters, url, formId, containerId) {
-  $(filters).on('change keyup', function (e) {
+function filteringDatas(searchInputSelector, url, formId, containerId) {
+  $(searchInputSelector).on('change keyup', function (e) {
     e.preventDefault();
+    selectors = searchInputSelector.split(',');
+    selectors.forEach(s => {
+      console.log(`value selector : ${$(s).val()}`);
+    });
     // clear any previous timeout
     clearTimeout($(this).data('timer'));
     $(this).data('timer', setTimeout(fetchDatas(url, formId, containerId), 500));
   });
 }
 
-// function to fecth datas
+// when refresh run fetchDatas function
+function refresh(refreshBtn, url, formId, containerId) {
+  $(refreshBtn).on('click', function () {
+    fetchDatas(url, formId, containerId);
+  });
+}
+
 function fetchDatas(url, formId = null, containerId) {
-  var formData = formId ? $(formId).serialize() : '';
+  const formData = formId ? $(formId).serialize() : '';
+  const loader = $('#table-loader');
+  const table_container = $('#data-table');
+  loader.removeClass('d-none');
+  table_container.hide();
   $.ajax({
     url: url,
     data: formData,
     type: 'GET',
+    beforeSend: function () {
+      loader.removeClass('d-none');
+    },
     success: function (data) {
       if (data.success) {
-        console.log(`datas : ${JSON.stringify(data)}`);
         $(containerId).html(data.html);
       } else {
         console.error('Error occurred while fetching data : ', data.message);
       }
+    },
+    error: function (xhr, status, error) {
+      console.error('AJAX Error:', error);
+    },
+    complete: function () {
+      loader.addClass('d-none');
+      table_container.show();
     }
   });
 }
@@ -144,7 +167,6 @@ function submitForm(formId, url, fetchUrl) {
     const formData = form.serialize();
     const saveUrl = $('#save-btn').text() === 'Mettre à jour' ? url + 'update/' : url;
     const updateId = $('#update-id').val();
-    console.log('Submitting form to: ', saveUrl + (updateId ? updateId : ''));
     // Send AJAX request
     $.ajax({
       url: saveUrl + (updateId ? updateId : ''),
@@ -154,8 +176,6 @@ function submitForm(formId, url, fetchUrl) {
         if (data.success) {
           showAlertMessage(data.message, '#form-success');
           form.closest('form')[0].reset();
-          // on need to add something for proper refresh ps: containerId is the table container
-          // fetchDatas(fetchUrl)
         } else {
           console.error('Error occurred on submit : ', data.message);
           showAlertMessage(data.errors, '#form-error');

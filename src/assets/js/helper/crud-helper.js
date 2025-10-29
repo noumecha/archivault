@@ -21,10 +21,11 @@ function initCRUD(config) {
   submitForm(formSelector, baseUrl, fetchUrl);
   // Fetch initial data
   fetchDatas(fetchUrl, searchFormSelector, tableContainerSelector);
-  // Dynamic search/filter
-  filteringDatas(searchInputSelector, fetchUrl, searchFormSelector, tableContainerSelector);
+  filteringDatas(searchInputSelector, fetchUrl, searchFormSelector, tableContainerSelector); // automatic refresh when change filter
   // Clear search field
   clearSearch(clearBtnSelector, searchInputSelector);
+  // refresh
+  refresh('#refresh-button', fetchUrl, searchFormSelector, tableContainerSelector);
   // Show success/error messages
   showMessage();
 }

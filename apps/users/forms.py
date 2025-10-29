@@ -29,15 +29,6 @@ class UtilisateurForm(forms.ModelForm):
         required=False,
     )
 
-    # Django groups/roles management
-    groups = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.all(),
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-        label="Groupes Django",
-        help_text="Sélectionnez les groupes auxquels l'utilisateur appartient"
-    )
-
     class Meta:
         model = Utilisateur
 
@@ -47,11 +38,8 @@ class UtilisateurForm(forms.ModelForm):
             'last_name',
             'email',
             'role',
-            'profil',
-            'division',
+            'cellule',
             'is_active',
-            'is_staff',
-            'groups',
         )
         labels = {
             'username': "Login utilisateur",
@@ -59,10 +47,8 @@ class UtilisateurForm(forms.ModelForm):
             'last_name': "Nom utilisateur",
             'email': "Email utilisateur",
             'role': "Rôle",
-            'profil': "Profil",
-            'division': "Division",
-            'is_active': "Compte actif",
-            'is_staff': "Accès admin",
+            'cellule': "Cellule",
+            'is_active': "Compte actif/inactif",
         }
 
         widgets = {
@@ -72,6 +58,7 @@ class UtilisateurForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(UtilisateurForm, self).__init__(*args, **kwargs)
         self.fields['username'].help_text = None
+        self.fields['is_active'].help_text = None
 
         # Make password required only for new users
         if not self.instance.pk:
@@ -108,42 +95,17 @@ class UtilisateurForm(forms.ModelForm):
                 ),
             ),
             Fieldset(
-                'Rôles et permissions',
+                'Rôles et Statut',
                 Row(
+                    Column(FloatingField("cellule"), css_class='form-group col-md-6 mb-3'),
                     Column(FloatingField("role"), css_class='form-group col-md-6 mb-3'),
-                    Column(FloatingField("profil"), css_class='form-group col-md-6 mb-3'),
-                    css_class='form-row'
-                ),
-                Row(
-                    Column(FloatingField("division"), css_class='form-group col-md-12 mb-3'),
-                    css_class='form-row'
-                ),
-                Row(
-                    Column(
-                        Field("groups", css_class='form-check-input'),
-                        css_class='form-group col-md-12 mb-3'
-                    ),
+                    Column(Field('is_active'), css_class='form-group col-md-6 mb-0',),
                     css_class='form-row'
                 ),
             ),
-            Fieldset(
-                'Statut du compte',
-                Row(
-                    Column(
-                        Field("is_active", css_class='form-check-input'),
-                        css_class='form-group col-md-6 mb-3'
-                    ),
-                    Column(
-                        Field("is_staff", css_class='form-check-input'),
-                        css_class='form-group col-md-6 mb-3'
-                    ),
-                    css_class='form-row'
-                ),
-            )
         )
 
     def clean_password2(self):
-        """Validate that the two password fields match."""
         password1 = self.cleaned_data.get('password1')
         password2 = self.cleaned_data.get('password2')
 
@@ -158,7 +120,6 @@ class UtilisateurForm(forms.ModelForm):
         return password2
 
     def clean_email(self):
-        """Validate email uniqueness."""
         email = self.cleaned_data.get('email')
         if email:
             # Check if email exists for other users
@@ -170,7 +131,6 @@ class UtilisateurForm(forms.ModelForm):
         return email
 
     def save(self, commit=True):
-        """Save the user with password handling."""
         user = super().save(commit=False)
 
         # Handle password

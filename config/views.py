@@ -5,6 +5,7 @@ from django.contrib import messages
 from web_project import TemplateLayout
 from django.template.loader import render_to_string
 from django.db.models import Q
+from django.db import models
 from django.core.paginator import Paginator
 
 #generic view for basic operation
@@ -14,31 +15,104 @@ class BaseCRUDView(TemplateView):
     formset_class = None
     list_template = None
     list_route = None
-    #partial_template = None
     form_template = 'layout/form_template.html'
-    # template elements
     headers = []
     fields = []
+    filters = []
     delete_url = ""
     partial_template = 'layout/partials/crud_table.html'
     context_object_name = 'objects'
     search_fields = []
-    # pagination
     paginate_by = 20
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
         context["form"] = self.form_class
+        filters_context = []
+        for f in self.filters:
+            # --- GESTION DES FILTRES ---
+            # chaque élément peut être :
+            # - un modèle Django (ex: Cellule)
+            # - une TextChoices (ex: RoleUtilisateur)
+            # - un tuple (nom_du_champ, source)
+            # - un iterable [(value, label), ...]
+            if isinstance(f, (list, tuple)) and len(f) == 2:
+                field_name, source = f
+            else:
+                source = f
+                field_name = getattr(source, "__name__", "filter").lower()
+            # 🔹 Cas 1 : modèle Django
+            if hasattr(source, "objects"):
+                try:
+                    items = source.objects.all()
+                    # Si le modèle a une date de création, on peut trier
+                    if hasattr(source, "Date_creation"):
+                        items = items.order_by("-Date_creation")
+                    filters_context.append({
+                        "name": field_name,
+                        "type": "model",
+                        "items": items
+                    })
+                    continue
+                except Exception:
+                    pass
+            # 🔹 Cas 2 : TextChoices
+            try:
+                if issubclass(source, models.TextChoices):
+                    filters_context.append({
+                        "name": field_name,
+                        "type": "choices",
+                        "items": [{"value": c.value, "label": c.label} for c in source]
+                    })
+                    continue
+            except TypeError:
+                pass
+            # 🔹 Cas 3 : Iterable de tuples (value, label)
+            try:
+                items = list(source)
+                if items and isinstance(items[0], (list, tuple)) and len(items[0]) >= 2:
+                    filters_context.append({
+                        "name": field_name,
+                        "type": "iterable",
+                        "items": [{"value": v, "label": l} for v, l in items]
+                    })
+                    continue
+            except Exception:
+                pass
+        context["filters"] = filters_context
         return context
 
     def get_queryset(self, search_query=None):
         queryset = self.model.objects.all().order_by('-Date_creation')
+        request = getattr(self, 'request', None)
+        if not request:
+            return queryset
+        # 🔍 1. Appliquer les filtres dynamiques (ex: cellule, role, statut, etc.)
+        filters = {}
+        for key, value in request.GET.items():
+            if key in ['search', 'page']:  # on ignore la recherche et la pagination
+                continue
+            if value:  # ignorer les valeurs vides
+                filters[key] = value
+        if filters:
+            queryset = queryset.filter(**filters)
+        # 🔎 2. Appliquer la recherche textuelle si elle existe
         if search_query and self.search_fields:
             q_objects = Q()
             for field in self.search_fields:
                 q_objects |= Q(**{f"{field}__icontains": search_query})
-            queryset = queryset.filter(q_objects).order_by('-Date_creation')
-        return queryset[:100]
+            queryset = queryset.filter(q_objects)
+        return queryset.order_by('-Date_creation')[:100]
+
+    #def get_queryset(self, search_query=None):
+    #    queryset = self.model.objects.all().order_by('-Date_creation')
+    #    print(search_query)
+    #    if search_query and self.search_fields:
+    #        q_objects = Q()
+    #        for field in self.search_fields:
+    #            q_objects |= Q(**{f"{field}__icontains": search_query})
+    #        queryset = queryset.filter(q_objects).order_by('-Date_creation')
+    #    return queryset[:100]
 
     def get_form_view(self, request, pk=None):
         instance = get_object_or_404(self.model, pk=pk) if pk else None
