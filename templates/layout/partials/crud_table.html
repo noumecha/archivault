@@ -38,11 +38,25 @@
               </a>
               <a
                 href="#"
-                class="dropdown-item btn-success"
+                class="dropdown-item"
                 data-bs-target="#delete-{{ object_name|lower }}-modal-{{ obj.id }}"
                 data-bs-toggle="modal">
                 <i class="ri-delete-bin-6-line me-1"></i>Supprimer
               </a>
+              {% if obj.statut %}
+                {% with action_url_name=object_name|lower|add:"_action" %}
+                  <a
+                    href="{% url action_url_name pk=obj.id action='toggle_status' %}"
+                    class="dropdown-item custom-action-btn"
+                    data-action="toggle_status">
+                    {% if obj.statut == 'activé' %}
+                      <i class="ri-close-circle-line me-1"></i> Désactiver
+                    {% else %}
+                      <i class="ri-check-double-line me-1"></i> Activer
+                    {% endif %}
+                  </a>
+                {% endwith %}
+              {% endif %}
             </div>
 
             <!-- Modal de suppression -->

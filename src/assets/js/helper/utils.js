@@ -206,7 +206,6 @@ function showAlertMessage(msg, id) {
 
 // show message
 function showMessage() {
-  console.log('works');
   container = $('#message-show');
   container.fadeIn().css('display', 'block');
   setTimeout(() => container.fadeOut(), 5000);
@@ -218,7 +217,6 @@ function setVisible(mainSelector, targetSelector = null, valueToShow = null) {
   if (mainSelector) {
     $(document).on('change', mainSelector, function () {
       const selectedValue = $(this).val();
-      //console.log("Selected value: ", selectedValue);
       if (selectedValue === valueToShow) {
         $(targetSelector).closest('.form-group').show();
         $(targetSelector).prop('required', true);
@@ -244,7 +242,6 @@ function toogleFormset(selectElement, value = null, formsetToShow, formsetToHide
   if (selectElement) {
     $(document).on('change', selectElement, function () {
       const selectedValue = $(this).val();
-      //console.log("Selected value: ", selectedValue);
       if (selectedValue === value) {
         $(formsetToShow).show();
         $(formsetToHide).hide();

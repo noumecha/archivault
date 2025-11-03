@@ -1,26 +1,19 @@
 from django.views.generic import ListView
-from django.views.generic import CreateView, ListView, UpdateView, TemplateView, View
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.http import JsonResponse
-from .models import *
-from .serializers import SousTypeDocumentSerializer
+from django.views.generic import ListView, UpdateView
 from .forms import *
 from django.views.generic import DeleteView
 from django.urls import reverse_lazy
 from django.urls import reverse_lazy
-from django.template.loader import render_to_string
 from django.db.models import Q
-from django.core.paginator import Paginator
-from django.shortcuts import redirect, render, get_object_or_404
+from django.shortcuts import redirect, render
 from django.contrib import messages
 from config.views import BaseCRUDView
 from django.db import transaction
 from django.core.exceptions import PermissionDenied
 from web_project import TemplateLayout
 import os
-from django.utils.text import slugify
+from dal import autocomplete
+from django.http import JsonResponse
 
 #occupant view
 class NiveauAccesDocumentView(BaseCRUDView):
@@ -166,52 +159,6 @@ class DocumentCreateMultipleView(ListView):
         # Si le formulaire est invalide
         return render(request, self.template_name, {"form": form})
 
-#class DocumentCreateMultipleView(ListView):
-#    template_name = "upload_multiple.html"
-#    form_class = UploadMultipleForm
-#
-#    def get(self, request):
-#        form = self.form_class()
-#        return render(request, self.template_name, {"form": form})
-#
-#    def post(self, request):
-#        form = self.form_class(request.POST, request.FILES)
-#        files = request.FILES.getlist('fichiers')
-#        if not files:
-#            messages.error(request, "Aucun fichier sélectionné.")
-#            return render(request, self.template_name, {"form": form})
-#
-#        if form.is_valid():
-#            data = form.cleaned_data
-#            created = []
-#            with transaction.atomic():
-#                for f in files:
-#                    # créer un titre lisible à partir du nom de fichier
-#                    name = os.path.splitext(f.name)[0]
-#                    titre = name.replace('_', ' ').replace('-', ' ').strip()
-#                    # slug unique si besoin
-#                    doc = Document.objects.create(
-#                        titre=titre,
-#                        fichier=f,
-#                        type_document=data.get("type_document"),
-#                        sous_type=data.get("sous_type"),
-#                        theme=data.get("theme"),
-#                        cellule=data.get("cellule"),
-#                        etat=data.get("etat") or Document._meta.get_field('etat').default,
-#                        niveau_acces=data.get("niveau_acces"),
-#                        profil_document=data.get("profil_document") or Document._meta.get_field('profil_document').default,
-#                        cree_par=request.user if request.user.is_authenticated else None,
-#                        metadonnees=data.get("metadonnees") or None,
-#                    )
-#                    if data.get("regles_classement"):
-#                        doc.regles_classement.set(data.get("regles_classement"))
-#                    created.append(doc)
-#            messages.success(request, f"{len(created)} document(s) créés.")
-#            return redirect("list_document")
-#        else:
-#            return render(request, self.template_name, {"form": form})
-
-
 class DocumentListView(ListView):
     model = Document
     template_name = "list.html"
@@ -306,3 +253,36 @@ class DocumentDeleteView(DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Document supprimé avec succès.")
         return super().delete(request, *args, **kwargs)
+
+class TypeDocumentAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = TypeDocument.objects.all()
+        if self.q:
+            qs = qs.filter(
+                Q(libelle__icontains=self.q) | Q(description__icontains=self.q)
+            )
+        return qs
+
+class SousTypeDocumentAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = SousTypeDocument.objects.all()
+        if self.q:
+            qs = qs.filter(
+                Q(libelle__icontains=self.q) | Q(description__icontains=self.q)
+            )
+        return qs
+
+# filtering structure base on administration
+def getsoustypes(request):
+    if request.method == 'GET':
+        type_id = request.GET.get('type_id')
+        if not type_id:
+            return JsonResponse({'error': 'Aucun type selectionné'}, status=400)
+        try:
+            type_id = int(type_id)
+            soustypes = SousTypeDocument.objects.filter(type_document=type_id)[:20]  # Limit to 20 results for performance
+            soustypeslist = [{'id': soustype.id, 'text': soustype.libelle} for soustype in soustypes]
+            return JsonResponse(soustypeslist, safe=False)
+        except (ValueError, TypeDocument.DoesNotExist):
+            return JsonResponse({'error': 'ID du type incorrect'}, status=400)
+    return JsonResponse({'error': 'Invalid request'}, status=400)

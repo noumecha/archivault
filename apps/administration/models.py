@@ -1,8 +1,15 @@
 from django.db import models
 
+# statut
+class Statut(models.TextChoices):
+    ACTIVE = 'activé', 'Activé'
+    DESACTIVE = 'desactivé', 'Desactivé'
+
 # Ministère
 class Ministere(models.Model):
-    nom = models.CharField(max_length=255)
+    nom = models.CharField(max_length=255, unique=True)
+    code = models.CharField(max_length=255, blank=True, null=True)
+    abrevation = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, name='description_ministere')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
@@ -11,10 +18,25 @@ class Ministere(models.Model):
     def __str__(self):
         return self.nom
 
+# direction generale
+class DirectionGenerale(models.Model):
+    nom = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, name='description_direction_generale')
+    ministere = models.ForeignKey(Ministere, on_delete=models.CASCADE, related_name='directions_generales', null=True, blank=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.nom
+
+
 # Division
 class Division(models.Model):
-    nom = models.CharField(max_length=255)
+    nom = models.CharField(max_length=255, unique=True)
     ministere = models.ForeignKey(Ministere, on_delete=models.CASCADE, related_name='divisions')
+    direction_generale = models.ForeignKey(DirectionGenerale, on_delete=models.CASCADE, related_name='divisions', blank=True, null=True)
+    statut = models.CharField(max_length=255, choices=Statut.choices, default=Statut.DESACTIVE)
     description = models.TextField(blank=True, name='description_division')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
@@ -25,7 +47,7 @@ class Division(models.Model):
 
 # Cellule
 class Cellule(models.Model):
-    nom = models.CharField(max_length=255)
+    nom = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, name='description_cellule')
     division = models.ForeignKey(Division, on_delete=models.CASCADE, related_name='cellules')
     # timestamp

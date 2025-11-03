@@ -250,6 +250,8 @@ class BaseCRUDView(TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         action = kwargs.pop('action', None)
+
+        # 🔹 Actions CRUD standards
         if action == 'list':
             return self.get_list_data(request)
         elif action == 'form':
@@ -260,4 +262,18 @@ class BaseCRUDView(TemplateView):
             return self.delete(request, kwargs.get('pk'))
         elif action == 'partial_form':
             return self.partial_form_view(request)
+
+        # 🔹 Actions personnalisées (ex: toggle_status)
+        custom_actions = getattr(self, 'custom_actions', {})
+        if action in custom_actions:
+            method_name = custom_actions[action]
+            method = getattr(self, method_name, None)
+            if callable(method):
+                return method(request, **kwargs)
+            return JsonResponse({
+                'success': False,
+                'message': f"Action personnalisée '{action}' non trouvée."
+            }, status=400)
+
+        # 🔹 Action non reconnue → comportement par défaut
         return super().dispatch(request, *args, **kwargs)

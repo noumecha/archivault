@@ -24,7 +24,8 @@ class DashboardsView(TemplateView):
         # === Statistiques principales ===
         context["total_docs"] = Document.objects.count()
         context["docs_valides"] = Document.objects.filter(etat="VALIDE").count()
-        context["docs_rejetes"] = Document.objects.filter(etat="REJETE").count()
+        context["docs_archives"] = Document.objects.filter(etat="ARCHIVE").count()
+        context["docs_entraitement"] = Document.objects.filter(etat="EN_TRAITEMENT").count()
         context["docs_attente"] = Document.objects.filter(etat="EN_ATTENTE").count()
         context["utilisateurs"] = Utilisateur.objects.count()
         context["cellules"] = Cellule.objects.count()

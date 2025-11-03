@@ -4,6 +4,7 @@ from apps.users.models import RoleUtilisateur, Utilisateur
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column
+from dal import autocomplete
 
 # form for nivea d'accès
 class NiveauAccesDocumentsForm(forms.ModelForm):
@@ -148,7 +149,7 @@ class UploadMultipleForm(forms.Form):
     type_document = forms.ModelChoiceField(queryset=TypeDocument.objects.all(), required=False)
     sous_type = forms.ModelChoiceField(queryset=SousTypeDocument.objects.all(), required=False)
     theme = forms.ModelChoiceField(queryset=Theme.objects.all(), required=False)
-    cellule = forms.ModelChoiceField(queryset=Cellule.objects.all(), required=False)
+    cellule = forms.ModelChoiceField(queryset=Cellule.objects.filter(division__statut='activé'), required=False)
     etat = forms.ChoiceField(choices=EtatDocument.choices, required=False)
     niveau_acces = forms.ModelChoiceField(queryset=NiveauAccesDocument.objects.all(), required=False)
     profil_document = forms.ChoiceField(choices=ProfilDoc.choices, required=False)
@@ -175,7 +176,8 @@ class UploadMultipleForm(forms.Form):
         }
 
         widgets = {
-
+            'type_document': autocomplete.ModelSelect2(url='documents:typedocument_autocomplete'),
+            'sous_type': autocomplete.ModelSelect2(url='documents:soustypedocument_autocomplete'),
         }
 
         labels = {

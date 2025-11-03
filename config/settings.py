@@ -86,6 +86,10 @@ INSTALLED_APPS = [
     'apps.rapports',
     'apps.users',
     'apps.administration',
+    # autocomplete features
+    'dal',
+    'dal_select2',
+    'django_select2',
 ]
 
 MIDDLEWARE = [

@@ -24,7 +24,13 @@
       {% endif %}
   </div>
 
-  <h3 class="mb-4">Modifier le document</h3>
+  <h3 class="mb-4 text-white">
+    {% if document.profil_document == 'modifiable' %}
+      Modifier le document
+    {% else %}
+      Prévisualisation du document
+    {% endif %}
+  </h3>
 
   <!-- ✅ Aperçu du document -->
   <div class="card shadow-sm mb-4">
@@ -60,6 +66,7 @@
   </div>
 
   <!-- Formulaire de mise à jour -->
+{% if document.profil_document == 'modifiable' %}
   <div class="card p-3 shadow-sm">
     <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
@@ -84,10 +91,11 @@
     {% endif %}
   </div>
 </div>
+{% endif %}
 
 </div>
 {% endblock content %}
 
 {% block extra_js %}
-<script src="{% static 'js/document.js' %}"></script>
+<script src="{% static 'js/document-edit.js' %}"></script>
 {% endblock %}

@@ -42,7 +42,9 @@ class MinistereForm(forms.ModelForm):
 
         fields = (
             "nom",
-            "description_ministere"
+            "description_ministere",
+            "abrevation",
+            "code",
         )
 
         labels = {
@@ -65,6 +67,34 @@ class MinistereForm(forms.ModelForm):
             ),
         )
 
+class DirectionGeneraleForm(forms.ModelForm):
+    class Meta:
+        model = DirectionGenerale
+        fields = (
+            "nom",
+            "description_direction_generale",
+            "ministere"
+        )
+        labels = {
+            "nom" : "Nom de la direction generale",
+            "description_direction_generale" : "Description de la direction generale",
+            "ministere" : "Ministere Correspndant"
+        }
+        widgets = {
+            "description_direction_generale" : forms.Textarea(attrs={'rows': 5, 'col': 10}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(DirectionGeneraleForm, self).__init__(*args, **kwargs)
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("ministere"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("description_direction_generale"), css_class='form-group col-md-12 mb-0'),
+                css_class='form-row p-3 pt-0'
+            ),
+        )
 
 class DivisionForm(forms.ModelForm):
     class Meta:
@@ -73,13 +103,15 @@ class DivisionForm(forms.ModelForm):
         fields = (
             "nom",
             "description_division",
-            "ministere"
+            "ministere",
+            "direction_generale"
         )
 
         labels = {
             "nom" : "Nom de la division",
             "description_division" : "Description de la Division",
-            "ministere" : "Ministere Correspndant"
+            "ministere" : "Ministere Correspndant",
+            "direction_generale" : "Direction generale correspondante"
         }
 
         widgets = {
@@ -94,6 +126,7 @@ class DivisionForm(forms.ModelForm):
                 Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
                 Column(FloatingField("description_division"), css_class='form-group col-md-12 mb-0'),
                 Column(FloatingField("ministere"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("direction_generale"), css_class='form-group col-md-12 mb-0'),
                 css_class='form-row p-3 pt-0'
             ),
         )
