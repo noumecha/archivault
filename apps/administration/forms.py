@@ -1,5 +1,6 @@
 from django import forms
 from .models import *
+from django.core.exceptions import ValidationError
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from crispy_forms.helper import FormHelper, Layout
 from crispy_forms.layout import Layout, Row, Column, Field
@@ -15,8 +16,8 @@ class CellulesForm(forms.ModelForm):
         )
 
         labels = {
-            "nom" : "Nom de la Cellule",
-            "description_cellule" : "Description de la Cellule",
+            "nom" : "Libellé unité de traitement",
+            "description_cellule" : "Description de l'unité de traitement",
             "division" : "Division correspondante"
         }
 
@@ -35,6 +36,16 @@ class CellulesForm(forms.ModelForm):
                 css_class='form-row p-3 pt-0'
             ),
         )
+
+    def validate_unique(self):
+        """
+        Override the default unique validation to provide a custom error message.
+        """
+        try:
+            super().validate_unique()
+        except ValidationError as e:
+            # Replace the default message with a more user-friendly one.
+            raise ValidationError("Une cellule portant ce nom existe déjà au sein de cette division. Veuillez choisir un autre nom.")
 
 class MinistereForm(forms.ModelForm):
     class Meta:

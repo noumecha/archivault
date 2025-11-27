@@ -3,7 +3,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Cellules{% endblock %}
+{% block title %}unités de traitement{% endblock %}
 
 {% load crispy_forms_tags %}
 
@@ -13,9 +13,9 @@
         <div class="card-header">
             <div class="row d-flex justify-content-between align-items-center">
                 <div class="col-md-8 col-lg-8">
-                    <h3 class="">Listes des Cellules</h3>
+                    <h3 class="">Listes des Unités de traitement</h3>
                     <p class="text-sm">
-                        Gérer les Cellules
+                        Gérer les unités de traitement
                     </p>
                 </div>
                 <div class="col-md-4 col-lg-4 text-end">
@@ -41,7 +41,7 @@
             <form action="" class="row mt-3" id="cellule-search-form">
                 <div class="col-md-12 col-lg-12">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Rechercher une cellule" name="search" id="search">
+                        <input type="text" class="form-control" placeholder="Rechercher une unité de traitement" name="search" id="search">
                         <button class="btn btn-outline-primary" type="button" id="clearSearch">
                             <i class="ri-close-line"></i>
                         </button>
@@ -69,7 +69,7 @@
                 <form id="celluleForm">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title">Enregistrement des informations sur une cellule </h5>
+                        <h5 class="modal-title">Enregistrement des informations sur une unité de traitement</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">

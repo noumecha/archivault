@@ -29,7 +29,7 @@
     <li class="menu-item {% if 'index' == request.resolver_match.url_name or '/dashbord/' in request.path %}active{% endif %}">
       <a href="{% url 'index' %}" class="menu-link">
         <i class="menu-icon tf-icons ri-home-smile-line"></i>
-        <div class="text-truncate" data-i18n="Dashboards">Acceuil</div>
+        <div class="text-truncate" data-i18n="Dashboards">Accueil</div>
       </a>
     </li>
 
@@ -81,10 +81,10 @@
     <li class="menu-header fw-medium mt-7">
       <span class="menu-header-text">Utilisateurs & Rôles</span>
     </li>
-    <li class="menu-item">
-      <a href="" class="menu-link">
+    <li class="menu-item {% if '/profile/' in request.path %}active{% endif %}">
+      <a href="{% url 'user_profile' %}" class="menu-link">
         <i class="menu-icon tf-icons ri-profile-line"></i>
-        <div class="text-truncate" data-i18n="utilisateurs">Profil</div>
+        <div class="text-truncate {% if '/profile/' in request.path %}text-white{% endif %}" data-i18n="utilisateurs">Profil</div>
       </a>
     </li>
     {% if request.user.role == 'administrateur' %}
@@ -111,7 +111,7 @@
     <li class="menu-item {% if '/cellule/' in request.path %}active{% endif %}">
       <a href="{% url 'cellule_list' %}" class="menu-link">
         <i class="menu-icon tf-icons ri-building-line"></i>
-        <div class="text-truncate" data-i18n="cellules">Cellules</div>
+        <div class="text-truncate" data-i18n="cellules">Unité de traitement</div>
       </a>
     </li>
     <li class="menu-item {% if '/division/' in request.path %}active{% endif %}">

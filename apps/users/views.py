@@ -116,7 +116,7 @@ class UserView(BaseCRUDView):
     list_route = 'utilisateur_list'
     list_template = "user_list.html"
     filters = [
-        ('cellule', Cellule),
+        ('cellule', Cellule, 'Unité de traitement'),
         ('role', RoleUtilisateur),
     ]
     context_object_name = 'users'

@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from config.views import BaseCRUDView
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.core.exceptions import PermissionDenied
 from web_project import TemplateLayout
 import os
@@ -89,8 +89,6 @@ class DocumentView(BaseCRUDView):
     ]
 
 # managing doucments
-from django.db import transaction, IntegrityError
-
 class DocumentCreateMultipleView(ListView):
     template_name = "upload_multiple.html"
     form_class = UploadMultipleForm

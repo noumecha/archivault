@@ -1,0 +1,36 @@
+{% comment %}
+  Renders a form field with a button to add a new item via a modal.
+  Parameters:
+  - field: The Django form field object (e.g., form.type_document).
+  - model_name: A string identifier for the model (e.g., 'typedocument').
+  - model_verbose_name: A user-friendly name for the model (e.g., 'Type de document').
+{% endcomment %}
+
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+<!-- Modal for {{ model_name }} -->
+<div class="modal fade" id="create-{{ model_name }}-modal" tabindex="-1" aria-labelledby="{{ model_name }}ModalLabel">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content p-0">
+      <form id="{{ model_name }}Form" data-list-id="{{ field.id_for_label }}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Enregistrement des informations sur un {{ model_verbose_name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="{{ model_name }}-form-content">Chargement...</div>
+          <div class="alert alert-success" style="display: none;" data-success-id="form-success"></div>
+          <div class="alert alert-danger" style="display: none;" data-error-id="form-error"></div>
+          <input type="hidden" value="" name="id" id="update-id" />
+        </div>
+        <div class="modal-footer flex-row-reverse">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="submit" class="btn btn-outline-primary btn-outline-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

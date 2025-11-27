@@ -156,10 +156,12 @@ function fetchDatas(url, formId = null, containerId) {
 }
 
 // function to handle form submission
-function submitForm(formId, url, fetchUrl) {
+function submitForm(formId, url, fetchUrl, modalId = null) {
   $(document).on('submit', formId, function (e) {
     e.preventDefault();
     const form = $(this);
+    const list = $(this).data('list-id');
+    const listId = $('#' + list);
     const formData = form.serialize();
     const saveUrl = $('#save-btn').text() === 'Mettre à jour' ? url + 'update/' : url;
     const updateId = $('#update-id').val();
@@ -170,10 +172,20 @@ function submitForm(formId, url, fetchUrl) {
       data: formData,
       success: function (data) {
         if (data.success) {
-          showAlertMessage(data.message, '#form-success');
-          form.closest('form')[0].reset();
+          if (listId && listId.length && data.data) {
+            listId.append($('<option>', { value: data.data.id, text: data.data.text, selected: true }));
+            const successId = form.find(`[data-success-id]`);
+            showAlertMessage(data.message, successId);
+            const modalInstance = bootstrap.Modal.getInstance(document.querySelector(modalId));
+            modalInstance.hide();
+          } else {
+            showAlertMessage(data.message, '#form-success');
+            form.closest('form')[0].reset();
+          }
         } else {
           console.error('Error occurred on submit : ', data.message);
+          const errorId = form.find(`[data-error-id]`);
+          showAlertMessage(data.errors, errorId);
           showAlertMessage(data.errors, '#form-error');
         }
       }
@@ -191,7 +203,11 @@ function showAlertMessage(msg, id) {
     const list = $('<ul></ul>');
     Object.keys(msg).forEach(key => {
       msg[key].forEach(error => {
-        list.append($('<li></li>').text(`${key}: ${error}`));
+        if (key === '__all__') {
+          list.append($('<li></li>').text(error)); // Don't show the '__all__' key
+        } else {
+          list.append($('<li></li>').text(`${key}: ${error.message || error}`));
+        }
       });
     });
     msgBlock.append(list);

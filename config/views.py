@@ -29,6 +29,7 @@ class BaseCRUDView(TemplateView):
     # names and objects
     context_object_name = 'objects'
     object_name = None
+    object_label = None
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
@@ -40,12 +41,21 @@ class BaseCRUDView(TemplateView):
             # - un modèle Django (ex: Cellule)
             # - une TextChoices (ex: RoleUtilisateur)
             # - un tuple (nom_du_champ, source)
+            # - un tuple (nom_du_champ, source, label)
             # - un iterable [(value, label), ...]
-            if isinstance(f, (list, tuple)) and len(f) == 2:
-                field_name, source = f
+            label = None
+            if isinstance(f, (list, tuple)):
+                if len(f) == 3:
+                    field_name, source, label = f
+                elif len(f) == 2:
+                    field_name, source = f
+                else:
+                    continue  # Ignore invalid tuples
             else:
                 source = f
                 field_name = getattr(source, "__name__", "filter").lower()
+            if not label:
+                label = field_name.replace('_', ' ').title()
             # 🔹 Cas 1 : modèle Django
             if hasattr(source, "objects"):
                 try:
@@ -55,6 +65,7 @@ class BaseCRUDView(TemplateView):
                         items = items.order_by("-Date_creation")
                     filters_context.append({
                         "name": field_name,
+                        "label": label,
                         "type": "model",
                         "items": items
                     })
@@ -66,6 +77,7 @@ class BaseCRUDView(TemplateView):
                 if issubclass(source, models.TextChoices):
                     filters_context.append({
                         "name": field_name,
+                        "label": label,
                         "type": "choices",
                         "items": [{"value": c.value, "label": c.label} for c in source]
                     })
@@ -78,6 +90,7 @@ class BaseCRUDView(TemplateView):
                 if items and isinstance(items[0], (list, tuple)) and len(items[0]) >= 2:
                     filters_context.append({
                         "name": field_name,
+                        "label": label,
                         "type": "iterable",
                         "items": [{"value": v, "label": l} for v, l in items]
                     })
@@ -139,6 +152,7 @@ class BaseCRUDView(TemplateView):
                 'fields': self.fields,
                 'delete_url': self.delete_url,
                 'object_name': self.object_name or self.model._meta.verbose_name.title(),
+                'object_label': self.object_label or self.model._meta.verbose_name.title(),
             },
             request=request
         )
@@ -219,13 +233,14 @@ class BaseCRUDView(TemplateView):
         })
 
     def delete(self, request, pk):
+        text = self.object_label or self.model._meta.verbose_name
         try:
             obj = get_object_or_404(self.model, pk=pk)
             obj.delete()
-            messages.success(request, f"{self.model._meta.verbose_name} supprimé avec succès!")
+            messages.success(request, f"{text} supprimé avec succès!")
             return redirect(self.list_route)
         except obj.DoesNotExist:
-            messages.success(request, f"{self.model._meta.verbose_name} non trouvé !")
+            messages.success(request, f"{text} non trouvé !")
             return redirect(self.list_route)
 
     def partial_form_view(self, request):

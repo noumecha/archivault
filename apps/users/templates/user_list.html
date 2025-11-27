@@ -50,7 +50,7 @@
                 {% for filter in filters %}
                   <div class="col-md-6 col-lg-6 d-flex mt-2 gap-2">
                     <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
-                      <option value="">-- {{ filter.name|capfirst }} --</option>
+                      <option value="">-- {{ filter.label|capfirst }} --</option>
                       {% for item in filter.items %}
                         {% if item.value %}
                           <option value="{{ item.value }}">{{ item.label }}</option>

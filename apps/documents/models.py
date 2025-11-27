@@ -4,7 +4,7 @@ from apps.users.models import Utilisateur, RoleUtilisateur
 
 # Create your models here.
 class Theme(models.Model):
-    libelle = models.CharField(max_length=255)
+    libelle = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, name='description_theme')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
@@ -14,7 +14,7 @@ class Theme(models.Model):
         return self.libelle
 
 class TypeDocument(models.Model):
-    libelle = models.CharField(max_length=255)
+    libelle = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, name='description_typedocument')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
@@ -24,7 +24,7 @@ class TypeDocument(models.Model):
         return self.libelle
 
 class SousTypeDocument(models.Model):
-    libelle = models.CharField(max_length=255)
+    libelle = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, name='description_soustypedocument')
     type_document = models.ForeignKey(TypeDocument, on_delete=models.CASCADE, related_name='sous_types')
     # timestamp
@@ -41,7 +41,7 @@ class EtatDocument(models.TextChoices):
     ARCHIVE = 'archive', 'Archivé'
 
 class NiveauAccesDocument(models.Model):
-    niveau = models.CharField(max_length=100)  # Ex: 'confidentiel', 'restreint'
+    niveau = models.CharField(max_length=100, unique=True)  # Ex: 'confidentiel', 'restreint'
     description = models.TextField(blank=True, name='description_niveauaccess')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)

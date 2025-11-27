@@ -1,0 +1,19 @@
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+<div class="row">
+  <div class="col-md-10">
+    {{ field|as_crispy_field }}
+  </div>
+  <div class="col-md-2 mt-4 d-flex align-items-center">
+    <button
+      type="button"
+      class="w-100 btn btn-lg btn-dark btn-primary text-white"
+      data-bs-toggle="modal"
+      data-action="create"
+      data-bs-target="#create-{{ model_name }}-modal">
+      <i class="menu-icon ri-add-line"></i> Ajouter
+    </button>
+  </div>
+</div>

@@ -11,6 +11,7 @@ class CelluleView(BaseCRUDView):
     list_route = 'cellule_list'
     list_template = 'cellules_list.html'
     context_object_name = 'cellules'
+    object_label = 'Unité de traitement'
     search_fields = ["nom","description_cellule"]
     headers = ["Nom", "Description"]
     fields = ["nom", "description_cellule"]

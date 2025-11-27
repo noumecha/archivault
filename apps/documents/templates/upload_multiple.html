@@ -37,16 +37,26 @@
 
         <hr/>
         <div class="mt-3">
-          <!-- on affiche le reste des champs du form (métadonnées) -->
-          {{ form.type_document|as_crispy_field }}
-          {{ form.sous_type|as_crispy_field }}
-          {{ form.theme|as_crispy_field }}
-          {{ form.cellule|as_crispy_field }}
-          {{ form.etat|as_crispy_field }}
-          {{ form.niveau_acces|as_crispy_field }}
-          {{ form.profil_document|as_crispy_field }}
+          <!-- form fields + button -->
+          {% include 'partials/_ajax_modal_button.html' with field=form.type_document model_name='typedocument' %}
+          {% include 'partials/_ajax_modal_button.html' with field=form.sous_type model_name='soustypedocument' %}
+          {% include 'partials/_ajax_modal_button.html' with field=form.theme model_name='theme' %}
+          {% include 'partials/_ajax_modal_button.html' with field=form.cellule model_name='cellule' %}
+          <div class="row">
+            <div class="col-md-6">
+              {{ form.etat|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+              {{ form.niveau_acces|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+              {{ form.profil_document|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+              {{ form.responsable_document|as_crispy_field }}
+            </div>
+          </div>
           {{ form.metadonnees|as_crispy_field }}
-          {{ form.responsable_document|as_crispy_field }}
         </div>
         <hr/>
         <div class="text-right mt-3">
@@ -55,8 +65,17 @@
         </div>
       </div>
     </form>
+    <!-- modal form -->
+    {% include 'partials/_ajax_modal_field.html' with field=form.type_document model_name='typedocument' model_verbose_name='Type de document' %}
+    {% include 'partials/_ajax_modal_field.html' with field=form.sous_type model_name='soustypedocument' model_verbose_name='Sous-type de document' %}
+    {% include 'partials/_ajax_modal_field.html' with field=form.theme model_name='theme' model_verbose_name='Thème' %}
+    {% include 'partials/_ajax_modal_field.html' with field=form.cellule model_name='cellule' model_verbose_name='Cellule' %}
   </div>
 {% endblock content %}
 {% block extra_js %}
     <script src="{% static 'js/document.js' %}"></script>
+    <script src="{% static 'js/typedocuments.js' %}"></script>
+    <script src="{% static 'js/soustypedocuments.js' %}"></script>
+    <script src="{% static 'js/themes.js' %}"></script>
+    <script src="{% static 'js/cellule.js' %}"></script>
 {% endblock %}

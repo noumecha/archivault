@@ -159,21 +159,7 @@ class UploadMultipleForm(forms.Form):
     class Meta:
         model = Document
 
-        fields = (
-
-        )
-
-        labels = {
-            "titre" : "Titre du Document",
-            "type_document" : "Type du Document",
-            "sous_type" : "sous type du Document",
-            "theme" : "Thème du Document",
-            "cellule" : "Cellule du Document",
-            "niveau_acces" : "Niveau accès du Document",
-            "profil_document" : "Profil du Document",
-            "metadonnees" : "Métadonnées du Document",
-            'responsable_document' : "Responsable",
-        }
+        fields = ()
 
         widgets = {
             'type_document': autocomplete.ModelSelect2(url='documents:typedocument_autocomplete'),
@@ -182,9 +168,9 @@ class UploadMultipleForm(forms.Form):
 
         labels = {
             "type_document" : "Type du Document",
-            "sous_type" : "sous type du Document",
+            "sous_type" : "Sous type du Document",
             "theme" : "Thème du Document",
-            "cellule" : "Cellule du Document",
+            "cellule" : "Unité de traitement",
             "niveau_acces" : "Niveau accès du Document",
             "profil_document" : "Profil du Document",
             "regles_classement" : "Rèlges de classemnt",
@@ -236,7 +222,7 @@ class DocumentsForm(forms.ModelForm):
             "type_document" : "Type du Document",
             "sous_type" : "sous type du Document",
             "theme" : "Thème du Document",
-            "cellule" : "Cellule du Document",
+            "cellule" : "Unité de traitement",
             "niveau_acces" : "Niveau accès du Document",
             "profil_document" : "Profil du Document",
             "metadonnees" : "Métadonnées du Document",

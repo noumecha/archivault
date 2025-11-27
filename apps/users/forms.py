@@ -47,7 +47,7 @@ class UtilisateurForm(forms.ModelForm):
             'last_name': "Nom utilisateur",
             'email': "Email utilisateur",
             'role': "Rôle",
-            'cellule': "Cellule",
+            'cellule': "Unité de traitement",
             'is_active': "Compte actif/inactif",
         }
 
