@@ -197,7 +197,6 @@ function submitForm(formId, url, fetchUrl, modalId = null) {
 function showAlertMessage(msg, id) {
   const msgBlock = $(id);
   msgBlock.stop(true, true).empty();
-
   if (typeof msg === 'object' && !Array.isArray(msg)) {
     // Handle JSON object with fields and arrays of messages
     const list = $('<ul></ul>');

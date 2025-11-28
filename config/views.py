@@ -185,10 +185,7 @@ class BaseCRUDView(TemplateView):
             return JsonResponse({
                 'success': True,
                 'message': f'{self.model._meta.verbose_name} enregistré avec succès',
-                'data': {
-                    'id' : obj.id,
-                    'text': str(obj)
-                }
+                'data': { 'id' : obj.id, 'text': str(obj) }
             })
         # error case
         html = render_to_string(self.form_template, {'form': form}, request=request)

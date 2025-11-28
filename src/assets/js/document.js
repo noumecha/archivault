@@ -1,140 +1,281 @@
 $(function () {
-  // Show success/error messages
-  showMessage();
-  const dropArea = document.getElementById('drop-area');
-  const fileInput = document.getElementById('file-input');
-  const browseBtn = document.getElementById('browse-btn');
-  const previews = document.getElementById('previews');
-  const uploadForm = document.getElementById('upload-form');
+  /* ---------------------------------------------------------
+    ELEMENTS
+  --------------------------------------------------------- */
+  const dropArea = $('#drop-area')[0];
+  const fileInput = $('#file-input')[0];
+  const browseBtn = $('#browse-btn');
+  const previews = $('#previews')[0];
+  const uploadForm = $('#upload-form');
 
+  /* ---------------------------------------------------------
+    HELPERS
+  --------------------------------------------------------- */
+
+  // Prevent default behavior for drag & drop
   function preventDefaults(e) {
     e.preventDefault();
     e.stopPropagation();
   }
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
-    dropArea.addEventListener(evt, preventDefaults, false);
-  });
 
-  ['dragenter', 'dragover'].forEach(evt => {
-    dropArea.addEventListener(evt, () => dropArea.classList.add('bg-light'), false);
-  });
-  ['dragleave', 'drop'].forEach(evt => {
-    dropArea.addEventListener(evt, () => dropArea.classList.remove('bg-light'), false);
-  });
-
-  dropArea.addEventListener('drop', handleDrop, false);
-  browseBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', handleFiles, false);
-
-  function handleDrop(e) {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    fileInput.files = filesToDataTransfer(files).files; // set input.files
-    handleFiles();
-  }
-
-  function filesToDataTransfer(files) {
-    // utility to create a DataTransfer object for setting input.files
+  // Create a new DataTransfer object with given file list (used for add/remove)
+  function buildFileList(exceptIndex = null) {
     const dt = new DataTransfer();
-    for (let i = 0; i < files.length; i++) dt.items.add(files[i]);
+    Array.from(fileInput.files).forEach((file, idx) => {
+      if (idx !== exceptIndex) dt.items.add(file);
+    });
     return dt;
   }
 
-  function handleFiles() {
-    previews.innerHTML = '';
-    const files = fileInput.files;
-    for (let i = 0; i < files.length; i++) {
-      previewFile(files[i], i);
-    }
+  // Check if file is an image
+  function isImage(file) {
+    return file.type.startsWith('image/');
   }
 
-  function previewFile(file, i) {
+  /* ---------------------------------------------------------
+    DRAG & DROP HANDLERS
+  --------------------------------------------------------- */
+
+  // Add/remove highlight on drag
+  const highlight = () => dropArea.classList.add('bg-light');
+  const unhighlight = () => dropArea.classList.remove('bg-light');
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => dropArea.addEventListener(evt, preventDefaults));
+
+  ['dragenter', 'dragover'].forEach(evt => dropArea.addEventListener(evt, highlight));
+
+  ['dragleave', 'drop'].forEach(evt => dropArea.addEventListener(evt, unhighlight));
+
+  // Handle dropped files
+  dropArea.addEventListener('drop', e => {
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    fileInput.files = dt.files;
+    renderPreviews();
+  });
+
+  /* ---------------------------------------------------------
+    FILE INPUT EVENTS
+  --------------------------------------------------------- */
+
+  browseBtn.on('click', () => fileInput.click());
+  fileInput.addEventListener('change', renderPreviews);
+
+  /* ---------------------------------------------------------
+    PREVIEW RENDERING
+  --------------------------------------------------------- */
+
+  function renderPreviews() {
+    previews.innerHTML = '';
+
+    Array.from(fileInput.files).forEach((file, index) => {
+      previews.appendChild(buildPreviewCard(file, index));
+    });
+  }
+
+  // Build a single preview card
+  function buildPreviewCard(file, index) {
     const col = document.createElement('div');
     col.className = 'col-3 mb-3';
+
     const card = document.createElement('div');
-    card.className = 'card p-1 h-100';
+    card.className = 'card p-1 h-100 text-center';
+
     const body = document.createElement('div');
-    body.className = 'text-center';
-    // image preview if image
-    if (file.type.startsWith('image/')) {
-      const img = document.createElement('img');
-      img.style.maxWidth = '100%';
-      img.style.maxHeight = '120px';
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-      body.appendChild(img);
+
+    if (isImage(file)) {
+      addImagePreview(file, body);
     } else {
-      // icon + filename
-      const ext = file.name.split('.').pop().toUpperCase();
-      const p = document.createElement('p');
-      p.className = 'mt-2';
-      p.innerHTML = `<strong>${ext}</strong><br><small>${file.name}</small>`;
-      body.appendChild(p);
+      addFilePreview(file, body);
     }
 
     const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
     removeBtn.className = 'btn btn-sm btn-outline-danger w-100 mt-2';
     removeBtn.textContent = 'Supprimer';
-    removeBtn.addEventListener('click', function () {
-      removeFileAtIndex(i);
-    });
+    removeBtn.onclick = () => removeFile(index);
 
-    card.appendChild(body);
-    card.appendChild(removeBtn);
+    card.append(body, removeBtn);
     col.appendChild(card);
-    previews.appendChild(col);
+
+    return col;
   }
 
-  function removeFileAtIndex(index) {
-    const dt = new DataTransfer();
-    const files = fileInput.files;
-    for (let i = 0; i < files.length; i++) {
-      if (i === index) continue;
-      dt.items.add(files[i]);
-    }
-    fileInput.files = dt.files;
-    handleFiles();
+  function addImagePreview(file, body) {
+    const img = document.createElement('img');
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '120px';
+
+    const reader = new FileReader();
+    reader.onload = e => (img.src = e.target.result);
+    reader.readAsDataURL(file);
+
+    body.appendChild(img);
   }
 
-  // On submit, normal form submit; input[name=fichiers] already populated
-  uploadForm.addEventListener('submit', function (e) {
-    // leave default submit to server; but we can validate before
-    if (!fileInput.files.length) {
-      e.preventDefault();
-      alert("Ajoutez au moins un fichier avant d'enregistrer.");
-      return false;
+  function addFilePreview(file, body) {
+    const ext = file.name.split('.').pop().toUpperCase();
+    body.innerHTML = `
+      <p class="mt-2">
+        <strong>${ext}</strong><br>
+        <small>${file.name}</small>
+      </p>
+    `;
+  }
+
+  /* ---------------------------------------------------------
+    REMOVE FILE
+  --------------------------------------------------------- */
+
+  function removeFile(index) {
+    const newList = buildFileList(index);
+    fileInput.files = newList.files;
+    renderPreviews();
+  }
+
+  /* ---------------------------------------------------------
+    FORM VALIDATION
+  --------------------------------------------------------- */
+
+  let conflictQueue = []; // { file, existingDoc }
+  let uploadQueue = []; // files sans conflit
+  let currentConflict = null; // conflit en cours
+
+  uploadForm.on('submit', function (e) {
+    e.preventDefault();
+
+    const files = [...fileInput.files];
+    if (!files.length) {
+      showAlertMessage('Ajoutez au moins un fichier', '#form-error');
+      return;
     }
-    // else default submit (multipart/form-data)
+
+    conflictQueue = [];
+    uploadQueue = [];
+
+    Promise.all(files.map(f => checkFileConflict(f))).then(() => {
+      // Si aucun conflit → envoi direct
+      if (conflictQueue.length === 0) {
+        submitFinalForm();
+      } else {
+        // traiter le premier conflit
+        showNextConflict();
+      }
+    });
   });
 
-  // manage filtering :
-  console.log('test');
-  // filtering object by some id
-  $(document).on('change', '#id_type_document', function () {
-    let typeId = $(this).val();
-    $('#id_sous_type').empty().trigger('change');
-    if (typeId) {
-      $.ajax({
-        url: '/soustypes/',
-        data: {
-          type_id: typeId
-        },
-        success: function (data) {
-          $('#id_sous_type').append('<option value="">---------</option>');
-          data.forEach(function (item) {
-            let newOption = new Option(item.text, item.id, false, false);
-            $('#id_sous_type').append(newOption);
+  function checkFileConflict(file) {
+    return fetch(`/check-document/?filename=${encodeURIComponent(file.name)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.exists) {
+          conflictQueue.push({
+            file: file,
+            existing: data
           });
-          $('#id_sous_type').trigger('change');
-        },
-        error: function (xhr, status, error) {
-          console.error('Error fetching sous types of documents :', error);
+        } else {
+          uploadQueue.push(file);
         }
       });
+  }
+
+  function showNextConflict() {
+    if (conflictQueue.length === 0) {
+      submitFinalForm();
+      return;
     }
+    currentConflict = conflictQueue.shift();
+
+    $('#dup-text').text(`Le document "${currentConflict.existing.titre}" existe déjà. Que souhaitez-vous faire ?`);
+
+    $('#duplicateDocumentModal').modal('show');
+  }
+
+  let actions = []; // { file, action, documentId }
+  $('#btn-version')
+    .off()
+    .on('click', function () {
+      actions.push({
+        file: currentConflict.file,
+        action: 'version',
+        documentId: currentConflict.existing.document_id
+      });
+      $('#duplicateDocumentModal').modal('hide');
+      showNextConflict();
+    });
+
+  $('#btn-overwrite')
+    .off()
+    .on('click', function () {
+      actions.push({
+        file: currentConflict.file,
+        action: 'overwrite',
+        documentId: currentConflict.existing.document_id
+      });
+      $('#duplicateDocumentModal').modal('hide');
+      showNextConflict();
+    });
+
+  function submitFinalForm() {
+    const formData = new FormData(uploadForm[0]);
+    // fichiers sans conflit
+    uploadQueue.forEach(f => {
+      formData.append('files[]', f);
+    });
+
+    // fichiers avec conflit + action choisie
+    actions.forEach(a => {
+      formData.append('files[]', a.file);
+      formData.append(
+        'actions[]',
+        JSON.stringify({
+          name: a.file.name,
+          action: a.action,
+          documentId: a.documentId
+        })
+      );
+    });
+    console.log(`submit datas : ${JSON.stringify(formData)}`);
+    console.log(`actions : ${actions}`);
+    fetch('/upload/', {
+      method: 'POST',
+      body: formData
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          console.log(`data : ${JSON.stringify(data)}`);
+          showAlertMessage(data.message, '#form-success');
+          uploadForm[0].reset();
+        } else {
+          console.log(`data : ${JSON.stringify(data)}`);
+          showAlertMessage(data.errors, '#form-error');
+        }
+      });
+  }
+
+  /* ---------------------------------------------------------
+    DYNAMIC FILTERING: TYPE → SOUS-TYPE
+  --------------------------------------------------------- */
+
+  $(document).on('change', '#id_type_document', function () {
+    const typeId = $(this).val();
+    const sousType = $('#id_sous_type');
+
+    sousType.empty().trigger('change');
+
+    if (!typeId) return;
+
+    $.ajax({
+      url: '/soustypes/',
+      data: { type_id: typeId },
+      success: data => {
+        sousType.append('<option value="">---------</option>');
+        data.forEach(item => {
+          sousType.append(new Option(item.text, item.id));
+        });
+        sousType.trigger('change');
+      },
+      error: err => console.error('Erreur chargement sous-types :', err)
+    });
   });
 });

@@ -30,4 +30,7 @@ urlpatterns = [
     path('typedocument/autocomplete/', TypeDocumentAutocomplete.as_view(), name='typedocument_autocomplete'),
     path('soustypedocument/autocomplete/', SousTypeDocumentAutocomplete.as_view(), name='soustypedocument_autocomplete'),
     path("soustypes/", getsoustypes, name='getsoustypes'),
+    #
+    path('check-document/', check_document, name='check_document'),
+
 ]

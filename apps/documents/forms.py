@@ -198,7 +198,6 @@ class UploadMultipleForm(forms.Form):
             )
         )
 
-
 class DocumentsForm(forms.ModelForm):
     class Meta:
         model = Document
@@ -251,3 +250,40 @@ class DocumentsForm(forms.ModelForm):
                 css_class='form-row p-3 pt-0'
             ),
         )
+
+class VersionDocumentForm(forms.ModelForm):
+    class Meta:
+        model = VersionDocument
+
+        fields = (
+            "titre",
+            "document",
+            "numero_version",
+            "fichier",
+            "responsable_version"
+        )
+
+        labels = {
+            "titre" : "Titre de la version",
+            "document" : "Document correspondant",
+            "numero_version" : "Numero de version",
+            "fichier" : "Titre de la version",
+            "responsable_version": "Responsable de la version"
+        }
+
+        widgets = {
+
+        }
+
+        def __init__(self, *args, **kwargs):
+            super(VersionDocumentForm, self).__init__(*args, **kwargs)
+            self.helper =  FormHelper()
+            self.helper.layout = Layout(
+                Row(
+                    Column(FloatingField("titre"), css_class='form-group col-md-12 mb-0'),
+                    Column(FloatingField("document"), css_class='form-group col-md-12 mb-0'),
+                    Column("fichier", css_class="form-group col-md-12 mb-0 mt-1"),
+                    Column(FloatingField("responsable_version"), css_class="form-group col-md-12 mb-2"),
+                    css_class='form-row p-3 pt-0'
+                ),
+            )

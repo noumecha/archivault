@@ -14,18 +14,6 @@
         <h3>Uploader des documents</h3>
         <a href="{% url 'list_document' %}" class="btn btn-primary"><i class="ri-file-list-line"></i>liste</a>
       </div>
-      <div class="row">
-            {% if messages %}
-                {% for msg in messages %}
-                    <div class="
-                      alert {% if 'error' in msg.tags %}alert-danger{% else %}alert-success{% endif %}
-                      col-12 text-center mt-3"
-                      style="display:none;" id="message-show">
-                        {{ msg }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-      </div>
     <form id="upload-form" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="card p-3">
@@ -58,6 +46,20 @@
           </div>
           {{ form.metadonnees|as_crispy_field }}
         </div>
+        <div class="row">
+          {% if messages %}
+              {% for msg in messages %}
+                  <div class="
+                    alert {% if 'error' in msg.tags %}alert-danger{% else %}alert-success{% endif %}
+                    col-12 text-center mt-3"
+                    style="display:none;" id="message-show">
+                      {{ msg }}
+                  </div>
+              {% endfor %}
+          {% endif %}
+        </div>
+        <div class="alert alert-success" style="display: none;" id="form-success"></div>
+        <div class="alert alert-danger" style="display: none;" id="form-error"></div>
         <hr/>
         <div class="text-right mt-3">
           <a href="{% url 'list_document' %}" class="btn btn-secondary">Annuler</a>
@@ -70,9 +72,29 @@
     {% include 'partials/_ajax_modal_field.html' with field=form.sous_type model_name='soustypedocument' model_verbose_name='Sous-type de document' %}
     {% include 'partials/_ajax_modal_field.html' with field=form.theme model_name='theme' model_verbose_name='Thème' %}
     {% include 'partials/_ajax_modal_field.html' with field=form.cellule model_name='cellule' model_verbose_name='Cellule' %}
+
+    <!-- save modal -->
+    <div class="modal fade" id="duplicateDocumentModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content p-0">
+          <div class="modal-header">
+            <h5 class="modal-title">Document déjà existant</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p id="dup-text"></p>
+          </div>
+          <div class="modal-footer flex-row-reverse">
+            <button class="btn btn-danger" id="btn-overwrite">Écraser</button>
+            <button class="btn btn-warning" id="btn-version">Créer une version</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 {% endblock content %}
 {% block extra_js %}
+    <script src="{% static 'js/helper/utils.js' %}"></script>
     <script src="{% static 'js/document.js' %}"></script>
     <script src="{% static 'js/typedocuments.js' %}"></script>
     <script src="{% static 'js/soustypedocuments.js' %}"></script>

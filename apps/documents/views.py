@@ -1,3 +1,5 @@
+import json
+import os
 from django.views.generic import ListView
 from django.views.generic import ListView, UpdateView
 from .forms import *
@@ -8,12 +10,13 @@ from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from config.views import BaseCRUDView
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.core.exceptions import PermissionDenied
 from web_project import TemplateLayout
-import os
 from dal import autocomplete
+from datetime import datetime
 from django.http import JsonResponse
+from django.utils.text import slugify
 
 #occupant view
 class NiveauAccesDocumentView(BaseCRUDView):
@@ -101,61 +104,128 @@ class DocumentCreateMultipleView(ListView):
         form = self.form_class(request.POST, request.FILES)
         files = request.FILES.getlist('fichiers')
 
-        if not files:
-            messages.error(request, "Aucun fichier sélectionné.")
-            return render(request, self.template_name, {"form": form})
+        # Récupère la liste des actions JSON envoyées par le client
+        actions_json = request.POST.getlist("actions[]")
 
-        if form.is_valid():
-            data = form.cleaned_data
-            created = []
-            errors = []  # pour stocker les fichiers non créés à cause du titre
+        # Transforme la liste en un dictionnaire {nom_fichier: {action, documentId}}
+        actions = {}
+        for action_str in actions_json:
+            action_data = json.loads(action_str)
+            actions[action_data['name']] = action_data
 
-            with transaction.atomic():
-                for f in files:
-                    name = os.path.splitext(f.name)[0]
-                    titre = name.replace('_', ' ').replace('-', ' ').strip()
+        try:
+            if form.is_valid():
+                data = form.cleaned_data
+                created_documents = []
+                created_versions = []
+                skipped = []
 
-                    # ✅ Vérifie si un document avec ce titre existe déjà
-                    if Document.objects.filter(titre__iexact=titre).exists():
-                        errors.append(titre)
-                        continue  # on passe au suivant
+                with transaction.atomic():
+                    for f in files:
+                        name = os.path.splitext(f.name)[0]
+                        titre = name.replace("_", " ").replace("-", " ").strip()
 
-                    try:
-                        doc = Document.objects.create(
-                            titre=titre,
-                            fichier=f,
-                            type_document=data.get("type_document"),
-                            sous_type=data.get("sous_type"),
-                            theme=data.get("theme"),
-                            cellule=data.get("cellule"),
-                            etat=data.get("etat") or Document._meta.get_field('etat').default,
-                            niveau_acces=data.get("niveau_acces"),
-                            profil_document=data.get("profil_document") or Document._meta.get_field('profil_document').default,
-                            cree_par=request.user if request.user.is_authenticated else None,
-                            metadonnees=data.get("metadonnees") or None,
-                        )
+                        action_info = actions.get(f.name)
+                        action = action_info['action'] if action_info else "create"
 
-                        if data.get("regles_classement"):
-                            doc.regles_classement.set(data.get("regles_classement"))
+                        # ⚠ si utilisateur demande IGNORER
+                        if action == "skip":
+                            skipped.append(titre)
+                            continue
 
-                        created.append(doc)
+                        doc_exist = Document.objects.filter(titre__iexact=titre).first()
 
-                    except IntegrityError:
-                        errors.append(titre)
+                        # -----------------------------------------------------------
+                        # 1️⃣ CAS A — DOCUMENT N’EXISTE PAS -> Création document
+                        # -----------------------------------------------------------
+                        if not doc_exist and action == "create":
+                            doc = Document.objects.create(
+                                titre=titre,
+                                fichier=f,
+                                type_document=data.get("type_document"),
+                                sous_type=data.get("sous_type"),
+                                theme=data.get("theme"),
+                                cellule=data.get("cellule"),
+                                etat=data.get("etat") or Document._meta.get_field('etat').default,
+                                niveau_acces=data.get("niveau_acces"),
+                                profil_document=data.get("profil_document") or Document._meta.get_field('profil_document').default,
+                                cree_par=request.user if request.user.is_authenticated else None,
+                                metadonnees=data.get("metadonnees") or None,
+                                responsable_document=data.get("responsable_document"),
+                            )
 
-            # ✅ Affiche les messages de retour
-            if created:
-                messages.success(request, f"{len(created)} document(s) créé(s) avec succès.")
-            if errors:
-                messages.warning(
-                    request,
-                    f"Les documents suivants existent déjà et n’ont pas été ajoutés : {', '.join(errors)}"
-                )
+                            if data.get("regles_classement"):
+                                doc.regles_classement.set(data.get("regles_classement"))
 
-            return redirect("upload_document")
+                            created_documents.append(doc)
+                            continue
 
-        # Si le formulaire est invalide
-        return render(request, self.template_name, {"form": form})
+                        # -----------------------------------------------------------
+                        # 2️⃣ CAS B — DOCUMENT EXISTE MAIS L’USER VEUT CRÉER UNE VERSION
+                        # -----------------------------------------------------------
+                        if doc_exist and action == "version":
+                            last_version = doc_exist.versions.order_by("-numero_version").first()
+                            next_version_number = (last_version.numero_version + 1) if last_version else 1
+
+                            version = VersionDocument.objects.create(
+                                # change the document title with the current date and hour
+                                titre=f"{doc_exist.titre}-{datetime.now().strftime('%d-%m-%Y_%H-%M-%S')}",
+                                document=doc_exist,
+                                numero_version=next_version_number,
+                                fichier=f,
+                                cree_par=request.user if request.user.is_authenticated else None,
+                                responsable_version=data.get("responsable_document"),
+                            )
+
+                            created_versions.append(version)
+                            continue
+
+                        # -----------------------------------------------------------
+                        # 3️⃣ CAS C — DOCUMENT EXISTE MAIS L’USER VEUT REMPLACER
+                        # -----------------------------------------------------------
+                        if doc_exist and action == "overwrite":
+                            doc_exist.fichier = f
+                            doc_exist.modifier_par = request.user
+                            doc_exist.save()
+
+                            created_documents.append(doc_exist)
+                            continue
+
+                if created_documents:
+                    return JsonResponse({
+                        "success": True,
+                        "message": f"{len(created_documents)} document(s) enregistré(s) avec succès."
+                    })
+
+                if created_versions:
+                    return JsonResponse({
+                        "success": True,
+                        "message": f"{len(created_versions)} nouvelle(s) version(s) créées."
+                    })
+
+            return JsonResponse({
+                "success": False,
+                "message": "Erreur lors de l'enregistrement",
+                "errors" : form.errors
+            })
+        except Exception as e:
+            return e
+
+def check_document(request):
+    filename = request.GET.get("filename", "")
+    name = os.path.splitext(filename)[0]
+    titre = name.replace('_', ' ').replace('-', ' ').strip()
+
+    exists = Document.objects.filter(titre__iexact=titre).first()
+
+    if exists:
+        return JsonResponse({
+            "exists": True,
+            "document_id": exists.id,
+            "titre": exists.titre,
+        })
+
+    return JsonResponse({"exists": False})
 
 class DocumentListView(ListView):
     model = Document
