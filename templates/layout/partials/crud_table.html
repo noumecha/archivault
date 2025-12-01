@@ -43,6 +43,13 @@
                 data-bs-toggle="modal">
                 <i class="ri-delete-bin-6-line me-1"></i>Supprimer
               </a>
+              {% if manage_url %}
+              <a
+                href="{% url manage_url obj.id %}"
+                class="dropdown-item">
+                <i class="ri-edit-box-fill me-1"></i>Gérer
+              </a>
+              {% endif %}
               {% if obj.statut %}
                 {% with action_url_name=object_name|lower|add:"_action" %}
                   <a

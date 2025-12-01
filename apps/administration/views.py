@@ -2,7 +2,7 @@ from .models import *
 from .forms import *
 from config.views import BaseCRUDView
 from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.contrib import messages
 
 class CelluleView(BaseCRUDView):
@@ -16,6 +16,31 @@ class CelluleView(BaseCRUDView):
     headers = ["Nom", "Description"]
     fields = ["nom", "description_cellule"]
     delete_url = "cellule_delete"
+    manage_url = "cellule_manage"
+    manage_menu = [
+        {"label": "Résumé", "icon": "ri-pie-chart-line me-1", "section": "resume"},
+        {"label": "Membres", "icon": "ri-user-2-line me-1", "section": "membres"},
+        {"label": "Statistiques", "icon": "ri-bar-chart-line me-1", "section": "stats"}
+    ]
+    manage_template = 'cellules/manage_base.html'
+
+    def manage_resume(self, request, context, obj):
+        # Logiques personnalisées pour la section résumé/statistiques
+        # context["stats"] = ...
+        template = self.get_manage_template("resume")
+        return render(request, template, context)
+
+    def manage_membres(self, request, context, obj):
+        # Logiques personnalisées pour la section membres
+        # context["membres"] = obj.membres.all() # Exemple
+        template = self.get_manage_template("membres")
+        return render(request, template, context)
+
+    def manage_stats(self, request, context, obj):
+        # Logiques personnalisées pour la section membres
+        # context["membres"] = obj.membres.all() # Exemple
+        template = self.get_manage_template("stats")
+        return render(request, template, context)
 
 class DivisionView(BaseCRUDView):
     model = Division
@@ -27,6 +52,7 @@ class DivisionView(BaseCRUDView):
     headers = ["Nom", "Description", "Statut"]
     fields = ["nom", "description_division", "statut"]
     delete_url = "division_delete"
+    manage_url = "division_manage"
     # 🔹 Déclaration des actions personnalisées
     custom_actions = {
         "toggle_status": "toggle_status_action"
@@ -53,6 +79,7 @@ class MinistereView(BaseCRUDView):
     headers = ["Nom", "Description","Code","abrevation"]
     fields = ["nom", "description_ministere","code","abrevation"]
     delete_url = "ministere_delete"
+    manage_url = "ministere_manage"
 
 class DirectionGeneraleView(BaseCRUDView):
     model = DirectionGenerale
@@ -64,4 +91,5 @@ class DirectionGeneraleView(BaseCRUDView):
     headers = ["Nom", "Description", "Ministere"]
     fields = ["nom", "description_direction_generale", "ministere"]
     delete_url = "directiongenerale_delete"
+    manage_url = "directiongenerale_manage"
     object_name = "directiongenerale"

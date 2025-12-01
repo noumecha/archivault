@@ -16,7 +16,7 @@ class Ministere(models.Model):
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.nom
+        return f"(Ministère) {self.nom}"
 
 # direction generale
 class DirectionGenerale(models.Model):
@@ -28,7 +28,7 @@ class DirectionGenerale(models.Model):
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.nom
+        return f"(Direction Générale) {self.nom}"
 
 
 # Division
@@ -43,7 +43,7 @@ class Division(models.Model):
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.nom} ({self.ministere.nom})"
+        return f"(Division) {self.nom}"
 
 # Cellule
 class Cellule(models.Model):
@@ -60,4 +60,4 @@ class Cellule(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.nom} - {self.division.nom}"
+        return f"(Cellule) {self.nom}"

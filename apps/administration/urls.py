@@ -9,4 +9,6 @@ urlpatterns = [
     # division urls
     *get_crud_urls(DivisionView, "division/divisions", "division"),
     path('divisions/<int:pk>/<str:action>/', DivisionView.as_view(), name='division_action'),
+    # manage urls for cellule
+    *get_manage_urls(CelluleView, "cellule")
 ]

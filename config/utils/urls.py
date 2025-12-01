@@ -11,4 +11,11 @@ def get_crud_urls(view_class, prefix, name):
         path(f"{prefix}/edit/<int:pk>", view_class.as_view(), {'action': 'form'}, name=f'{name}_update'),
         path(f"{prefix}/update/<int:pk>", view_class.as_view(), {'action': 'update'}, name=f'{name}_update'),
         path(f"{prefix}/delete/<int:pk>", view_class.as_view(), {'action': 'delete'}, name=f'{name}_delete'),
+        path(f"{prefix}/manage/<int:pk>", view_class.as_view(), {'action': 'manage'}, name=f'{name}_manage'),
+    ]
+
+def get_manage_urls(view_class, name):
+    """ Helper function to generate CRUD URLS for a view class base on hist manage url """
+    return [
+        path(f"{name}/<int:pk>/manage/<str:section>/", view_class.as_view(), name=f"{name}_manage"),
     ]

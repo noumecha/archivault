@@ -34,7 +34,7 @@
     </li>
 
     <!-- documents -->
-    <li class="menu-header fw-medium mt-7">
+    <li class="menu-header fw-medium mt-3">
       <span class="menu-header-text">Gestion des documents</span>
     </li>
     <li class="menu-item {% if '/upload/' in request.path %}active open{% endif %}">
@@ -78,7 +78,7 @@
     </li>
 
     <!-- utilisateurs menu -->
-    <li class="menu-header fw-medium mt-7">
+    <li class="menu-header fw-medium mt-3">
       <span class="menu-header-text">Utilisateurs & Rôles</span>
     </li>
     <li class="menu-item {% if '/profile/' in request.path %}active{% endif %}">
@@ -105,7 +105,7 @@
 
     <!-- Administration menu -->
     {% if request.user.role == 'administrateur' %}
-    <li class="menu-header fw-medium mt-7">
+    <li class="menu-header fw-medium mt-3">
       <span class="menu-header-text">Eléments Administratifs</span>
     </li>
     <li class="menu-item {% if '/cellule/' in request.path %}active{% endif %}">

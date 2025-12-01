@@ -127,7 +127,7 @@
         <ul class="list-group list-group-flush">
           {% for c in by_cellule %}
           <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ c.cellule__nom|default:"Non défini" }}
+            {{ c.nom|default:"Non défini" }}
             <span class="badge bg-primary rounded-pill">{{ c.total }}</span>
           </li>
           {% empty %}

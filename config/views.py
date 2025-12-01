@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
 from django.views.generic import TemplateView
 from django.http import JsonResponse
 from django.contrib import messages
@@ -20,16 +20,28 @@ class BaseCRUDView(TemplateView):
     list_route = None
     fields = []
     filters = []
-    delete_url = ""
     # templates
     headers = []
     partial_template = 'layout/partials/crud_table.html'
     list_template = None
     form_template = 'layout/form_template.html'
+    manage_template = 'layout/layout_manage.html'
     # names and objects
     context_object_name = 'objects'
     object_name = None
     object_label = None
+    # manage vars
+    delete_url = ""
+    manage_url = ""
+    manage_menu = []
+
+    def get(self, request, *args, **kwargs):
+        # Si une section est présente dans les kwargs -> page de management
+        if "section" in kwargs:
+            return self.dynamic_manage_view(request, **kwargs)
+
+        # Sinon comportement CRUD normal
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
@@ -151,6 +163,7 @@ class BaseCRUDView(TemplateView):
                 'headers': self.headers,
                 'fields': self.fields,
                 'delete_url': self.delete_url,
+                'manage_url': self.manage_url,
                 'object_name': self.object_name or self.model._meta.verbose_name.title(),
                 'object_label': self.object_label or self.model._meta.verbose_name.title(),
             },
@@ -260,6 +273,39 @@ class BaseCRUDView(TemplateView):
             html = render_to_string(self.form_template, {'form': form}, request=request)
             return JsonResponse({'html': html})
 
+    # management of model
+    def get_manage_view(self, request, **kwargs):
+        pk = kwargs.get("pk")
+        obj = get_object_or_404(self.model, pk=pk)
+        context = {
+            "page_title": f"Gestion de : {obj}",
+            "object": obj,
+        }
+        context = TemplateLayout().init(context)
+        context["manage_menu"] = getattr(self, "manage_menu", [])
+        return render(request, self.manage_template, context)
+
+    def get_manage_template(self, section):
+        model_name = self.model.__name__.lower()
+        return f"{model_name}s/{section}.html"
+
+    def dynamic_manage_view(self, request, **kwargs):
+        pk = kwargs.get("pk")
+        section = kwargs.get("section")
+        obj = get_object_or_404(self.model, pk=pk)
+        context = {
+            "object": obj,
+            "section": section,
+            "page_title": f"{obj} – {section.capitalize()}",
+        }
+        context = TemplateLayout().init(context)
+        context["manage_menu"] = getattr(self, "manage_menu", [])
+        handler_name = f"manage_{section}"
+        if hasattr(self, handler_name):
+            return getattr(self, handler_name)(request, context, obj)
+        template = self.get_manage_template(section)
+        return render(request, template, context)
+
     def dispatch(self, request, *args, **kwargs):
         action = kwargs.pop('action', None)
 
@@ -268,6 +314,8 @@ class BaseCRUDView(TemplateView):
             return self.get_list_data(request)
         elif action == 'form':
             return self.get_form_view(request, kwargs.get('pk'))
+        elif action == 'manage':
+            return self.get_manage_view(request, **kwargs)
         elif action == 'update':
             return self.update(request, **kwargs)
         elif action == 'delete':

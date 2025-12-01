@@ -1,0 +1,49 @@
+{% load static %}
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+  <!-- ! Hide app brand if navbar-full -->
+  {% if not navbar_full %}
+  <div class="app-brand demo">
+    <a href="{% url 'index' %}" class="app-brand-link">
+      <img class="avatar"
+          style="
+              height: 50px;
+              width: 50px;
+              object-fit: contain;
+          "
+          src="{% static 'img/logo/logo.png' %}"
+          alt="Archivault" width="">
+          <span class="app-brand-text demo text-heading fw-semibold">Archivault</span>
+    </a>
+
+    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+      <i class="menu-toggle-icon d-xl-block align-middle"></i>
+    </a>
+  </div>
+  {% endif %}
+
+
+  <div class="menu-inner-shadow"></div>
+
+  <ul class="menu-inner py-1">
+
+    <li class="menu-item {% if 'index' == request.resolver_match.url_name or '/dashbord/' in request.path %}active{% endif %}">
+      <a href="{% url 'index' %}" class="menu-link">
+        <i class="menu-icon tf-icons ri-home-smile-line"></i>
+        <div class="text-truncate" data-i18n="Dashboards">Accueil > Archivault</div>
+      </a>
+    </li>
+
+    <li class="menu-header fw-medium mt-3">
+      <span class="menu-header-text">{{ object }}</span>
+    </li>
+
+    {% for item in manage_menu %}
+      <li class="menu-item {% if item.route in request.path %}active{% endif %}">
+        <a href="{% url item.route object.id %}" class="menu-link">
+          <i class="{{ item.icon }}"></i> {{ item.label }}
+        </a>
+      </li>
+    {% endfor %}
+
+  </ul>
+</aside>

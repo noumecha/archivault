@@ -1,0 +1,40 @@
+{% extends 'layout/layout_manage.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block manage_sidebar %}
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+    <div class="app-brand demo">
+        <a href="#" class="app-brand-link">
+            <span class="app-brand-text demo menu-text fw-bold">{{ object.nom | truncatechars:20 }}</span>
+        </a>
+        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+            <i class="ti menu-toggle-icon d-none d-xl-block ti-sm align-middle"></i>
+            <i class="ti ti-x d-block d-xl-none ti-sm align-middle"></i>
+        </a>
+    </div>
+    <div class="menu-inner-shadow"></div>
+    <ul class="menu-inner py-1">
+        {% for item in manage_menu %}
+        <li class="menu-item {% if section == item.section %}active{% endif %}">
+            <a href="{% url 'cellule_manage' pk=object.pk section=item.section %}" class="menu-link">
+                <i class="{{ item.icon }}"></i>
+                <div>{{ item.label }}</div>
+            </a>
+        </li>
+        {% endfor %}
+        <li class="menu-item mt-7 {% if 'index' == request.resolver_match.url_name or '/dashbord/' in request.path %}active{% endif %}">
+          <a href="{% url 'index' %}" class="menu-link">
+            <i class="ri-arrow-left-line me-1"></i>
+            <div class="text-truncate" data-i18n="Dashboards">Accueil</div>
+          </a>
+        </li>
+    </ul>
+</aside>
+{% endblock %}
+
+{% block content %}
+  <div class="">
+    <h1 class="app-brand-text demo menu-text fw-bold">{{ object.nom | truncatechars:20 }}</h1>
+  </div>
+{% endblock %}

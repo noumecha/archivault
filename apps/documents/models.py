@@ -16,12 +16,21 @@ class Theme(models.Model):
 class TypeDocument(models.Model):
     libelle = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, name='description_typedocument')
+    # a typeDocument belongs to a Cellule
+    cellule = models.ForeignKey(Cellule, on_delete=models.CASCADE, null=True, blank=True)
+    # relation de règle de gestion
+    parent_type = models.ForeignKey(
+        'self',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='sous_types_fonctionnels'
+    )
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.libelle
+        return f"(Type de document) : {self.libelle}"
 
 class SousTypeDocument(models.Model):
     libelle = models.CharField(max_length=255, unique=True)
@@ -32,7 +41,7 @@ class SousTypeDocument(models.Model):
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.libelle} ({self.type_document})"
+        return f"(Sous Type de document) : {self.libelle}"
 
 class EtatDocument(models.TextChoices):
     EN_ATTENTE = 'attente', 'En attente'
@@ -55,6 +64,29 @@ class ProfilDoc(models.TextChoices):
     MODIFIABLE = 'modifiable', 'Modifiable'
     IMPRIMABLE = 'imprimable', 'Imprimable'
 
+class Bailleurs(models.Model):
+    abrevation = models.CharField(max_length=255)
+    libelle = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.libelle
+
+class Avenants(models.Model):
+    # a avenant believe to a bailleur
+    bailleur = models.ForeignKey(Bailleurs, on_delete=models.CASCADE, null=True, related_name= "avenant_bailleur")
+    nom = models.CharField(max_length=255)
+    prenom = models.CharField(max_length=255)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.nom
+
 class Document(models.Model):
     titre = models.CharField(max_length=255, unique=True)
     fichier = models.FileField(upload_to='documents/')
@@ -75,6 +107,17 @@ class Document(models.Model):
         blank=True,
         related_name='documents_responsables',
         limit_choices_to={'role': 'responsable'}
+    )
+    # relations
+    bailleur = models.ForeignKey(Bailleurs, on_delete=models.CASCADE, related_name='document_bailleur', null=True, blank=True)
+    avenant = models.ForeignKey(Avenants, on_delete=models.CASCADE, related_name='document_avenant', null=True, blank=True)
+    # Relation hiérarchique
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='enfants'
     )
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)

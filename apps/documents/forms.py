@@ -41,12 +41,14 @@ class TypeDocumentsForm(forms.ModelForm):
         model = TypeDocument
 
         fields = (
-            'libelle',"description_typedocument"
+            'libelle',"description_typedocument","parent_type","cellule"
         )
 
         labels = {
             "libelle" : "Libellé du type de document",
-            "description_typedocument" : "Description"
+            "description_typedocument" : "Description",
+            "cellule" : "Unité de gestion Correspondante",
+            "parent_type" : "Type de document parent (relation de dépendance entre type)"
         }
 
         widgets = {
@@ -60,6 +62,8 @@ class TypeDocumentsForm(forms.ModelForm):
             Row(
                 Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
                 Column(FloatingField("description_typedocument"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("cellule"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("parent_type"), css_class='form-group col-md-12 mb-0'),
                 css_class='form-row p-3 pt-0'
             ),
         )
@@ -214,6 +218,7 @@ class DocumentsForm(forms.ModelForm):
             "profil_document",
             "metadonnees",
             'responsable_document',
+            'parent'
         )
 
         labels = {
@@ -226,6 +231,7 @@ class DocumentsForm(forms.ModelForm):
             "profil_document" : "Profil du Document",
             "metadonnees" : "Métadonnées du Document",
             'responsable_document' : "Responsable",
+            'parent' : 'Parent (relation de dépendance entre documents)'
         }
 
         widgets = {
@@ -247,6 +253,7 @@ class DocumentsForm(forms.ModelForm):
                 Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-0 mt-1"),
                 Column(FloatingField("responsable_document"), css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("parent"), css_class="form-group col-md-12 mb-2"),
                 css_class='form-row p-3 pt-0'
             ),
         )
@@ -284,6 +291,70 @@ class VersionDocumentForm(forms.ModelForm):
                     Column(FloatingField("document"), css_class='form-group col-md-12 mb-0'),
                     Column("fichier", css_class="form-group col-md-12 mb-0 mt-1"),
                     Column(FloatingField("responsable_version"), css_class="form-group col-md-12 mb-2"),
+                    css_class='form-row p-3 pt-0'
+                ),
+            )
+
+class BailleursFrom(forms.ModelForm):
+    class Meta:
+        model = Bailleurs
+
+        fields = (
+            "abrevation",
+            "libelle",
+            "description",
+        )
+
+        labels = {
+            "abrevation" : "Abréviation du bailleur",
+            "libelle" : "Nom du bailleur",
+            "description" : "Description du bailleur"
+        }
+
+        widgets = {
+
+        }
+
+        def __init__(self, *args, **kwargs):
+            super(BailleursFrom, self).__init__(*args, **kwargs)
+            self.helper =  FormHelper()
+            self.helper.layout = Layout(
+                Row(
+                    Column(FloatingField("abrevation"), css_class='form-group col-md-12 mb-0'),
+                    Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                    Column(FloatingField("description"), css_class="form-group col-md-12 mb-2"),
+                    css_class='form-row p-3 pt-0'
+                ),
+            )
+
+class AvenantsForm(forms.ModelForm):
+    class Meta:
+        model = Avenants
+
+        fields = (
+            "bailleur",
+            "nom",
+            "prenom",
+        )
+
+        labels = {
+            "bailleur" : "Selectionnez le bailleur",
+            "nom" : "Nom de l'avenant",
+            "prenom" : "Prenom de l'avenant",
+        }
+
+        widgets = {
+
+        }
+
+        def __init__(self, *args, **kwargs):
+            super(AvenantsForm, self).__init__(*args, **kwargs)
+            self.helper =  FormHelper()
+            self.helper.layout = Layout(
+                Row(
+                    Column(FloatingField("bailleur"), css_class='form-group col-md-12 mb-0'),
+                    Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
+                    Column(FloatingField("prenom"), css_class="form-group col-md-12 mb-2"),
                     css_class='form-row p-3 pt-0'
                 ),
             )
