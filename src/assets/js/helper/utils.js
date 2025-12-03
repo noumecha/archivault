@@ -91,7 +91,10 @@ function loadModal(modalId, formContainer, baseUrl) {
       btn.text('Mettre à jour');
       btn.addClass('btn-outline-success btn-outline-success');
     } else {
-      url = url + 'form';
+      url = url + 'form/';
+      // Vérifier si on est dans un contexte de gestion de cellule
+      const celluleId = $(this).data('cellule-id');
+      console.log('cellule id', celluleId);
       btn.text('Enregistrer');
       btn.addClass('btn-outline-primary btn-outline-primary');
     }
