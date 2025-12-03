@@ -73,7 +73,7 @@
                   <form action="{% url delete_url obj.id %}" method="post">
                     {% csrf_token %}
                     <div class="modal-header">
-                      <h5 class="modal-title">Suppression d'un(e) : {{ object_label }}</h5>
+                      <h5 class="modal-title">Suppression d'un(e) : {% if object_label %}{{ object_label }}{% else %}{{ object_name }}{% endif %}</h5>
                       <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">

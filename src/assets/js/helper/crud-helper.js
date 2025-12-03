@@ -28,6 +28,8 @@ function initCRUD(config) {
   refresh('#refresh-button', fetchUrl, searchFormSelector, tableContainerSelector);
   // Show success/error messages
   showMessage();
+  // close modal
+  closeModal(modalSelector);
 }
 // Expose globally (so you can call it in any module JS)
 window.initCRUD = initCRUD;

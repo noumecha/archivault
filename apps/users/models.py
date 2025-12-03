@@ -28,4 +28,4 @@ class Utilisateur(AbstractUser):
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.get_full_name()
+        return self.username

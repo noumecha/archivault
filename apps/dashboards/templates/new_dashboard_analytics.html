@@ -159,6 +159,7 @@
             <tr>
               <td>{{ doc.titre }}</td>
               <td>{{ doc.type_document.nom|default:"-" }}</td>
+              <!-- show default cree_par value if the cree_par object exist -->
               <td>{{ doc.cree_par.get_full_name|default:doc.cree_par.username|default:"-" }}</td>
               <td>{{ doc.Date_creation|date:"d/m/Y H:i" }}</td>
             </tr>

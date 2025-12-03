@@ -1,11 +1,6 @@
-{% extends layout_path %}
+{% extends 'cellules/manage_base.html' %}
 
-{% load static %}
-{% load i18n %}
-
-{% block title %}Thèmes{% endblock %}
-
-{% load crispy_forms_tags %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
   {% include 'documents_blocs/typedocs_bloc.html' %}

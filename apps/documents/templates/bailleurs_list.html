@@ -3,14 +3,14 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Utilisateurs{% endblock %}
+{% block title %}Thèmes{% endblock %}
 
 {% load crispy_forms_tags %}
 
 {% block content %}
-  {% include 'users_blocs/users_bloc.html' %}
+  {% include 'documents_blocs/bailleurs_bloc.html' %}
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/utilisateur.js' %}"></script>
+    <script src="{% static 'js/bailleurs.js' %}"></script>
 {% endblock %}

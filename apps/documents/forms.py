@@ -218,20 +218,26 @@ class DocumentsForm(forms.ModelForm):
             "profil_document",
             "metadonnees",
             'responsable_document',
-            'parent'
+            'parent',
+            'bailleur',
+            'avenant'
         )
 
         labels = {
             "titre" : "Titre du Document",
+            "fichier" : "Selectionnez un fichier",
             "type_document" : "Type du Document",
             "sous_type" : "sous type du Document",
             "theme" : "Thème du Document",
             "cellule" : "Unité de traitement",
+            "etat" : "Définir l'état du document",
             "niveau_acces" : "Niveau accès du Document",
             "profil_document" : "Profil du Document",
             "metadonnees" : "Métadonnées du Document",
             'responsable_document' : "Responsable",
-            'parent' : 'Parent (relation de dépendance entre documents)'
+            "bailleur" : "Ajouter eventuellement un bailleur",
+            "avenant" : "Ajouter eventuellement un avenant",
+            "parent" : "Parent (relation de dépendance entre documents)"
         }
 
         widgets = {
@@ -244,15 +250,18 @@ class DocumentsForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("titre"), css_class='form-group col-md-12 mb-0'),
-                Column("fichier", css_class="form-group col-md-12 mb-0 mt-1"),
+                Column(FloatingField("fichier"), css_class="form-group col-md-12 mb-0 mt-1"),
                 Column(FloatingField("type_document"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("sous_type"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("theme"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("cellule"), css_class="form-group col-md-6 mb-0 mt-1"),
+                Column(FloatingField("etat"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("niveau_acces"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-0 mt-1"),
                 Column(FloatingField("responsable_document"), css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("avenant"), css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("bailleur"), css_class="form-group col-md-12 mb-2"),
                 Column(FloatingField("parent"), css_class="form-group col-md-12 mb-2"),
                 css_class='form-row p-3 pt-0'
             ),

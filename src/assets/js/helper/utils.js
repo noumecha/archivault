@@ -75,10 +75,11 @@ function ajaxModal(modalId, formnContainerId, formId, fetchUrl, selectItemId = n
 }
 
 // function to load modal content
-function loadModal(modalId, formContainer, url) {
+function loadModal(modalId, formContainer, baseUrl) {
   const formContent = $(formContainer);
   $(document).on('click', `[data-bs-target="${modalId}"]`, function (e) {
     e.preventDefault();
+    let url = baseUrl;
     action = $(this).data('action');
     const id = $(this).data('id');
     btn = $('#save-btn');
@@ -94,10 +95,19 @@ function loadModal(modalId, formContainer, url) {
       btn.text('Enregistrer');
       btn.addClass('btn-outline-primary btn-outline-primary');
     }
+    console.log('final url', url);
+    console.log('id: ', id);
     $.get(url, function (data) {
       formContent.html(data.html);
     });
-    url = '';
+  });
+}
+
+// when the modal is closed set id to null
+function closeModal(modalId) {
+  $(document).on('hidden.bs.modal', modalId, function () {
+    x = $('#update-id').val('');
+    console.log('modal closed with the id : ', x.val());
   });
 }
 
@@ -156,40 +166,61 @@ function fetchDatas(url, formId = null, containerId) {
 }
 
 // function to handle form submission
-function submitForm(formId, url, fetchUrl, modalId = null) {
+function submitForm(formId, baseUrl, fetchUrl, modalId = null) {
   $(document).on('submit', formId, function (e) {
     e.preventDefault();
+    let url = baseUrl;
     const form = $(this);
     const list = $(this).data('list-id');
     const listId = $('#' + list);
-    const formData = form.serialize();
+    let formData;
+    let ajaxOptions = {};
+    // getting input of type file
+    const fileInput = form.find('input[type="file"]');
+    if (fileInput.length > 0 && fileInput[0].files.length > 0) {
+      formData = new FormData(form[0]);
+      ajaxOptions = {
+        processData: false,
+        contentType: false
+      };
+    } else {
+      formData = form.serialize();
+    }
+    console.log('formdata : ', formData);
     const saveUrl = $('#save-btn').text() === 'Mettre à jour' ? url + 'update/' : url;
     const updateId = $('#update-id').val();
     // Send AJAX request
-    $.ajax({
-      url: saveUrl + (updateId ? updateId : ''),
-      type: 'POST',
-      data: formData,
-      success: function (data) {
-        if (data.success) {
-          if (listId && listId.length && data.data) {
-            listId.append($('<option>', { value: data.data.id, text: data.data.text, selected: true }));
-            const successId = form.find(`[data-success-id]`);
-            showAlertMessage(data.message, successId);
-            const modalInstance = bootstrap.Modal.getInstance(document.querySelector(modalId));
-            modalInstance.hide();
-          } else {
-            showAlertMessage(data.message, '#form-success');
-            form.closest('form')[0].reset();
+    $.ajax(
+      Object.assign(
+        {
+          url: saveUrl + (updateId ? updateId : ''),
+          type: 'POST',
+          data: formData,
+          success: function (data) {
+            if (data.success) {
+              if (listId && listId.length && data.data) {
+                listId.append($('<option>', { value: data.data.id, text: data.data.text, selected: true }));
+                const successId = form.find(`[data-success-id]`);
+                showAlertMessage(data.message, successId);
+                const modalInstance = bootstrap.Modal.getInstance(document.querySelector(modalId));
+                modalInstance.hide();
+              } else {
+                showAlertMessage(data.message, '#form-success');
+                form.closest('form')[0].reset();
+              }
+            } else {
+              console.error('Error occurred on submit : ', data.message);
+              const errorId = form.find(`[data-error-id]`);
+              showAlertMessage(data.errors, errorId);
+              showAlertMessage(data.errors, '#form-error');
+              console.log('data : ', data);
+            }
           }
-        } else {
-          console.error('Error occurred on submit : ', data.message);
-          const errorId = form.find(`[data-error-id]`);
-          showAlertMessage(data.errors, errorId);
-          showAlertMessage(data.errors, '#form-error');
-        }
-      }
-    });
+        },
+        ajaxOptions
+      )
+    );
+    $('#update-id').val('');
   });
 }
 

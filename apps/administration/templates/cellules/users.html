@@ -1,11 +1,6 @@
-{% extends layout_path %}
+{% extends 'cellules/manage_base.html' %}
 
-{% load static %}
-{% load i18n %}
-
-{% block title %}Utilisateurs{% endblock %}
-
-{% load crispy_forms_tags %}
+{% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
   {% include 'users_blocs/users_bloc.html' %}

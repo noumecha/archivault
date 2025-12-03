@@ -1,9 +1,12 @@
+from apps.documents.models import Bailleurs, EtatDocument, ProfilDoc, SousTypeDocument, Theme, TypeDocument
+from apps.users.models import RoleUtilisateur
 from .models import *
 from .forms import *
 from config.views import BaseCRUDView
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect, render
 from django.contrib import messages
+from config.utils.utils import generates_filters
 
 class CelluleView(BaseCRUDView):
     model = Cellule
@@ -18,22 +21,51 @@ class CelluleView(BaseCRUDView):
     delete_url = "cellule_delete"
     manage_url = "cellule_manage"
     manage_menu = [
-        {"label": "Résumé", "icon": "ri-pie-chart-line me-1", "section": "resume"},
-        {"label": "Membres", "icon": "ri-user-2-line me-1", "section": "membres"},
-        {"label": "Statistiques", "icon": "ri-bar-chart-line me-1", "section": "stats"}
+        {"label": "Statistiques", "icon": "ri-bar-chart-line me-1", "section": "stats"},
+        {"label": "Utilisateurs", "icon": "ri-user-2-line me-1", "section": "users"},
+        {"label": "Documents", "icon": "ri-folders-line me-1", "section": "docs"},
+        {"label": "Types de Documents", "icon": "ri-folder-settings-line me-1", "section": "docstypes"},
+        {"label": "Bailleurs", "icon": "ri-wallet-2-fill me-1", "section": "bailleurs"},
+        {"label": "Avenants", "icon": "ri-bill-fill me-1", "section": "avenants"},
     ]
     manage_template = 'cellules/manage_base.html'
 
-    def manage_resume(self, request, context, obj):
-        # Logiques personnalisées pour la section résumé/statistiques
-        # context["stats"] = ...
-        template = self.get_manage_template("resume")
+    def manage_docstypes(self, request, context, obj):
+        template = self.get_manage_template("docstypes")
         return render(request, template, context)
 
-    def manage_membres(self, request, context, obj):
+    def manage_docs(self, request, context, obj):
+        template = self.get_manage_template("docs")
+        filters = [
+            ('type_document', TypeDocument),
+            ('sous_type', SousTypeDocument),
+            ('etat', EtatDocument),
+            ('profil_document', ProfilDoc, 'Profil du Document'),
+            ('theme', Theme)
+        ]
+        context['filters'] = generates_filters(filters)
+        return render(request, template, context)
+
+    def manage_bailleurs(self, request, context, obj):
+        template = self.get_manage_template("bailleurs")
+        return render(request, template, context)
+
+    def manage_avenants(self, request, context, obj):
+        template = self.get_manage_template("avenants")
+        filters = [
+            ('bailleur', Bailleurs),
+        ]
+        context['filters'] = generates_filters(filters)
+        return render(request, template, context)
+
+    def manage_users(self, request, context, obj):
         # Logiques personnalisées pour la section membres
-        # context["membres"] = obj.membres.all() # Exemple
-        template = self.get_manage_template("membres")
+        filters = [
+            ('cellule', Cellule, 'Unité de traitement'),
+            ('role', RoleUtilisateur),
+        ]
+        template = self.get_manage_template("users")
+        context['filters'] = generates_filters(filters)
         return render(request, template, context)
 
     def manage_stats(self, request, context, obj):

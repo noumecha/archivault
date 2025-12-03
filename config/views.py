@@ -2,6 +2,7 @@ from django.shortcuts import redirect, get_object_or_404, render
 from django.views.generic import TemplateView
 from django.http import JsonResponse
 from django.contrib import messages
+from config.utils.utils import generates_filters
 from web_project import TemplateLayout
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -46,70 +47,7 @@ class BaseCRUDView(TemplateView):
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
         context["form"] = self.form_class
-        filters_context = []
-        for f in self.filters:
-            # --- GESTION DES FILTRES ---
-            # chaque élément peut être :
-            # - un modèle Django (ex: Cellule)
-            # - une TextChoices (ex: RoleUtilisateur)
-            # - un tuple (nom_du_champ, source)
-            # - un tuple (nom_du_champ, source, label)
-            # - un iterable [(value, label), ...]
-            label = None
-            if isinstance(f, (list, tuple)):
-                if len(f) == 3:
-                    field_name, source, label = f
-                elif len(f) == 2:
-                    field_name, source = f
-                else:
-                    continue  # Ignore invalid tuples
-            else:
-                source = f
-                field_name = getattr(source, "__name__", "filter").lower()
-            if not label:
-                label = field_name.replace('_', ' ').title()
-            # 🔹 Cas 1 : modèle Django
-            if hasattr(source, "objects"):
-                try:
-                    items = source.objects.all()
-                    # Si le modèle a une date de création, on peut trier
-                    if hasattr(source, "Date_creation"):
-                        items = items.order_by("-Date_creation")
-                    filters_context.append({
-                        "name": field_name,
-                        "label": label,
-                        "type": "model",
-                        "items": items
-                    })
-                    continue
-                except Exception:
-                    pass
-            # 🔹 Cas 2 : TextChoices
-            try:
-                if issubclass(source, models.TextChoices):
-                    filters_context.append({
-                        "name": field_name,
-                        "label": label,
-                        "type": "choices",
-                        "items": [{"value": c.value, "label": c.label} for c in source]
-                    })
-                    continue
-            except TypeError:
-                pass
-            # 🔹 Cas 3 : Iterable de tuples (value, label)
-            try:
-                items = list(source)
-                if items and isinstance(items[0], (list, tuple)) and len(items[0]) >= 2:
-                    filters_context.append({
-                        "name": field_name,
-                        "label": label,
-                        "type": "iterable",
-                        "items": [{"value": v, "label": l} for v, l in items]
-                    })
-                    continue
-            except Exception:
-                pass
-        context["filters"] = filters_context
+        context['filters'] = generates_filters(self.filters)
         return context
 
     def get_queryset(self, search_query=None):
@@ -181,7 +119,12 @@ class BaseCRUDView(TemplateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST, request.FILES)
         if form.is_valid():
-            obj = form.save()
+            # Use commit=False to get the object without saving it to the DB yet
+            obj = form.save(commit=False)
+            # Set the creator if the attribute exists on the model
+            if hasattr(obj, 'cree_par'):
+                obj.cree_par = request.user
+            obj.save() # Now save the object to the database
             formsets_valid = True
             for name, formset_class in getattr(self, "formsets_classes", {}).items():
                 formset = formset_class(request.POST, instance=obj)
@@ -189,6 +132,7 @@ class BaseCRUDView(TemplateView):
                     formset.save()
                 else:
                     formsets_valid = False
+            form.save_m2m() # Save many-to-many relationships
             if formsets_valid:
                 return JsonResponse({
                     'success': True,
@@ -216,7 +160,12 @@ class BaseCRUDView(TemplateView):
         instance = get_object_or_404(self.model, pk=pk)
         form = self.form_class(request.POST, instance=instance)
         if form.is_valid():
-            obj = form.save()
+            # Use commit=False to get the object without saving it to the DB yet
+            obj = form.save(commit=False)
+            # Set the modifier if the attribute exists on the model
+            if hasattr(obj, 'modifier_par'):
+                obj.modifier_par = request.user
+            obj.save() # Now save the object to the database
             formsets_valid = True
             for name, formset_class in getattr(self, "formsets_classes", {}).items():
                 formset = formset_class(request.POST, instance=obj)
@@ -224,6 +173,7 @@ class BaseCRUDView(TemplateView):
                     formset.save()
                 else:
                     formsets_valid = False
+            form.save_m2m() # Save many-to-many relationships
             if formsets_valid:
                 return JsonResponse({
                     'success': True,

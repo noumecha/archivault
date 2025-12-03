@@ -4,81 +4,9 @@
 {% block title %}documents{% endblock title %}
 
 {% block content %}
-<div class="content">
-    <div class="row">
-        <div class="card p-3">
-            <div class="card-header">
-                <div class="row d-flex justify-content-between align-items-center">
-                    <div class="col-md-9 col-lg-9">
-                        <h3 class="">Lites des documents archivés</h3>
-                        <p class="text-sm">
-                            Gérer des documents archivés ...
-                        </p>
-                    </div>
-                    <div class="col-md-3 col-lg-3 text-end">
-                        <button
-                            type="button"
-                            class="btn btn-lg btn-dark btn-primary text-white"
-                            data-bs-toggle="modal"
-                            data-action = "create"
-                            id="add-button"
-                            data-bs-target="#create-document-modal"
-                        >
-                          <i class="ri-file-upload-fill"></i> Ajouter
-                        </button>
-                    </div>
-                </div>
-                <div class="row">
-                    {% if messages %}
-                        {% for msg in messages %}
-                            <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show">
-                                {{ msg }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-                <form action="" class="row mt-3" id="document-search-form">
-                    <div class="col-md-12 col-lg-12">
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Rechercher un document" name="searchFilter" id="searchFilter">
-                            <button class="btn btn-outline-primary" type="button" id="clearSearch">
-                                <i class="bx bx-x"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+  {% include 'documents_blocs/docs_bloc.html' with filters=filters %}
+{% endblock %}
 
-            <div class="container-flex" id="document-table-container">
-            </div>
-        </div>
-        <!-- create or update document -->
-        <div class="modal fade" id="create-document-modal" tabindex="-1" aria-labelledby="exampleModalLabel">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content p-0">
-                    <form id="documentForm">
-                        {% csrf_token %}
-                        <div class="modal-header">
-                            <h5 class="modal-title">Ajouter un nouveau document</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="document-form-content">Chargement...</div>
-                            <div class="alert alert-success" style="display: none;" id="form-success"></div>
-                            <div class="alert alert-danger" style="display: none;" id="form-error"></div>
-                            <input type="hidden" value="" name="id" id="update-id">
-                        </div>
-                        <div class="modal-footer flex-row-reverse">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                            <button type="submit" id="save-btn" class="btn">...</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock content %}
-{% block extrajs %}
-    <script src="{% static 'assets/js/documents.js' %}"></script>
+{% block extra_js %}
+    <script src="{% static 'js/documents-crud.js' %}"></script>
 {% endblock %}

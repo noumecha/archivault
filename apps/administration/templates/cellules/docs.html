@@ -1,0 +1,11 @@
+{% extends 'cellules/manage_base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+  {% include 'documents_blocs/docs_bloc.html' %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/documents-crud.js' %}"></script>
+{% endblock %}

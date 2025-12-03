@@ -57,6 +57,35 @@ class ThemeListView(BaseCRUDView):
     fields = ["libelle","description_theme"]
     delete_url = "themes_delete"
 
+class BailleursView(BaseCRUDView):
+    model = Bailleurs
+    form_class = BailleursFrom
+    list_route = 'bailleurs_list'
+    list_template = 'bailleurs_list.html'
+    context_object_name = 'bailleurs',
+    search_fields = ["abrevation","libelle","description"]
+    filters = []
+    headers = ["Abrevation","Libelle"]
+    fields = ["abrevation","libelle"]
+    delete_url = "bailleurs_delete"
+    object_name = 'bailleur'
+
+class AvenantsView(BaseCRUDView):
+    model = Avenants
+    form_class = AvenantsForm
+    list_route = 'avenants_list'
+    list_template = 'avenants_list.html'
+    context_object_name = 'avenants',
+    search_fields = ["nom","prenom"]
+    filters = [
+        ('bailleur', Bailleurs),
+    ]
+    headers = ["Nom","Prenom","Bailleur"]
+    fields = ["nom","prenom","bailleur"]
+    delete_url = "avenants_delete"
+    object_name = 'avenant'
+
+
 class TypeDocumentView(BaseCRUDView):
     model = TypeDocument
     form_class = TypeDocumentsForm
@@ -74,11 +103,9 @@ class DocumentView(BaseCRUDView):
     form_class = DocumentsForm
     list_route = 'documents_list'
     list_template = 'documents_list.html'
-    partial_template = 'partials/documents_partial.html'
     context_object_name = 'documents'
     search_fields = [
         "titre",
-        "fichier",
         "type_document",
         "sous_type",
         "theme",
@@ -90,6 +117,17 @@ class DocumentView(BaseCRUDView):
         "metadonnees",
         "cree_par",
     ]
+    filters = [
+        ('type_document', TypeDocument),
+        ('sous_type', SousTypeDocument),
+        ('etat', EtatDocument),
+        ('profil', ProfilDoc),
+        ('theme', Theme)
+    ]
+    headers = ["Titre","Theme","Type","Etat"]
+    fields = ["titre","theme","type_document","etat"]
+    delete_url = "documents_delete"
+    object_name = 'document'
 
 # managing doucments
 class DocumentCreateMultipleView(ListView):
