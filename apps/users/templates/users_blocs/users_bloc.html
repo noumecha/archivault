@@ -28,6 +28,11 @@
             </div>
         </div>
         <form action="" class="row d-flex mt-3" id="utilisateur-search-form">
+            {# Si le template est inclus depuis une page de gestion (ex: gestion d'une cellule), #}
+            {# on ajoute un champ caché pour forcer le filtrage sur l'objet parent (la cellule). #}
+            {% if object %}
+                <input type="hidden" name="cellule" value="{{ object.id }}">
+            {% endif %}
             <div class="col-md-12 col-lg-12">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Rechercher un utilisateur" name="search" id="search">

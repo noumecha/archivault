@@ -3,12 +3,123 @@
 {% block page_title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-  <div class="card">
-      <div class="card-header">
-          <h3 class="mb-0">Statistiques de : {{ object.nom }}</h3>
-      </div>
-      <div class="card-body">
-          <p>Statistiques</p>
-      </div>
-  </div>
+<div class="card">
+    <div class="card-header">
+        <h3 class="mb-0">Statistiques de : {{ object.nom }}</h3>
+    </div>
+    <div class="card-body">
+        <p>Statistiques</p>
+    </div>
+</div>
+
+<div class="row mt-3">
+    {% for card in stats_cards %}
+    <div class="{{ col_class }} col-md-6 col-sm-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div class="card-info">
+                        <p class="card-text">{{ card.label }}</p>
+                        <h4 class="mb-0">{{ card.value }}</h4>
+                    </div>
+                    <div class="card-icon">
+                        <span class="badge {{ card.color_class }} rounded-pill p-2">
+                            <i class="{{ card.icon }} ri-2x"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+        <p class="text-muted">Aucune statistique à afficher.</p>
+    {% endfor %}
+</div>
+
+<div class="row">
+    <!-- Graphique: Répartition par état -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Répartition par statut</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste: Documents Récents -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Derniers Documents Ajoutés</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for doc in stats.recent_documents %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ doc.titre }}
+                            <small>{{ doc.Date_creation|date:"d/m/Y" }}</small>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Aucun document trouvé.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block vendor_js %}
+    <!-- Inclure Chart.js si ce n'est pas déjà fait dans votre base.html -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block page_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const ctx = document.getElementById('statusChart').getContext('2d');
+
+  // Données passées depuis la vue Django
+  const labels = {{ chart_status_labels|safe }};
+  const data = {{ chart_status_data|safe }};
+
+  new Chart(ctx, {
+    type: 'doughnut', // ou 'pie'
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Documents par Statut',
+        data: data,
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.7)',
+          'rgba(54, 162, 235, 0.7)',
+          'rgba(255, 206, 86, 0.7)',
+          'rgba(75, 192, 192, 0.7)',
+          'rgba(153, 102, 255, 0.7)',
+        ],
+        borderColor: [
+          'rgba(255, 99, 132, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+      }
+    }
+  });
+});
+</script>
 {% endblock %}

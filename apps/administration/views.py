@@ -1,5 +1,5 @@
-from apps.documents.models import Bailleurs, EtatDocument, ProfilDoc, SousTypeDocument, Theme, TypeDocument
-from apps.users.models import RoleUtilisateur
+from apps.documents.models import Avenants, Bailleurs, Document, EtatDocument, ProfilDoc, SousTypeDocument, Theme, TypeDocument
+from apps.users.models import RoleUtilisateur, Utilisateur
 from .models import *
 from .forms import *
 from config.views import BaseCRUDView
@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect, render
 from django.contrib import messages
 from config.utils.utils import generates_filters
+from django.db.models import Count
 
 class CelluleView(BaseCRUDView):
     model = Cellule
@@ -30,10 +31,19 @@ class CelluleView(BaseCRUDView):
     ]
     manage_template = 'cellules/manage_base.html'
 
+    def get_manage_menu(self, obj):
+        menu = super().get_manage_menu(obj)
+        if not obj.accepte_bailleurs:
+            # Si la cellule n'accepte pas les bailleurs, on retire les sections correspondantes
+            menu = [item for item in menu if item['section'] not in ['bailleurs', 'avenants']]
+        return menu
+
+    # gérer les types de documents
     def manage_docstypes(self, request, context, obj):
         template = self.get_manage_template("docstypes")
         return render(request, template, context)
 
+    # gerer les documents
     def manage_docs(self, request, context, obj):
         template = self.get_manage_template("docs")
         filters = [
@@ -41,15 +51,18 @@ class CelluleView(BaseCRUDView):
             ('sous_type', SousTypeDocument),
             ('etat', EtatDocument),
             ('profil_document', ProfilDoc, 'Profil du Document'),
-            ('theme', Theme)
+            ('theme', Theme),
+            ('bailleur', Bailleurs),
         ]
         context['filters'] = generates_filters(filters)
         return render(request, template, context)
 
+    # gérer les bailleurs
     def manage_bailleurs(self, request, context, obj):
         template = self.get_manage_template("bailleurs")
         return render(request, template, context)
 
+    # gérer les avenants
     def manage_avenants(self, request, context, obj):
         template = self.get_manage_template("avenants")
         filters = [
@@ -58,20 +71,59 @@ class CelluleView(BaseCRUDView):
         context['filters'] = generates_filters(filters)
         return render(request, template, context)
 
+    # gérer les utilisateurs
     def manage_users(self, request, context, obj):
         # Logiques personnalisées pour la section membres
+        # Le filtre sur la cellule est désormais implicite, on ne garde que les autres filtres.
         filters = [
-            ('cellule', Cellule, 'Unité de traitement'),
             ('role', RoleUtilisateur),
         ]
         template = self.get_manage_template("users")
         context['filters'] = generates_filters(filters)
         return render(request, template, context)
 
+    # gérer les statistiques
     def manage_stats(self, request, context, obj):
-        # Logiques personnalisées pour la section membres
-        # context["membres"] = obj.membres.all() # Exemple
         template = self.get_manage_template("stats")
+
+        # 1. Récupérer tous les documents de la cellule
+        documents = Document.objects.filter(cellule=obj)
+
+        # 2. Créer une liste dynamique de cartes de statistiques
+        stats_cards = [
+            {"label": "Documents", "value": documents.count(), "icon": "ri-folders-line", "color_class": "bg-label-primary"},
+            {"label": "Utilisateurs", "value": Utilisateur.objects.filter(cellule=obj).count(), "icon": "ri-user-2-line", "color_class": "bg-label-info"},
+        ]
+
+        # Ajouter les bailleurs et avenants seulement si la cellule les accepte
+        if obj.accepte_bailleurs:
+            stats_cards.append({"label": "Bailleurs", "value": Bailleurs.objects.filter(cellule=obj).count(), "icon": "ri-wallet-2-fill", "color_class": "bg-label-success"})
+            stats_cards.append({"label": "Avenants", "value": Avenants.objects.filter(bailleur__cellule=obj).count(), "icon": "ri-bill-fill", "color_class": "bg-label-warning"})
+
+        # 3. Calculer les autres statistiques pour les graphiques et listes
+        docs_by_status = documents.values('etat').annotate(count=Count('etat')).order_by('-count')
+        stats = {
+            'recent_documents': documents.order_by('-Date_creation')[:5]
+        }
+
+        # 4. Préparer les données pour les graphiques (Chart.js)
+        status_labels = [item['etat'] for item in docs_by_status]
+        status_data = [item['count'] for item in docs_by_status]
+
+        # 5. Déterminer la classe de colonne pour un affichage responsive
+        num_cards = len(stats_cards)
+        if num_cards > 0 and 12 % num_cards == 0:
+            col_class = f"col-lg-{12 // num_cards}"
+        else:
+            col_class = "col-lg-3" # Valeur par défaut
+
+        # 6. Ajouter les statistiques au contexte
+        context['stats_cards'] = stats_cards
+        context['col_class'] = col_class
+        context['stats'] = stats
+        context['chart_status_labels'] = status_labels
+        context['chart_status_data'] = status_data
+
         return render(request, template, context)
 
 class DivisionView(BaseCRUDView):

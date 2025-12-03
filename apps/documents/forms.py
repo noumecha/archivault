@@ -267,6 +267,28 @@ class DocumentsForm(forms.ModelForm):
             ),
         )
 
+    def clean(self):
+        type_doc = self.cleaned_data.get("type_document")
+
+        if type_doc.libelle == "convention":
+            if not self.cleaned_data.get("bailleur"):
+                raise forms.ValidationError({"bailleur": "Un bailleur est requis pour une convention."})
+
+        if type_doc.libelle == "aide-memoire":
+            if not self.cleaned_data.get("parent"):
+                raise forms.ValidationError({"parent": "Un aide-mémoire doit être rattaché à une convention."})
+
+            if self.cleaned_data["parent"].type_document.libelle != "convention":
+                raise forms.ValidationError("L’aide-mémoire doit être attaché à une convention.")
+
+        if type_doc.libelle == "rapport":
+            if not self.cleaned_data.get("parent"):
+                raise forms.ValidationError({"parent": "Un rapport doit être lié à un aide-mémoire."})
+
+            if self.cleaned_data["parent"].type_document.libelle != "aide-memoire":
+                raise forms.ValidationError("Un rapport doit dépendre d'un aide-mémoire.")
+
+
 class VersionDocumentForm(forms.ModelForm):
     class Meta:
         model = VersionDocument
@@ -312,12 +334,14 @@ class BailleursFrom(forms.ModelForm):
             "abrevation",
             "libelle",
             "description",
+            "cellule",
         )
 
         labels = {
             "abrevation" : "Abréviation du bailleur",
             "libelle" : "Nom du bailleur",
-            "description" : "Description du bailleur"
+            "description" : "Description du bailleur",
+            "cellule" : "Unité de traitement",
         }
 
         widgets = {
@@ -331,6 +355,7 @@ class BailleursFrom(forms.ModelForm):
                 Row(
                     Column(FloatingField("abrevation"), css_class='form-group col-md-12 mb-0'),
                     Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("cellule"), css_class="form-group col-md-6 mb-0 mt-1"),
                     Column(FloatingField("description"), css_class="form-group col-md-12 mb-2"),
                     css_class='form-row p-3 pt-0'
                 ),

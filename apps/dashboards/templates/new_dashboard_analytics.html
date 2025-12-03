@@ -27,7 +27,7 @@
     <div class="card">
       <div class="card-body text-nowrap">
         <h5 class="card-title mb-0 flex-wrap text-nowrap">
-          Bienvenue {{ request.user.get_full_name|default:request.user.username }} 🎉
+          Ravie de vous revoir  {{ request.user.get_full_name|default:request.user.username }} 🎉
         </h5>
         <p class="mb-2">Résumé global du système</p>
         <h4 class="text-primary mb-0">{{ total_docs }}</h4>
@@ -99,20 +99,21 @@
               </div>
             </div>
           </div>
-          <!--div class="col-md-3 col-6">
-            <div class="d-flex align-items-center">
-              <div class="avatar">
-                <div class="avatar-initial bg-info rounded shadow-xs">
-                  <i class="ri-user-line ri-24px"></i>
-                </div>
-              </div>
-              <div class="ms-3">
-                <p class="mb-0">Utilisateurs</p>
-                <h5 class="mb-0">{{ utilisateurs }}</h5>
-              </div>
-            </div>
-          </div-->
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphique annuel des documents -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <div>
+          <h5 class="card-title mb-1">Activité annuelle</h5>
+          <p class="text-muted mb-0">Nombre de documents créés par mois</p>
+        </div>
+      </div>
+      <div class="card-body" id="docsByMonthChart">
       </div>
     </div>
   </div>
@@ -121,13 +122,13 @@
   <div class="col-xl-4 col-md-6">
     <div class="card h-100">
       <div class="card-header">
-        <h5 class="mb-1">Répartition par cellule</h5>
+        <h5 class="mb-1">Répartition par unité de gestion</h5>
       </div>
       <div class="card-body pt-lg-2">
         <ul class="list-group list-group-flush">
           {% for c in by_cellule %}
           <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ c.nom|default:"Non défini" }}
+            {{ c.cellule__nom|default:"Non défini" }}
             <span class="badge bg-primary rounded-pill">{{ c.total }}</span>
           </li>
           {% empty %}
@@ -175,4 +176,56 @@
   </div>
 
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Couleurs de la charte graphique
+  const cardColor = 'rgba(var(--bs-card-color-rgb), 1)';
+  const headingColor = 'rgba(var(--bs-heading-color-rgb), 1)';
+  const axisColor = 'rgba(var(--bs-secondary-color-rgb), 1)';
+  const primaryColor = 'rgba(var(--bs-primary-rgb), 1)';
+
+  // Données du graphique (passées depuis la vue)
+  const chartLabels = JSON.parse('{{ docs_by_month_labels|safe }}');
+  const chartData = JSON.parse('{{ docs_by_month_data|safe }}');
+
+  const docsByMonthChartEl = document.querySelector('#docsByMonthChart');
+  if (docsByMonthChartEl) {
+    const docsByMonthChart = new ApexCharts(docsByMonthChartEl, {
+      chart: {
+        height: 350,
+        type: 'line',
+        toolbar: { show: false }
+      },
+      series: [{
+        name: 'Documents',
+        data: chartData
+      }],
+      xaxis: {
+        categories: chartLabels,
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        labels: { style: { colors: axisColor, fontSize: '13px' } }
+      },
+      yaxis: {
+        labels: {
+          style: { colors: axisColor, fontSize: '13px' },
+          formatter: function (val) {
+            return parseInt(val); // Assure que les nombres sont des entiers
+          }
+        }
+      },
+      colors: [primaryColor],
+      stroke: { curve: 'smooth', width: 3 },
+      grid: {
+        borderColor: axisColor,
+        strokeDashArray: 3,
+        padding: { top: -20, bottom: -8, left: 10 }
+      },
+      tooltip: { y: { formatter: (val) => `${val} documents` } },
+      dataLabels: { enabled: false },
+    });
+    docsByMonthChart.render();
+  }
+});
+</script>
 {% endblock %}

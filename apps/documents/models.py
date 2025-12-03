@@ -44,10 +44,10 @@ class SousTypeDocument(models.Model):
         return f"(Sous Type de document) : {self.libelle}"
 
 class EtatDocument(models.TextChoices):
-    EN_ATTENTE = 'attente', 'En attente'
-    EN_TRAITEMENT = 'traitement', 'En traitement'
-    VALIDE = 'valide', 'Validé'
-    ARCHIVE = 'archive', 'Archivé'
+    EN_ATTENTE = 'en attente',
+    EN_TRAITEMENT = 'en traitement',
+    VALIDE = 'valide',
+    ARCHIVE = 'archive',
 
 class NiveauAccesDocument(models.Model):
     niveau = models.CharField(max_length=100, unique=True)  # Ex: 'confidentiel', 'restreint'
@@ -68,6 +68,8 @@ class Bailleurs(models.Model):
     abrevation = models.CharField(max_length=255, unique=True)
     libelle = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
+    # a bailleur belongs to a cellule :
+    cellule = models.ForeignKey(Cellule, on_delete=models.CASCADE, null=True, blank=True)
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
@@ -124,7 +126,8 @@ class Document(models.Model):
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.titre
+        name = f"({self.type_document.libelle}) : {self.titre}" if self.type_document else f"(Aucun type de document) : {self.titre}"
+        return name
 
 class VersionDocument(models.Model):
     # generic

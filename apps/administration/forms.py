@@ -12,13 +12,15 @@ class CellulesForm(forms.ModelForm):
         fields = (
             "nom",
             "description_cellule",
-            "division"
+            "division",
+            "accepte_bailleurs",
         )
 
         labels = {
             "nom" : "Libellé unité de traitement",
             "description_cellule" : "Description de l'unité de traitement",
-            "division" : "Division correspondante"
+            "division" : "Division correspondante",
+            "accepte_bailleurs": "Accepter les bailleurs"
         }
 
         widgets = {
@@ -33,6 +35,7 @@ class CellulesForm(forms.ModelForm):
                 Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
                 Column(FloatingField("division"), css_class='form-group col-md-12 mb-0'),
                 Column(FloatingField("description_cellule"), css_class='form-group col-md-12 mb-0'),
+                Column(Field('accepte_bailleurs'), css_class='form-group col-md-6 mb-0',),
                 css_class='form-row p-3 pt-0'
             ),
         )

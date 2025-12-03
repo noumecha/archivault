@@ -50,6 +50,13 @@ class Cellule(models.Model):
     nom = models.CharField(max_length=255)
     description = models.TextField(blank=True, name='description_cellule')
     division = models.ForeignKey(Division, on_delete=models.CASCADE, related_name='cellules')
+    # avoir ou non des bailleurs
+    accepte_bailleurs = models.BooleanField(
+        default=False,
+        help_text=(
+            "Designe la possibilité pour une cellule de gérer des bailleurs."
+        ),
+    )
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
@@ -60,4 +67,4 @@ class Cellule(models.Model):
         ]
 
     def __str__(self):
-        return f"(Cellule) {self.nom}"
+        return f"(Unité de traitement) : {self.nom}"

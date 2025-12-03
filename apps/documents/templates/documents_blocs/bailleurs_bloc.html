@@ -28,6 +28,9 @@
           </div>
         </div>
         <form action="" class="row mt-3" id="bailleur-search-form">
+            {% if object %}
+              <input type="hidden" name="cellule" value="{{ object.id }}">
+            {% endif %}
             <div class="col-md-12 col-lg-12">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="Rechercher un bailleur" name="search" id="search">

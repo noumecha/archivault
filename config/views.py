@@ -232,8 +232,11 @@ class BaseCRUDView(TemplateView):
             "object": obj,
         }
         context = TemplateLayout().init(context)
-        context["manage_menu"] = getattr(self, "manage_menu", [])
+        context["manage_menu"] = self.get_manage_menu(obj)
         return render(request, self.manage_template, context)
+
+    def get_manage_menu(self, obj):
+        return getattr(self, "manage_menu", [])
 
     def get_manage_template(self, section):
         model_name = self.model.__name__.lower()
@@ -249,7 +252,7 @@ class BaseCRUDView(TemplateView):
             "page_title": f"{obj} – {section.capitalize()}",
         }
         context = TemplateLayout().init(context)
-        context["manage_menu"] = getattr(self, "manage_menu", [])
+        context["manage_menu"] = self.get_manage_menu(obj)
         handler_name = f"manage_{section}"
         if hasattr(self, handler_name):
             return getattr(self, handler_name)(request, context, obj)
