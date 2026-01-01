@@ -31,6 +31,19 @@ class CelluleView(BaseCRUDView):
     ]
     manage_template = 'cellules/manage_base.html'
 
+    def get_form_kwargs(self, request, **kwargs):
+        form_kwargs = super().get_form_kwargs(request, **kwargs)
+
+        # Si on est dans un manage contextuel
+        cellule_id = kwargs.get("pk")
+        section = kwargs.get("section")
+        print("section = ", section)
+
+        if cellule_id and section == "docstypes":
+            form_kwargs["cellule"] = get_object_or_404(Cellule, pk=cellule_id)
+
+        return form_kwargs
+
     def get_manage_menu(self, obj):
         menu = super().get_manage_menu(obj)
         if not obj.accepte_bailleurs:

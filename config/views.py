@@ -72,9 +72,15 @@ class BaseCRUDView(TemplateView):
             queryset = queryset.filter(q_objects)
         return queryset.order_by('-Date_creation')[:100]
 
-    def get_form_view(self, request, pk=None):
+    def get_form_kwargs(self, request, **kwargs):
+        return {}
+
+    def get_form_view(self, request, pk=None, **kwargs):
         instance = get_object_or_404(self.model, pk=pk) if pk else None
-        form = self.form_class(instance=instance)
+        form = self.form_class(
+            instance=instance,
+            **self.get_form_kwargs(request, **kwargs)
+        )
         formsets = {
             name: formset_class(instance=instance)
             for name, formset_class in getattr(self, "formsets_classes", {}).items()

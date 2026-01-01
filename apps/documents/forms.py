@@ -55,8 +55,14 @@ class TypeDocumentsForm(forms.ModelForm):
 
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, cellule=None, **kwargs):
         super(TypeDocumentsForm, self).__init__(*args, **kwargs)
+        # management :
+        if cellule:
+            print("Initialising TypeDocumentsForm with cellule:", cellule)
+            self.fields["cellule"].initial = cellule
+            self.fields["cellule"].disabled = True
+            self._forced_cellule = cellule
         self.helper =  FormHelper()
         self.helper.layout = Layout(
             Row(
@@ -67,6 +73,16 @@ class TypeDocumentsForm(forms.ModelForm):
                 css_class='form-row p-3 pt-0'
             ),
         )
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+
+        if hasattr(self, "_forced_cellule"):
+            obj.cellule = self._forced_cellule
+
+        if commit:
+            obj.save()
+        return obj
 
 # form for theme
 class ThemesForm(forms.ModelForm):
