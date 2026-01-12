@@ -49,7 +49,7 @@ class EtatDocument(models.TextChoices):
     VALIDE = 'valide',
     ARCHIVE = 'archive',
 
-class NiveauAccesDocument(models.Model):
+class NiveauAccesDocument(models.Model): # to change later as enum textchoices
     niveau = models.CharField(max_length=100, unique=True)  # Ex: 'confidentiel', 'restreint'
     description = models.TextField(blank=True, name='description_niveauaccess')
     # timestamp

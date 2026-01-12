@@ -151,31 +151,25 @@ SIMPLE_JWT = {
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DB_ENGINE   = os.getenv('DB_ENGINE'   , None)
-DB_USERNAME = os.getenv('DB_USERNAME' , None)
-DB_PASS     = os.getenv('DB_PASS'     , None)
-DB_HOST     = os.getenv('DB_HOST'     , None)
-DB_PORT     = os.getenv('DB_PORT'     , None)
-DB_NAME     = os.getenv('DB_NAME'     , None)
+MYSQL_USER = os.getenv('MYSQL_USER' , None)
+MYSQL_PASSWORD     = os.getenv('MYSQL_PASSWORD', None)
+MYSQL_HOST     = os.getenv('MYSQL_HOST', None)
+MYSQL_PORT     = os.getenv('MYSQL_PORT', None)
+MYSQL_DATABASE     = os.getenv('MYSQL_DATABASE', None)
 
-if DB_ENGINE and DB_NAME and DB_USERNAME:
-    DATABASES = {
-        'default': {
-            'ENGINE'  : 'django.db.backends.' + DB_ENGINE,
-            'NAME'    : DB_NAME,
-            'USER'    : DB_USERNAME,
-            'PASSWORD': DB_PASS,
-            'HOST'    : DB_HOST,
-            'PORT'    : DB_PORT,
-        },
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'db.sqlite3',
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': MYSQL_DATABASE,
+        'USER': MYSQL_USER,
+        'PASSWORD': MYSQL_PASSWORD,
+        'HOST': MYSQL_HOST,
+        'PORT': MYSQL_PORT,
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
         }
     }
+}
 
 
 REST_FRAMEWORK = {
