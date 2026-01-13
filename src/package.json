@@ -45,7 +45,7 @@
     "@popperjs/core": "2.11.8",
     "apexcharts-clevision": "3.28.5",
     "bootstrap": "5.3.3",
-    "highlight.js": "11.8.0",
+    "highlight.js": "^11.11.1",
     "jquery": "3.7.1",
     "masonry-layout": "4.2.2",
     "node-waves": "0.7.6",
