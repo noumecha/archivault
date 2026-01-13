@@ -1,0 +1,10 @@
+services:
+  web:
+    ports:
+      - '8000:8000'
+    environment:
+      DJANGO_ENVIRONMENT: production
+      DEBUG: 'False'
+
+  db:
+    ports: []

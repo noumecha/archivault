@@ -1,0 +1,24 @@
+services:
+  web:
+    ports:
+      - '8000:8000'
+    volumes:
+      - .:/app
+    environment:
+      DJANGO_ENVIRONMENT: development
+      DEBUG: 'True'
+
+  db:
+    ports:
+      - '3307:3306'
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: archivault_phpmyadmin
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - '8080:80'
