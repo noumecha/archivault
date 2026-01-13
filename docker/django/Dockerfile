@@ -15,7 +15,6 @@ COPY src/ .
 # build prod (génère assets/vendor)
 RUN npm run build
 
-
 ##################################
 # 2️⃣ STAGE BACKEND (Django)
 ##################################
