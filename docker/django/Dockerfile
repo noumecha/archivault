@@ -1,3 +1,24 @@
+##################################
+# 1️⃣ STAGE FRONTEND (Node)
+##################################
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+# copier uniquement les fichiers nécessaires
+COPY src/package*.json ./
+RUN npm install
+
+# copier le reste du front
+COPY src/ .
+
+# build prod (génère assets/vendor)
+RUN npm run build
+
+
+##################################
+# 2️⃣ STAGE BACKEND (Django)
+##################################
 FROM python:3.11-slim
 
 # variables d'env
@@ -22,6 +43,9 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # copier le code de l'application
 COPY . .
+
+# 🔥 copier les assets buildés par Node
+COPY --from=frontend-builder /frontend/assets/vendor /app/src/assets/vendor
 
 # script d'entrée
 COPY docker/django/entrypoint.sh /entrypoint.sh

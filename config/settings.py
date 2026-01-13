@@ -75,8 +75,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    # autorelaod browser dev
-    "django_browser_reload",
     # project apps
     'apps.documents',
     'apps.circulation',
@@ -102,10 +100,16 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # autorelaod browser dev
-    'django_browser_reload.middleware.BrowserReloadMiddleware',
+    # user Jwt middleware
     'apps.users.middleware.JWTAuthMiddleware',
 ]
+
+# disable autoreload in production left it only on development
+if ENVIRONMENT == "development":
+    # autorelaod browser dev
+    INSTALLED_APPS += ["django_browser_reload"]
+    # autorelaod browser dev
+    MIDDLEWARE += ["django_browser_reload.middleware.BrowserReloadMiddleware"]
 
 ROOT_URLCONF = "config.urls"
 
@@ -246,8 +250,12 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # For cookies: you probably want to set this in production
-SESSION_COOKIE_SECURE = True    # require HTTPS in prod
-CSRF_COOKIE_SECURE = True
+if ENVIRONMENT == "production":
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+else:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 CSRF_TRUSTED_ORIGINS = ['https://your-domain.com']  # adjust
 AUTH_USER_MODEL = 'users.Utilisateur'
 LOGIN_URL = 'login'
