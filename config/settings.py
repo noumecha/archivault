@@ -256,7 +256,7 @@ if ENVIRONMENT == "production":
 else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
-CSRF_TRUSTED_ORIGINS = ['https://your-domain.com','http://localhost:8000','http://127.0.0.1:8000']  # adjust
+CSRF_TRUSTED_ORIGINS = ['https://your-domain.com','http://localhost:8000','http://127.0.0.1:8000','http://148.230.123.18:8000/']  # adjust
 AUTH_USER_MODEL = 'users.Utilisateur'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
