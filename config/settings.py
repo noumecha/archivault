@@ -127,6 +127,7 @@ TEMPLATES = [
                 "config.context_processors.my_setting",
                 "config.context_processors.environment",
                 "config.context_processors.layout_context",
+                "config.context_processors.sidebar_context",
             ],
             # templates tags librairies
             "libraries": {

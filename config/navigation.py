@@ -1,0 +1,126 @@
+SIDEBAR_MENU = [
+    {
+        "title": "Accueil",
+        "icon": "ri-home-smile-line",
+        "url_name": "index",
+        "roles": ["superadmin", "admin", "superviseur", "gestionnaire", "responsable"],
+        "url_prefix": "/dashboard/",
+    },
+
+    {
+        "header": "Gestion des documents",
+        "roles": ["superadmin", "admin", "superviseur", "gestionnaire", "responsable"],
+    },
+    {
+        "title": "Ajouter",
+        "icon": "ri-sticky-note-add-line",
+        "url_prefix": "/upload/",
+        "url_name": "upload_document",
+        "roles": ["superadmin", "admin", "superviseur", "gestionnaire", "responsable"],
+    },
+    {
+        "title": "Documents",
+        "icon": "ri-file-list-3-fill",
+        "url_prefix": "/documents/",
+        "roles": ["superadmin", "admin", "superviseur", "gestionnaire", "responsable"],
+        "children": [
+            {
+                "title": "Listes",
+                "url_name": "list_document",
+                "url_prefix": "/documents/list/",
+                "roles": ["superadmin", "admin", "superviseur", "gestionnaire", "responsable"]
+            },
+            {
+                "title": "Types",
+                "url_name": "typedocument_list",
+                "url_prefix": "/typedocument/typedocuments/",
+                "roles": ["superadmin", "admin", "superviseur"]
+            },
+            {
+                "title": "Sous Types",
+                "url_name": "soustypedocument_list",
+                "url_prefix": "/soustypedocument/soustypedocuments/",
+                "roles": ["superadmin", "admin", "superviseur"]
+            },
+            {
+                "title": "Thèmes",
+                "url_name": "themes_list",
+                "url_prefix": "/theme/themes/",
+                "roles": ["superadmin", "admin", "superviseur"]
+            },
+            {
+                "title": "Niveau d'accès",
+                "url_name": "niveauaccess_list",
+                "url_prefix": "/niveauaccess/niveauaccesss/",
+                "roles": ["superadmin", "admin", "superviseur"]
+            },
+        ],
+    },
+
+    {
+        "header": "Utilisateurs & Rôles",
+        "roles": ["superadmin", "admin", "superviseur", "gestionnaire", "responsable"],
+    },
+    {
+        "title": "Profil",
+        "icon": "ri-profile-line",
+        "url_name": "user_profile",
+        "url_prefix": "/profile/",
+        "roles": ["superadmin", "admin", "superviseur", "gestionnaire", "responsable"],
+    },
+    {
+        "title": "Utilisateurs",
+        "icon": "ri-group-line",
+        "roles": ["superadmin", "admin", "superviseur"],
+        "children": [
+            {"title": "Listes", "url_name": "utilisateur_list", "url_prefix": "/utilisateur/"},
+        ],
+    },
+
+    {
+        "header": "Éléments Administratifs",
+        "roles": ["superadmin", "admin", "superviseur"],
+    },
+    {
+        "title": "Unité de traitement",
+        "icon": "ri-building-line",
+        "url_name": "cellule_list",
+        "url_prefix": "/cellule/",
+        "roles": ["superadmin", "admin"],
+    },
+    {
+        "title": "Divisions",
+        "icon": "ri-building-2-line",
+        "url_name": "division_list",
+        "url_prefix": "/division/",
+        "roles": ["superadmin", "admin"],
+    },
+    {
+        "title": "Directions générales",
+        "icon": "ri-building-2-line",
+        "url_prefix": "/directiongenerale/",
+        "url_name": "directiongenerale_list",
+        "roles": ["superadmin", "admin"],
+    },
+    {
+        "title": "Ministères",
+        "icon": "ri-government-line",
+        "url_name": "ministere_list",
+        "url_prefix": "/ministere/",
+        "roles": ["superadmin", "admin"],
+    },
+    {
+        "title": "Bailleurs",
+        "icon": "ri-wallet-2-fill me-1",
+        "url_name": "bailleurs_list",
+        "url_prefix": "/bailleur/bailleurs/",
+        "roles": ["superadmin", "admin", "superviseur"],
+    },
+    {
+        "title": "Avenants",
+        "icon": "ri-bill-fill me-1",
+        "url_name": "avenants_list",
+        "url_prefix": "/avenant/avenants/",
+        "roles": ["superadmin", "admin", "superviseur"],
+    },
+]
