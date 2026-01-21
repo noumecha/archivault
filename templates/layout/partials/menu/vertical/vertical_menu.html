@@ -87,7 +87,6 @@
         <div class="text-truncate {% if '/profile/' in request.path %}text-white{% endif %}" data-i18n="utilisateurs">Profil</div>
       </a>
     </li>
-    {% if request.user.role == 'administrateur' %}
     <li class="menu-item {% if '/form/' in request.path %}active open{% endif %}">
       <a href="javascript:void(0)" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons ri-group-line"></i>
@@ -101,10 +100,8 @@
         </li>
       </ul>
     </li>
-    {% endif %}
 
     <!-- Administration menu -->
-    {% if request.user.role == 'administrateur' %}
     <li class="menu-header fw-medium mt-3">
       <span class="menu-header-text">Eléments Administratifs</span>
     </li>
@@ -132,6 +129,5 @@
         <div class="text-truncate" data-i18n="cellules">Ministères</div>
       </a>
     </li>
-    {% endif %}
   </ul>
 </aside>

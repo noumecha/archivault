@@ -3,15 +3,15 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from apps.administration.models import Division
 
 class RoleUtilisateur(models.TextChoices):
+    SUPERADMIN = 'superadmin', 'Super Administrateur'
     ADMIN = 'administrateur', 'Administrateur'
-    SUPERVISEUR = 'superviseur', 'Superviseur'
-    AGENT = 'agent', 'Agent'
-    GESTIONNAIRE = 'gestionnaire', 'Gestionnaire'
-    RESPONSABLE = 'responsable', 'Responsable'
+    SUPERVISEUR = 'superviseur', 'Superviseur' # responsable ou directeur de la cellule
+    GESTIONNAIRE = 'gestionnaire', 'Gestionnaire' # gestionnaire de documents
+    RESPONSABLE = 'responsable', 'Responsable' # utilisateur avec des droits spécifiques
 
 # Utilisateur personnalisé
 class Utilisateur(AbstractUser):
-    role = models.CharField(max_length=255, choices=RoleUtilisateur.choices, default=RoleUtilisateur.AGENT)
+    role = models.CharField(max_length=255, choices=RoleUtilisateur.choices, default=RoleUtilisateur.RESPONSABLE)
     cellule = models.ForeignKey('administration.Cellule', on_delete=models.SET_NULL, null=True, blank=True, default=None)
     groups = models.ManyToManyField(
         Group,

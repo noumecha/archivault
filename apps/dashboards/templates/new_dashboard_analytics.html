@@ -27,11 +27,13 @@
     <div class="card">
       <div class="card-body text-nowrap">
         <h5 class="card-title mb-0 flex-wrap text-nowrap">
-          Ravie de vous revoir  {{ request.user.get_full_name|default:request.user.username }} 🎉
+          {{ dashboard_resume.title }}
         </h5>
-        <p class="mb-2">Résumé global du système</p>
+        <p class="mb-2">
+          Ravie de vous revoir {{ request.user.get_full_name|default:request.user.username }} 🎉
+        </p>
         <h4 class="text-primary mb-0">{{ total_docs }}</h4>
-        <p class="mb-2">Documents enregistrés</p>
+        <p class="mb-2">Document(s) enregistré(s)</p>
         <a href="{% url 'list_document' %}" class="btn btn-sm btn-primary">Voir les documents</a>
       </div>
       <img src="{% static 'img/illustrations/trophy.png' %}" class="position-absolute bottom-0 end-0 me-5 mb-5" width="83" alt="view sales">
@@ -43,7 +45,9 @@
   <div class="col-lg-8">
     <div class="card h-100">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <h5 class="card-title m-0 me-2">Statistiques des documents</h5>
+        <h5 class="card-title m-0 me-2">
+          {{ dashboard_resume.description }}
+        </h5>
       </div>
       <div class="card-body pt-lg-10">
         <div class="row g-6">
@@ -104,14 +108,40 @@
     </div>
   </div>
 
+  {% for item in manage_menu %}
+    <div class="col-md-4 col-sm-6">
+      <a href="{% url item.link %}" class="text-decoration-none manage-card-link">
+        <div class="card text-center h-100">
+          <div class="card-body d-flex flex-column justify-content-center">
+            <div class="avatar avatar-md-lg mx-auto mb-3">
+              <span class="avatar-initial rounded-circle bg-label-primary">
+                <i class="{{ item.icon }} ri-2x"></i>
+              </span>
+            </div>
+            <h5 class="card-title">{{ item.label }}</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+  {% endfor %}
+
   <!-- Graphique annuel des documents -->
   <div class="col-12">
     <div class="card">
-      <div class="card-header d-flex justify-content-between">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <div>
           <h5 class="card-title mb-1">Activité annuelle</h5>
-          <p class="text-muted mb-0">Nombre de documents créés par mois</p>
+          <p class="text-muted mb-0">Documents créés par mois pour l'année {{ selected_year }}</p>
         </div>
+        {% if available_years %}
+        <div class="d-flex align-items-center">
+          <select id="yearFilter" class="form-select form-select-sm" style="width: auto;">
+            {% for year in available_years %}
+            <option value="{{ year.year }}" {% if year.year == selected_year %}selected{% endif %}>{{ year.year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
       </div>
       <div class="card-body" id="docsByMonthChart">
       </div>
@@ -119,10 +149,11 @@
   </div>
 
   <!-- Documents par cellule -->
+  {% if dashboard_type == "GLOBAL" %}
   <div class="col-xl-4 col-md-6">
     <div class="card h-100">
       <div class="card-header">
-        <h5 class="mb-1">Répartition par unité de gestion</h5>
+        <h5 class="mb-1">Répartition par unité de traitement</h5>
       </div>
       <div class="card-body pt-lg-2">
         <ul class="list-group list-group-flush">
@@ -138,9 +169,10 @@
       </div>
     </div>
   </div>
+  {% endif %}
 
   <!-- Documents récents -->
-  <div class="col-xl-8 col-md-6">
+  <div class="{% if dashboard_type == 'GLOBAL' %}col-xl-8{% else %}col-xl-12{% endif %} col-md-6">
     <div class="card h-100">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="card-title m-0">Derniers documents ajoutés</h5>
@@ -210,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
         labels: {
           style: { colors: axisColor, fontSize: '13px' },
           formatter: function (val) {
-            return parseInt(val); // Assure que les nombres sont des entiers
+            return parseInt(val);
           }
         }
       },
@@ -226,6 +258,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     docsByMonthChart.render();
   }
+
+  // Gestion du filtre par année
+  document.getElementById('yearFilter')?.addEventListener('change', function() {
+    const selectedYear = this.value;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('year', selectedYear);
+    window.location.href = currentUrl.toString();
+  });
 });
 </script>
 {% endblock %}

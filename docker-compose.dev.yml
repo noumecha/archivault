@@ -7,6 +7,7 @@ services:
     environment:
       DJANGO_ENVIRONMENT: development
       DEBUG: 'True'
+    command: python manage.py runserver 0.0.0.0:8000
 
   db:
     ports:
