@@ -14,12 +14,11 @@ echo "La base de données est prête !"
 
 python manage.py migrate
 
-exec "$@"
-
-#if [ $ENV = "development" ]; then
-#  echo "Démarrage du serveur de développement Django rendez-vous sur http://localhost:8000/"
-#  python manage.py runserver 0.0.0.0:8000
-#else
-#  python manage.py collectstatic --noinput --clear
-#  exec gunicorn config.wsgi:application --bind 0.0.0.0:8000
-#fi
+if [ $ENV = "development" ]; then
+  echo "Démarrage du serveur de développement Django rendez-vous sur http://localhost:8000/"
+  exec "$@"
+# python manage.py runserver 0.0.0.0:8000
+else
+  python manage.py collectstatic --noinput --clear
+  exec gunicorn config.wsgi:application --bind 0.0.0.0:8000
+fi
