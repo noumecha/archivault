@@ -21,7 +21,8 @@ DASHBOARD_CONFIG = {
         "documents",
         "configs",
     ],
-    "ADMIN": [
+    "ADMINISTRATEUR": [
+        "system_stats",
         "cellules",
         "utilisateurs",
         "documents",
@@ -42,7 +43,7 @@ DASHBOARD_CONFIG = {
 
 DASHBOARD_TYPE_BY_ROLE = {
     "SUPERADMIN": "GLOBAL",
-    "ADMIN": "GLOBAL",
+    "ADMINISTRATEUR": "GLOBAL",
     "SUPERVISEUR": "CELLULE",
     "GESTIONNAIRE": "USER",
     "RESPONSABLE": "USER",
@@ -126,7 +127,8 @@ class DashboardsView(TemplateView):
             ]
         # counts stats
         context["dashboard_type"] = dashboard_type
-        context["total_docs"] = docs_qs.count()
+        context['total_userdocs'] = docs_qs.filter(cree_par=user).count()
+        context["total_docs"] = docs_qs.count(cellule=user.cellule) if dashboard_type == "CELLULE" else docs_qs.count()
         context["docs_valides"] = docs_qs.filter(etat=EtatDocument.VALIDE).count()
         context["docs_archives"] = docs_qs.filter(etat=EtatDocument.ARCHIVE).count()
         context["docs_entraitement"] = docs_qs.filter(etat=EtatDocument.EN_TRAITEMENT).count()

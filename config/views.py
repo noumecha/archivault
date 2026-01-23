@@ -296,3 +296,27 @@ class BaseCRUDView(TemplateView):
 
         # 🔹 Action non reconnue → comportement par défaut
         return super().dispatch(request, *args, **kwargs)
+
+# manage error : from django.shortcuts import render
+def custom_permission_denied_view(request, exception):
+    """
+    Vue 403 personnalisée avec TemplateLayout
+    """
+    context = TemplateLayout.init(request, {})
+    context["exception"] = exception
+    return render(request, "403.html", context=context, status=403)
+
+def custom_page_not_found_view(request, exception):
+    """
+    Vue 404 personnalisée avec TemplateLayout
+    """
+    context = TemplateLayout.init(request, {})
+    context["exception"] = exception
+    return render(request, "404.html", context=context, status=404)
+
+def custom_server_error_view(request):
+    """
+    Vue 500 personnalisée avec TemplateLayout
+    """
+    context = TemplateLayout.init(request, {})
+    return render(request, "500.html", context=context, status=500)

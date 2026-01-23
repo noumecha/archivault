@@ -17,6 +17,7 @@ from dal import autocomplete
 from datetime import datetime
 from django.http import JsonResponse
 from django.utils.text import slugify
+from .services.permissions import DocumentPermissionService
 
 #occupant view
 class NiveauAccesDocumentView(BaseCRUDView):
@@ -272,15 +273,31 @@ class DocumentListView(ListView):
     paginate_by = 24
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related('type_document', 'theme', 'cellule')
+        user = self.request.user
+        qs = DocumentPermissionService.get_visible_documents(user)
         q = self.request.GET.get('q')
         type_id = self.request.GET.get('type')
+        sous_type_id = self.request.GET.get('sous_type')
+        profil = self.request.GET.get('profil')
+        etat = self.request.GET.get('etat')
         theme_id = self.request.GET.get('theme')
         extension = self.request.GET.get('ext')
+        date_debut = self.request.GET.get('date_debut')
+        date_fin = self.request.GET.get('date_fin')
         if q:
             qs = qs.filter(titre__icontains=q)
         if type_id:
             qs = qs.filter(type_document_id=type_id)
+        if sous_type_id:
+            qs = qs.filter(sous_type_id=sous_type_id)
+        if profil:
+            qs = qs.filter(profil_document=profil)
+        if etat:
+            qs = qs.filter(etat=etat)
+        if date_debut:
+            qs = qs.filter(Date_creation__date__gte=date_debut)
+        if date_fin:
+            qs = qs.filter(Date_creation__date__lte=date_fin)
         if theme_id:
             qs = qs.filter(theme_id=theme_id)
         if extension:
@@ -290,12 +307,20 @@ class DocumentListView(ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['types'] = TypeDocument.objects.all()
+        ctx['sous_types'] = SousTypeDocument.objects.all()
         ctx['themes'] = Theme.objects.all()
+        ctx['profils'] = ProfilDoc.choices
+        ctx['etats'] = EtatDocument.choices
         ctx['selected_type'] = self.request.GET.get('type', '')
         ctx['selected_theme'] = self.request.GET.get('theme', '')
+        ctx['selected_profil'] = self.request.GET.get('profil', '')
+        ctx['selected_etat'] = self.request.GET.get('etat', '')
         ctx['q'] = self.request.GET.get('q', '')
         ctx['ext'] = self.request.GET.get('ext', '')
+        ctx['date_debut'] = self.request.GET.get('date_debut', '')
+        ctx['date_fin'] = self.request.GET.get('date_fin', '')
         return ctx
+
 
 class DocumentUpdateView(UpdateView):
     model = Document
@@ -303,47 +328,34 @@ class DocumentUpdateView(UpdateView):
     template_name = "edit.html"
     success_url = None
 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         layout_context = TemplateLayout.init(self, {})
         context.update(layout_context)
+
         context['document'] = self.object
+        context['can_edit'] = DocumentPermissionService.can_edit(self.request.user, self.object)
+        context['can_delete'] = DocumentPermissionService.can_delete(self.request.user, self.object)
+        context['can_download'] = DocumentPermissionService.can_download(self.request.user, self.object)
+
         return context
 
     def dispatch(self, request, *args, **kwargs):
-        """🔐 Vérifie les droits d'accès avant toute action"""
-        document = self.get_object()
+        self.object = self.get_object()
         user = request.user
 
-        # L’administrateur a tous les droits
-        if user.is_superuser or getattr(user, 'role', '') == 'admin':
-            return super().dispatch(request, *args, **kwargs)
-
-        # Gestion selon le profil du document
-        if document.profil_document == 'consultatif':
-            # Lecture seule → pas de modification
-            raise PermissionDenied("Ce document est consultatif. Vous ne pouvez pas le modifier.")
-
-        elif document.profil_document == 'imprimable':
-            # Peut seulement le télécharger → pas d’édition
-            raise PermissionDenied("Ce document est uniquement imprimable, pas modifiable.")
-
-        elif document.profil_document == 'modifiable':
-            # Peut modifier uniquement si c’est le créateur ou le responsable
-            if document.cree_par != user and document.responsable_document != user:
-                raise PermissionDenied("Vous n'avez pas la permission de modifier ce document.")
+        if not DocumentPermissionService.can_view(user, self.object):
+            raise PermissionDenied("Accès refusé.")
 
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         document = form.save(commit=False)
-        if self.request.user.is_authenticated:
-            document.modifier_par = self.request.user
+        document.modifier_par = self.request.user
         document.save()
-
         messages.success(self.request, "Document mis à jour avec succès.")
-        context = self.get_context_data(form=form)
-        return self.render_to_response(context)
+        return super().form_valid(form)
 
 class DocumentDeleteView(DeleteView):
     model = Document
@@ -351,14 +363,18 @@ class DocumentDeleteView(DeleteView):
     success_url = reverse_lazy("list_document")
 
     def dispatch(self, request, *args, **kwargs):
+        document = self.get_object()
         user = request.user
-        if not (user.is_superuser or getattr(user, 'role', '') == 'admin'):
-            raise PermissionDenied("Seul un administrateur peut supprimer des documents.")
+
+        if not DocumentPermissionService.can_delete(user, document):
+            raise PermissionDenied("Vous n'avez pas le droit de supprimer ce document.")
+
         return super().dispatch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, "Document supprimé avec succès.")
         return super().delete(request, *args, **kwargs)
+
 
 class TypeDocumentAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
@@ -375,6 +391,33 @@ class SousTypeDocumentAutocomplete(autocomplete.Select2QuerySetView):
         if self.q:
             qs = qs.filter(
                 Q(libelle__icontains=self.q) | Q(description__icontains=self.q)
+            )
+        return qs
+
+class DocumentAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Document.objects.all()
+        if self.q:
+            qs = qs.filter(
+                Q(titre__icontains=self.q)
+            )
+        return qs
+
+class BailleurAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Bailleurs.objects.all()
+        if self.q:
+            qs = qs.filter(
+                Q(libelle__icontains=self.q) | Q(abrevation__icontains=self.q)
+            )
+        return qs
+
+class AvenantAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Avenants.objects.all()
+        if self.q:
+            qs = qs.filter(
+                Q(nom__icontains=self.q) | Q(prenom__icontains=self.q)
             )
         return qs
 

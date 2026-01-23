@@ -1,9 +1,9 @@
 from django import forms
 from .models import *
 from apps.users.models import RoleUtilisateur, Utilisateur
-from crispy_bootstrap5.bootstrap5 import FloatingField
+from crispy_bootstrap5.bootstrap5 import FloatingField, Field
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Row, Column
+from crispy_forms.layout import Layout, Row, Column, Submit
 from dal import autocomplete
 
 # form for nivea d'accès
@@ -218,6 +218,7 @@ class UploadMultipleForm(forms.Form):
             )
         )
 
+# edit document form
 class DocumentsForm(forms.ModelForm):
     class Meta:
         model = Document
@@ -257,16 +258,26 @@ class DocumentsForm(forms.ModelForm):
         }
 
         widgets = {
-
+            "metadonnees" : forms.Textarea(attrs={'rows': 5, 'col': 10}),
+            #'type_document': autocomplete.ModelSelect2(url='typedocument_autocomplete'),
+            #'sous_type': autocomplete.ModelSelect2(url='soustypedocument_autocomplete'),
+            #'parent': autocomplete.ModelSelect2(url='document_autocomplete'),
+            #'bailleur': autocomplete.ModelSelect2(url='bailleur_autocomplete'),
+            #'avenant': autocomplete.ModelSelect2(url='avenant_autocomplete'),
         }
 
     def __init__(self, *args, **kwargs):
         super(DocumentsForm, self).__init__(*args, **kwargs)
+        cellule = self.instance.cellule if self.instance.pk else None
+        accepte_bailleurs = cellule and cellule.accepte_bailleurs
+        if not accepte_bailleurs:
+            self.fields.pop("bailleur")
+            self.fields.pop("avenant")
         self.helper =  FormHelper()
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("titre"), css_class='form-group col-md-12 mb-0'),
-                Column(FloatingField("fichier"), css_class="form-group col-md-12 mb-0 mt-1"),
+                Column(Field("fichier"), css_class="form-group col-md-12 mb-0 mt-1"),
                 Column(FloatingField("type_document"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("sous_type"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("theme"), css_class="form-group col-md-6 mb-0 mt-1"),
@@ -274,17 +285,38 @@ class DocumentsForm(forms.ModelForm):
                 Column(FloatingField("etat"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("niveau_acces"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("profil_document"), css_class="form-group col-md-6 mb-0 mt-1"),
-                Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-0 mt-1"),
-                Column(FloatingField("responsable_document"), css_class="form-group col-md-12 mb-2"),
-                Column(FloatingField("avenant"), css_class="form-group col-md-12 mb-2"),
-                Column(FloatingField("bailleur"), css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("responsable_document"), css_class="form-group col-md-6 mb-2"),
                 Column(FloatingField("parent"), css_class="form-group col-md-12 mb-2"),
+                Column(FloatingField("metadonnees"), css_class="form-group col-md-12 mb-0 mt-1"),
                 css_class='form-row p-3 pt-0'
-            ),
+            )
+        )
+        if accepte_bailleurs:
+            self.helper.layout.append(
+                Row(
+                    Column(FloatingField("bailleur"), css_class="col-md-6"),
+                    Column(FloatingField("avenant"), css_class="col-md-6"),
+                    css_class='form-row p-3 pt-0'
+                )
+            )
+        self.helper.layout.append(
+            Row(
+                Column(
+                    Submit("submit", "Enregistrer les modifications", css_class="btn btn-outline-primary"),
+                    css_class="form-group col-md-12 mb-0"
+                ),
+                css_class='form-row p-3 pt-0'
+            )
         )
 
     def clean(self):
-        type_doc = self.cleaned_data.get("type_document")
+        cleaned_data = super().clean()
+        type_doc = cleaned_data.get("type_document")
+        cellule = cleaned_data.get("cellule")
+
+        if cellule and not cellule.accepte_bailleurs:
+            cleaned_data["bailleur"] = None
+            cleaned_data["avenant"] = None
 
         if type_doc.libelle == "convention":
             if not self.cleaned_data.get("bailleur"):
@@ -364,18 +396,23 @@ class BailleursFrom(forms.ModelForm):
 
         }
 
-        def __init__(self, *args, **kwargs):
-            super(BailleursFrom, self).__init__(*args, **kwargs)
-            self.helper =  FormHelper()
-            self.helper.layout = Layout(
-                Row(
-                    Column(FloatingField("abrevation"), css_class='form-group col-md-12 mb-0'),
-                    Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
-                Column(FloatingField("cellule"), css_class="form-group col-md-6 mb-0 mt-1"),
-                    Column(FloatingField("description"), css_class="form-group col-md-12 mb-2"),
-                    css_class='form-row p-3 pt-0'
-                ),
+    def __init__(self, *args, **kwargs):
+        super(BailleursFrom, self).__init__(*args, **kwargs)
+        self.fields['cellule'].queryset = Cellule.objects.filter(accepte_bailleurs=True)
+        if not self.fields["cellule"].queryset.exists():
+            self.fields["cellule"].help_text = (
+                "Aucune unité de traitement n'accepte les bailleurs."
             )
+        self.helper =  FormHelper()
+        self.helper.layout = Layout(
+            Row(
+                Column(FloatingField("abrevation"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                Column(FloatingField("cellule"), css_class="form-group col-md-12 mb-0 mt-1"),
+                Column(FloatingField("description"), css_class="form-group col-md-12 mb-2"),
+                css_class='form-row p-3 pt-0'
+            ),
+        )
 
 class AvenantsForm(forms.ModelForm):
     class Meta:

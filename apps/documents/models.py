@@ -152,3 +152,21 @@ class VersionDocument(models.Model):
 
     def __str__(self):
         return self.titre
+
+class DocumentPermission(models.Model):
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='permissions')
+    utilisateur = models.ForeignKey('users.Utilisateur', on_delete=models.CASCADE, related_name='document_permissions')
+    can_view = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
+    can_download = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+    can_share = models.BooleanField(default=False)
+    # timestamp
+    Date_creation = models.DateTimeField(auto_now_add=True)
+    Date_miseajour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('document', 'utilisateur')
+
+    def __str__(self):
+        return f"Permissions for {self.utilisateur.username} on {self.document.titre}"
