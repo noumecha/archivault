@@ -1,5 +1,6 @@
 from django.db.models import Q
 from apps.documents.models import Document
+from config.roles import *
 
 class DocumentPermissionService:
 
@@ -10,7 +11,7 @@ class DocumentPermissionService:
         """
 
         # Admin / Superadmin → tout voir
-        if DocumentPermissionService.is_admin(user):
+        if is_admin(user):
             return Document.objects.all()
 
         qs = Document.objects.all()
@@ -20,37 +21,23 @@ class DocumentPermissionService:
             return qs.filter(cellule=user.cellule)
 
         # Gestionnaire / utilisateur
+        print("user : ", {user})
+        print("user.cellule : ", user.cellule)
         return qs.filter(
-            Q(cellule=user.cellule) |                 # Documents de sa cellule
-            Q(cree_par=user) |                        # Documents qu'il a créés
-            Q(permissions__utilisateur=user,          # Documents explicitement partagés
-                permissions__can_view=True)
-        ).distinct()
-
-    """ Role helper methods """
-    @staticmethod
-    def is_admin(user):
-        return user.is_superuser or getattr(user, 'role', '') in ['administrateur', 'superadmin']
-
-    @staticmethod
-    def is_superviseur(user, document):
-        return getattr(user, 'role', '') == 'superviseur' and user.cellule == document.cellule
-
-    @staticmethod
-    def is_owner(user, document):
-        return document.cree_par == user
-
-    @staticmethod
-    def is_responsable(user, document):
-        return document.responsable_document == user
+            Q(cellule=user.cellule) |
+            Q(cree_par=user) |
+            Q(document_permissions__utilisateur=user,
+            document_permissions__can_view=True
+        )
+    ).distinct()
 
     """ Permission check methods """
     @staticmethod
     def can_view(user, document):
-        if DocumentPermissionService.is_admin(user):
+        if is_admin(user):
             return True
 
-        if DocumentPermissionService.is_superviseur(user, document):
+        if is_superviseur(user, document):
             return True
 
         if document.cellule == user.cellule:
@@ -63,46 +50,46 @@ class DocumentPermissionService:
 
     @staticmethod
     def can_download(user, document):
-        if DocumentPermissionService.is_admin(user):
+        if is_admin(user):
             return True
 
         if document.profil_document in ['imprimable', 'modifiable']:
             return True
 
-        if DocumentPermissionService.is_superviseur(user, document):
+        if is_superviseur(user, document):
             return True
 
-        return DocumentPermissionService.is_owner(user, document)
+        return is_owner(user, document)
 
     @staticmethod
     def can_edit(user, document):
-        if DocumentPermissionService.is_admin(user):
+        if is_admin(user):
             return True
 
-        if DocumentPermissionService.is_superviseur(user, document):
+        if is_superviseur(user, document):
             return True
 
-        if document.profil_document != 'modifiable' and not DocumentPermissionService.can_download(user, document) and not DocumentPermissionService.is_owner(user, document):
+        if document.profil_document != 'modifiable' and not DocumentPermissionService.can_download(user, document) and not is_owner(user, document):
             return False
 
         return (
-            DocumentPermissionService.is_owner(user, document)
-            or DocumentPermissionService.is_responsable(user, document)
+            is_owner(user, document)
+            or is_responsable(user, document)
         )
 
     @staticmethod
     def can_delete(user, document):
-        if DocumentPermissionService.is_admin(user):
+        if is_admin(user):
             return True
 
         return (
-            DocumentPermissionService.is_admin(user) or DocumentPermissionService.is_superviseur(user, document)
-            or DocumentPermissionService.is_owner(user, document)
+            is_admin(user) or is_superviseur(user, document)
+            or is_owner(user, document)
         )
 
     @staticmethod
     def can_share(user, document):
-        if DocumentPermissionService.is_admin(user):
+        if is_admin(user):
             return True
 
         if user.role == 'superviseur' and user.cellule == document.cellule:

@@ -184,7 +184,7 @@ class DocumentCreateMultipleView(ListView):
                                 type_document=data.get("type_document"),
                                 sous_type=data.get("sous_type"),
                                 theme=data.get("theme"),
-                                cellule=data.get("cellule"),
+                                cellule=data.get("cellule") if data.get("cellule") else request.user.cellule,
                                 etat=data.get("etat") or Document._meta.get_field('etat').default,
                                 niveau_acces=data.get("niveau_acces"),
                                 profil_document=data.get("profil_document") or Document._meta.get_field('profil_document').default,

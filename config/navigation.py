@@ -73,7 +73,12 @@ SIDEBAR_MENU = [
         "icon": "ri-group-line",
         "roles": ["superadmin", "administrateur", "superviseur"],
         "children": [
-            {"title": "Listes", "url_name": "utilisateur_list", "url_prefix": "/utilisateur/"},
+            {
+                "title": "Listes",
+                "url_name": "utilisateur_list",
+                "url_prefix": "/utilisateur/",
+                "roles" : ["superadmin", "administrateur", "superviseur"]
+            },
         ],
     },
 

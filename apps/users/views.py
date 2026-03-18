@@ -15,6 +15,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.conf import settings
 from django.shortcuts import render, redirect
 from rest_framework_simplejwt.tokens import RefreshToken
+from .services.user_service import UserService
 
 # login view
 
@@ -124,6 +125,11 @@ class UserView(BaseCRUDView):
     headers = ["Nom", "Prenom", "Role", "Email"]
     fields = ['username', 'first_name', 'role', 'email']
     delete_url = "utilisateur_delete"
+    def get_queryset(self, search_query=None):
+        qs = super().get_queryset(search_query)
+        qs = UserService.get_users_queryset(self.request.user)
+        return qs
+
 
 class GroupAPIView(APIView):
     authentication_classes = [TokenAuthentication]

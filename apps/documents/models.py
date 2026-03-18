@@ -121,6 +121,11 @@ class Document(models.Model):
         blank=True,
         related_name='enfants'
     )
+    permissions = models.ManyToManyField(
+        'users.Utilisateur',
+        through='DocumentPermission',
+        related_name='documents_permissions'
+    )
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
@@ -154,8 +159,8 @@ class VersionDocument(models.Model):
         return self.titre
 
 class DocumentPermission(models.Model):
-    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='permissions')
-    utilisateur = models.ForeignKey('users.Utilisateur', on_delete=models.CASCADE, related_name='document_permissions')
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='document_permissions')
+    utilisateur = models.ForeignKey('users.Utilisateur', on_delete=models.CASCADE, related_name='utilisateur_document_permissions')
     can_view = models.BooleanField(default=False)
     can_edit = models.BooleanField(default=False)
     can_download = models.BooleanField(default=False)
