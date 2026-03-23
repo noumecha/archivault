@@ -5,6 +5,7 @@ from crispy_bootstrap5.bootstrap5 import FloatingField, Field
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit
 from dal import autocomplete
+from config.roles import *
 
 # form for nivea d'accès
 class NiveauAccesDocumentsForm(forms.ModelForm):
@@ -171,7 +172,7 @@ class UploadMultipleForm(forms.Form):
     theme = forms.ModelChoiceField(queryset=Theme.objects.all(), required=False)
     cellule = forms.ModelChoiceField(queryset=Cellule.objects.filter(division__statut='activé'), required=False)
     etat = forms.ChoiceField(choices=EtatDocument.choices, required=False)
-    niveau_acces = forms.ModelChoiceField(queryset=NiveauAccesDocument.objects.all(), required=False)
+    niveau_acces = forms.ChoiceField(choices=NiveauAcces.choices, required=False)
     profil_document = forms.ChoiceField(choices=ProfilDoc.choices, required=False)
     metadonnees = forms.CharField(widget=forms.Textarea, required=False)
     responsable_document = forms.ModelChoiceField(queryset=Utilisateur.objects.filter(role='responsable'), required=False)
@@ -198,8 +199,37 @@ class UploadMultipleForm(forms.Form):
             'responsable_document' : "Responsable",
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
+        if not user:
+            return
+        # ADMIN / SUPERADMIN
+        if is_superadmin(user) or is_admin(user):
+            return
+        # SUPERVISEUR
+        if is_superviseur(user):
+            self.fields["cellule"].queryset = Cellule.objects.filter(id=user.cellule_id)
+            self.fields["cellule"].initial = user.cellule
+            self.fields["cellule"].disabled = True
+            self.fields["type_document"].queryset = TypeDocument.objects.filter(cellule=user.cellule)
+            self.fields["sous_type"].queryset = SousTypeDocument.objects.filter(
+                type_document__cellule=user.cellule
+            )
+            self.fields["responsable_document"].queryset = Utilisateur.objects.filter(cellule=user.cellule)
+        # RESPONSABLE
+        if is_responsable(user):
+            self.fields["cellule"].queryset = Cellule.objects.filter(id=user.cellule_id)
+            self.fields["cellule"].initial = user.cellule
+            self.fields["cellule"].disabled = True
+            self.fields["type_document"].queryset = TypeDocument.objects.filter(cellule=user.cellule)
+            self.fields["sous_type"].queryset = SousTypeDocument.objects.filter(
+                type_document__cellule=user.cellule
+            )
+            self.fields["theme"].queryset = Theme.objects.filter(cellule=user.cellule)
+            self.fields["responsable_document"].queryset = Utilisateur.objects.filter(role='responsable')
+            self.fields["responsable_document"].initial = user
+            self.fields["responsable_document"].disabled = True
         self.fields['fichiers'].widget.attrs.update({'multiple': True})
         self.fields['fichiers'].widget.allow_multiple_selected = True
         self.helper = FormHelper()
@@ -259,14 +289,9 @@ class DocumentsForm(forms.ModelForm):
 
         widgets = {
             "metadonnees" : forms.Textarea(attrs={'rows': 5, 'col': 10}),
-            #'type_document': autocomplete.ModelSelect2(url='typedocument_autocomplete'),
-            #'sous_type': autocomplete.ModelSelect2(url='soustypedocument_autocomplete'),
-            #'parent': autocomplete.ModelSelect2(url='document_autocomplete'),
-            #'bailleur': autocomplete.ModelSelect2(url='bailleur_autocomplete'),
-            #'avenant': autocomplete.ModelSelect2(url='avenant_autocomplete'),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super(DocumentsForm, self).__init__(*args, **kwargs)
         cellule = self.instance.cellule if self.instance.pk else None
         accepte_bailleurs = cellule and cellule.accepte_bailleurs

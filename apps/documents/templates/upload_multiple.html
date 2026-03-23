@@ -26,10 +26,12 @@
         <hr/>
         <div class="mt-3">
           <!-- form fields + button -->
-          {% include 'partials/_ajax_modal_button.html' with field=form.type_document model_name='typedocument' %}
-          {% include 'partials/_ajax_modal_button.html' with field=form.sous_type model_name='soustypedocument' %}
-          {% include 'partials/_ajax_modal_button.html' with field=form.theme model_name='theme' %}
-          {% include 'partials/_ajax_modal_button.html' with field=form.cellule model_name='cellule' %}
+          <div class="row">
+            {% include 'partials/_ajax_modal_button.html' with field=form.type_document model_name='typedocument' %}
+            {% include 'partials/_ajax_modal_button.html' with field=form.sous_type model_name='soustypedocument' %}
+            {% include 'partials/_ajax_modal_button.html' with field=form.theme model_name='theme' %}
+            {% include 'partials/_ajax_modal_button.html' with field=form.cellule model_name='cellule' %}
+          </div>
           <div class="row">
             <div class="col-md-6">
               {{ form.etat|as_crispy_field }}

@@ -11,3 +11,10 @@ def get_field_value(obj, field_name):
 def get_attr(obj, attr):
     """Permet d'accéder dynamiquement à un attribut d'un objet dans le template"""
     return getattr(obj, attr, None)
+
+@register.filter
+def col_size(fields_per_row):
+    try:
+        return int(12 / int(fields_per_row))
+    except:
+        return 12

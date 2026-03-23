@@ -6,6 +6,8 @@ from apps.users.models import Utilisateur, RoleUtilisateur
 class Theme(models.Model):
     libelle = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, name='description_theme')
+    # a them belongs to a cellule
+    cellule = models.ForeignKey(Cellule, on_delete=models.CASCADE, null=True, blank=True)
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
@@ -59,6 +61,13 @@ class NiveauAccesDocument(models.Model): # to change later as enum textchoices
     def __str__(self):
         return self.niveau
 
+class NiveauAcces(models.TextChoices):
+    PUBLIC = "public", "Public" #document visible par tous les utilisateurs.
+    INTERNE = "interne", "Interne" #visible par tous les utilisateurs connectés
+    RESTREINT = "restreint", "Restreint" #visible seulement par la cellule du document.
+    CONFIDENTIEL = "confidentiel", "Confidentiel" #visible seulement par : responsable, superviseur, utilisateurs explicitement autorisés.
+    SECRET = "secret", "Secret" #visible uniquement par : admin, superadmin, personnes explicitement autorisées.
+
 class ProfilDoc(models.TextChoices):
     CONSULTATIF = 'consultatif', 'Consultatif'
     MODIFIABLE = 'modifiable', 'Modifiable'
@@ -97,7 +106,8 @@ class Document(models.Model):
     theme = models.ForeignKey(Theme, on_delete=models.SET_NULL, null=True)
     cellule = models.ForeignKey(Cellule, on_delete=models.SET_NULL, null=True, blank=True)
     etat = models.CharField(max_length=20, choices=EtatDocument.choices, default=EtatDocument.EN_ATTENTE)
-    niveau_acces = models.ForeignKey(NiveauAccesDocument, on_delete=models.SET_NULL, null=True)
+    #niveau_acces = models.ForeignKey(NiveauAccesDocument, on_delete=models.SET_NULL, null=True)
+    niveau_acces = models.CharField( max_length=20, choices=NiveauAcces.choices, default=NiveauAcces.INTERNE )
     profil_document = models.CharField(max_length=20, choices=ProfilDoc.choices, default=ProfilDoc.CONSULTATIF)
     metadonnees = models.JSONField(blank=True, null=True)
     cree_par = models.ForeignKey('users.Utilisateur', on_delete=models.SET_NULL, null=True, related_name='documents_crees')

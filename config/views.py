@@ -303,7 +303,7 @@ def custom_permission_denied_view(request, exception):
     Vue 403 personnalisée avec TemplateLayout
     """
     context = TemplateLayout.init(request, {})
-    context["exception"] = exception
+    context["exception"] = "accès refusé"
     return render(request, "403.html", context=context, status=403)
 
 def custom_page_not_found_view(request, exception):
@@ -311,7 +311,7 @@ def custom_page_not_found_view(request, exception):
     Vue 404 personnalisée avec TemplateLayout
     """
     context = TemplateLayout.init(request, {})
-    context["exception"] = exception
+    context["exception"] = "page introuvable"
     return render(request, "404.html", context=context, status=404)
 
 def custom_server_error_view(request):

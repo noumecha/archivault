@@ -1,5 +1,5 @@
 from django.db.models import Q
-from apps.documents.models import Document
+from apps.documents.models import Document, NiveauAcces
 from config.roles import *
 
 class DocumentPermissionService:
@@ -31,13 +31,42 @@ class DocumentPermissionService:
         )
     ).distinct()
 
+    #@staticmethod
+    #def get_visible_documents(user):
+    #
+    #    qs = Document.objects.select_related(
+    #        "cellule",
+    #        "cree_par",
+    #        "type_document",
+    #        "theme"
+    #    ).prefetch_related(
+    #        "document_permissions"
+    #    )
+    #
+    #    if is_admin(user):
+    #        return qs
+    #
+    #    if is_superviseur(user):
+    #        return qs.filter(cellule=user.cellule)
+    #
+    #    return qs.filter(
+    #        Q(niveau_acces=NiveauAcces.PUBLIC) |
+    #        Q(cellule=user.cellule) |
+    #        Q(cree_par=user) |
+    #        Q(document_permissions__utilisateur=user,
+    #        document_permissions__can_view=True)
+    #    ).distinct()
+
     """ Permission check methods """
     @staticmethod
     def can_view(user, document):
         if is_admin(user):
             return True
 
-        if is_superviseur(user, document):
+        if is_superviseur(user):
+            return True
+
+        if document.niveau_acces == NiveauAcces.PUBLIC:
             return True
 
         if document.cellule == user.cellule:
@@ -56,7 +85,10 @@ class DocumentPermissionService:
         if document.profil_document in ['imprimable', 'modifiable']:
             return True
 
-        if is_superviseur(user, document):
+        if document.niveau_acces == NiveauAcces.PUBLIC:
+            return True
+
+        if is_superviseur(user):
             return True
 
         return is_owner(user, document)
@@ -66,7 +98,10 @@ class DocumentPermissionService:
         if is_admin(user):
             return True
 
-        if is_superviseur(user, document):
+        if document.niveau_acces == NiveauAcces.PUBLIC:
+            return True
+
+        if is_superviseur(user):
             return True
 
         if document.profil_document != 'modifiable' and not DocumentPermissionService.can_download(user, document) and not is_owner(user, document):
@@ -74,7 +109,7 @@ class DocumentPermissionService:
 
         return (
             is_owner(user, document)
-            or is_responsable(user, document)
+            or is_responsable(user)
         )
 
     @staticmethod
@@ -82,9 +117,11 @@ class DocumentPermissionService:
         if is_admin(user):
             return True
 
+        if document.niveau_acces == NiveauAcces.PUBLIC:
+            return True
+
         return (
-            is_admin(user) or is_superviseur(user, document)
-            or is_owner(user, document)
+            is_admin(user) or is_superviseur(user) or is_owner(user, document)
         )
 
     @staticmethod
@@ -92,7 +129,10 @@ class DocumentPermissionService:
         if is_admin(user):
             return True
 
-        if user.role == 'superviseur' and user.cellule == document.cellule:
+        if document.niveau_acces == NiveauAcces.PUBLIC:
+            return True
+
+        if is_superviseur(user) and user.cellule == document.cellule:
             return True
 
         return document.permissions.filter(

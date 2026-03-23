@@ -18,9 +18,17 @@ from datetime import datetime
 from django.http import JsonResponse
 from django.utils.text import slugify
 from .services.permissions import DocumentPermissionService
+from config.roles import *
+from config.mixins.permissions import *
+from .services.metadata_service import DocumentMetadataService
 
 #occupant view
-class NiveauAccesDocumentView(BaseCRUDView):
+class NiveauAccesDocumentView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = NiveauAccesDocument
     form_class = NiveauAccesDocumentsForm
     list_route = 'niveauaccess_list'
@@ -33,7 +41,12 @@ class NiveauAccesDocumentView(BaseCRUDView):
     fields = ["niveau","description_niveauaccess"]
     delete_url = "niveauaccess_delete"
 
-class SousTypeDocumentView(BaseCRUDView):
+class SousTypeDocumentView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = SousTypeDocument
     form_class = SousTypeDocumentsForm
     list_route = 'soustypedocument_list'
@@ -46,7 +59,12 @@ class SousTypeDocumentView(BaseCRUDView):
     fields = ["libelle","description_soustypedocument", "type_document"]
     delete_url = "soustypedocument_delete"
 
-class ThemeListView(BaseCRUDView):
+class ThemeListView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = Theme
     form_class = ThemesForm
     list_route = 'themes_list'
@@ -58,7 +76,12 @@ class ThemeListView(BaseCRUDView):
     fields = ["libelle","description_theme"]
     delete_url = "themes_delete"
 
-class BailleursView(BaseCRUDView):
+class BailleursView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = Bailleurs
     form_class = BailleursFrom
     list_route = 'bailleurs_list'
@@ -71,7 +94,12 @@ class BailleursView(BaseCRUDView):
     delete_url = "bailleurs_delete"
     object_name = 'bailleur'
 
-class AvenantsView(BaseCRUDView):
+class AvenantsView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = Avenants
     form_class = AvenantsForm
     list_route = 'avenants_list'
@@ -87,7 +115,12 @@ class AvenantsView(BaseCRUDView):
     object_name = 'avenant'
 
 
-class TypeDocumentView(BaseCRUDView):
+class TypeDocumentView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = TypeDocument
     form_class = TypeDocumentsForm
     list_route = 'typedocument_list'
@@ -136,11 +169,16 @@ class DocumentCreateMultipleView(ListView):
     form_class = UploadMultipleForm
 
     def get(self, request):
-        form = self.form_class()
-        return render(request, self.template_name, {"form": form})
+        form = self.form_class(user=request.user)
+        ctx = {
+            "form": form,
+            "can_create_metadata": is_admin(request.user) or is_superadmin(request.user) or is_superviseur(request.user)
+        }
+        ctx["fields_per_row"] = 2
+        return render(request, self.template_name, ctx)
 
     def post(self, request):
-        form = self.form_class(request.POST, request.FILES)
+        form = self.form_class(request.POST, request.FILES, user=request.user)
         files = request.FILES.getlist('fichiers')
 
         # Récupère la liste des actions JSON envoyées par le client
@@ -177,6 +215,9 @@ class DocumentCreateMultipleView(ListView):
                         # -----------------------------------------------------------
                         # 1️⃣ CAS A — DOCUMENT N’EXISTE PAS -> Création document
                         # -----------------------------------------------------------
+                        cellule = data.get("cellule")
+                        if not is_admin(request.user) and not is_superadmin(request.user):
+                            cellule = request.user.cellule
                         if not doc_exist and action == "create":
                             doc = Document.objects.create(
                                 titre=titre,
@@ -184,7 +225,7 @@ class DocumentCreateMultipleView(ListView):
                                 type_document=data.get("type_document"),
                                 sous_type=data.get("sous_type"),
                                 theme=data.get("theme"),
-                                cellule=data.get("cellule") if data.get("cellule") else request.user.cellule,
+                                cellule=cellule,
                                 etat=data.get("etat") or Document._meta.get_field('etat').default,
                                 niveau_acces=data.get("niveau_acces"),
                                 profil_document=data.get("profil_document") or Document._meta.get_field('profil_document').default,
@@ -272,9 +313,7 @@ class DocumentListView(ListView):
     context_object_name = "documents"
     paginate_by = 24
 
-    def get_queryset(self):
-        user = self.request.user
-        qs = DocumentPermissionService.get_visible_documents(user)
+    def apply_filters(self, qs):
         q = self.request.GET.get('q')
         type_id = self.request.GET.get('type')
         sous_type_id = self.request.GET.get('sous_type')
@@ -294,21 +333,27 @@ class DocumentListView(ListView):
             qs = qs.filter(profil_document=profil)
         if etat:
             qs = qs.filter(etat=etat)
-        if date_debut:
-            qs = qs.filter(Date_creation__date__gte=date_debut)
-        if date_fin:
-            qs = qs.filter(Date_creation__date__lte=date_fin)
         if theme_id:
             qs = qs.filter(theme_id=theme_id)
         if extension:
             qs = qs.filter(fichier__iendswith='.' + extension.lstrip('.'))
+        if date_debut:
+            qs = qs.filter(Date_creation__date__gte=date_debut)
+        if date_fin:
+            qs = qs.filter(Date_creation__date__lte=date_fin)
         return qs.order_by('-Date_creation')
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = DocumentPermissionService.get_visible_documents(user)
+        return self.apply_filters(qs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['types'] = TypeDocument.objects.all()
-        ctx['sous_types'] = SousTypeDocument.objects.all()
-        ctx['themes'] = Theme.objects.all()
+        user = self.request.user
+        ctx['types'] = DocumentMetadataService.get_types(user)
+        ctx['sous_types'] = DocumentMetadataService.get_sous_types(user)
+        ctx['themes'] = DocumentMetadataService.get_themes(user)
         ctx['profils'] = ProfilDoc.choices
         ctx['etats'] = EtatDocument.choices
         ctx['selected_type'] = self.request.GET.get('type', '')
@@ -320,7 +365,6 @@ class DocumentListView(ListView):
         ctx['date_debut'] = self.request.GET.get('date_debut', '')
         ctx['date_fin'] = self.request.GET.get('date_fin', '')
         return ctx
-
 
 class DocumentUpdateView(UpdateView):
     model = Document
@@ -335,6 +379,7 @@ class DocumentUpdateView(UpdateView):
         context.update(layout_context)
 
         context['document'] = self.object
+        context['can_view'] = DocumentPermissionService.can_view(self.request.user, self.object)
         context['can_edit'] = DocumentPermissionService.can_edit(self.request.user, self.object)
         context['can_delete'] = DocumentPermissionService.can_delete(self.request.user, self.object)
         context['can_download'] = DocumentPermissionService.can_download(self.request.user, self.object)
