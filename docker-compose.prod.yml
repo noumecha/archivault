@@ -45,3 +45,9 @@ services:
     environment:
       DJANGO_ENVIRONMENT: production
       DEBUG: 'False'
+networks:
+  archivault_network:
+    driver: bridge
+
+volumes:
+  mysql_data_prod:
