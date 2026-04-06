@@ -9,11 +9,11 @@
 
 {% block content %}
   <div class="container py-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <a href="{% url 'index' %}"><i class="ri-arrow-left-line"></i> Retour</a>
-        <h3>Uploader des documents</h3>
-        <a href="{% url 'list_document' %}" class="btn btn-primary"><i class="ri-file-list-line"></i>liste</a>
-      </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a href="{% url 'index' %}"><i class="ri-arrow-left-line"></i> Retour</a>
+      <h3>Uploader des documents</h3>
+      <a href="{% url 'list_document' %}" class="btn btn-primary"><i class="ri-file-list-line"></i>liste</a>
+    </div>
     <form id="upload-form" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="card p-3">
@@ -22,14 +22,15 @@
           <input id="file-input" name="fichiers" type="file" multiple style="display:none;">
           <div id="previews" class="row mt-3"></div>
         </div>
-
         <hr/>
         <div class="mt-3">
           <!-- form fields + button -->
-          {% include 'partials/_ajax_modal_button.html' with field=form.type_document model_name='typedocument' %}
-          {% include 'partials/_ajax_modal_button.html' with field=form.sous_type model_name='soustypedocument' %}
-          {% include 'partials/_ajax_modal_button.html' with field=form.theme model_name='theme' %}
-          {% include 'partials/_ajax_modal_button.html' with field=form.cellule model_name='cellule' %}
+          <div class="row">
+            {% include 'partials/_ajax_modal_button.html' with field=form.type_document model_name='typedocument' %}
+            {% include 'partials/_ajax_modal_button.html' with field=form.sous_type model_name='soustypedocument' %}
+            {% include 'partials/_ajax_modal_button.html' with field=form.theme model_name='theme' %}
+            {% include 'partials/_ajax_modal_button.html' with field=form.cellule model_name='cellule' %}
+          </div>
           <div class="row">
             <div class="col-md-6">
               {{ form.etat|as_crispy_field }}
@@ -60,6 +61,15 @@
         </div>
         <div class="alert alert-success" style="display: none;" id="form-success"></div>
         <div class="alert alert-danger" style="display: none;" id="form-error"></div>
+        <hr/>
+        <div class="mt-3" id="progress-container" style="display:none;">
+          <div class="progress">
+            <div id="upload-progress"
+              class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar"
+              style="width: 0%">0%</div>
+          </div>
+        </div>
         <hr/>
         <div class="text-right mt-3">
           <a href="{% url 'list_document' %}" class="btn btn-secondary">Annuler</a>
@@ -94,10 +104,6 @@
   </div>
 {% endblock content %}
 {% block extra_js %}
-    <script src="{% static 'js/helper/utils.js' %}"></script>
-    <script src="{% static 'js/document.js' %}"></script>
-    <script src="{% static 'js/typedocuments.js' %}"></script>
-    <script src="{% static 'js/soustypedocuments.js' %}"></script>
-    <script src="{% static 'js/themes.js' %}"></script>
-    <script src="{% static 'js/cellule.js' %}"></script>
+  <script type="module" src="{% static 'js/modules/documents/index.js' %}"></script>
+  <script src="{% static 'js/helpers/utils.js' %}"></script>
 {% endblock %}

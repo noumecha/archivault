@@ -8,8 +8,15 @@ from django.shortcuts import redirect, render
 from django.contrib import messages
 from config.utils.utils import generates_filters
 from django.db.models import Count
+from config.mixins.permissions import *
+from config.roles import *
 
-class CelluleView(BaseCRUDView):
+class CelluleView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = Cellule
     form_class = CellulesForm
     list_route = 'cellule_list'
@@ -139,7 +146,10 @@ class CelluleView(BaseCRUDView):
 
         return render(request, template, context)
 
-class DivisionView(BaseCRUDView):
+class DivisionView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+    ]
     model = Division
     form_class = DivisionForm
     list_route = 'division_list'
@@ -166,7 +176,10 @@ class DivisionView(BaseCRUDView):
         messages.success(request, f"La division '{division.nom}' a été {division.statut}.")
         return redirect(self.list_route)
 
-class MinistereView(BaseCRUDView):
+class MinistereView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+    ]
     model = Ministere
     form_class = MinistereForm
     list_route = 'ministere_list'
@@ -178,7 +191,10 @@ class MinistereView(BaseCRUDView):
     delete_url = "ministere_delete"
     manage_url = "ministere_manage"
 
-class DirectionGeneraleView(BaseCRUDView):
+class DirectionGeneraleView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+    ]
     model = DirectionGenerale
     form_class = DirectionGeneraleForm
     list_route = 'directiongenerale_list'

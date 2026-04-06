@@ -14,7 +14,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <a href="{% url 'index' %}"><i class="ri-arrow-left-line"></i> Retour</a>
       <h3>Listes des documents archivés</h3>
-      <a href="{% url 'upload_document' %}" class="btn btn-primary">
+      <a href="{% url 'upload_page' %}" class="btn btn-primary">
         <i class="ri-file-upload-fill me-1"></i> Ajouter
       </a>
     </div>
@@ -22,6 +22,7 @@
     <div class="row">
       <div class="col-md-3">
         <div class="card p-3 mb-3">
+          <!-- filter form -->
           <form method="get">
             <div class="form-group">
               <input name="q" value="{{ q }}" class="form-control" placeholder="Recherche titre...">
@@ -36,6 +37,15 @@
               </select>
             </div>
             <div class="form-group mt-2">
+              <label>Sous-Type</label>
+              <select name="sous_type" class="form-control">
+                <option value="">Tous</option>
+                {% for st in sous_types %}
+                <option value="{{ st.id }}" {% if selected_sous_type|stringformat:"s" == st.id|stringformat:"s" %}selected{% endif %}>{{ st }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group mt-2">
               <label>Thème</label>
               <select name="theme" class="form-control">
                 <option value="">Tous</option>
@@ -43,6 +53,32 @@
                 <option value="{{ th.id }}" {% if selected_theme|stringformat:"s" == th.id|stringformat:"s" %}selected{% endif %}>{{ th }}</option>
                 {% endfor %}
               </select>
+            </div>
+            <div class="form-group mt-2">
+              <label>Profil</label>
+              <select name="profil" class="form-control">
+                <option value="">Tous</option>
+                {% for key, value in profils %}
+                <option value="{{ key }}" {% if selected_profil == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group mt-2">
+              <label>État</label>
+              <select name="etat" class="form-control">
+                <option value="">Tous</option>
+                {% for key, value in etats %}
+                <option value="{{ key }}" {% if selected_etat == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group mt-2">
+              <label>Date de création - De</label>
+              <input type="date" name="date_debut" value="{{ date_debut }}" class="form-control">
+            </div>
+            <div class="form-group mt-2">
+              <label>Date de création - À</label>
+              <input type="date" name="date_fin" value="{{ date_fin }}" class="form-control">
             </div>
             <div class="form-group mt-2">
               <label>Extension (ex: pdf, docx, jpg)</label>
@@ -60,13 +96,13 @@
         </div>
       </div>
 
+      <!-- liste des docuemnts -->
       <div class="col-md-9">
         <div class="row">
           {% for doc in documents %}
           <div class="col-6 col-sm-4 col-md-3 mb-4">
             <div class="card h-100">
               <a href="{{ doc.fichier.url }}" target="_blank" style="text-decoration:none;color:inherit;">
-                {% comment %} thumbnail preview: si image -> mini preview, sinon icone ext {% endcomment %}
                 {% with ext=doc.fichier.name|slice:"-4:" %}
                 {% endwith %}
                 {% if doc.fichier.name|lower|endswith:".jpg" or doc.fichier.name|lower|endswith:".jpeg" or doc.fichier.name|lower|endswith:".png" or doc.fichier.name|lower|endswith:".gif" %}
@@ -122,5 +158,4 @@
   </div>
 {% endblock content %}
 {% block extra_js %}
-    <script src="{% static 'js/document.js' %}"></script>
 {% endblock %}

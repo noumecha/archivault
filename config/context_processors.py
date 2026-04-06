@@ -1,5 +1,6 @@
 from django.conf import settings
 from .navigation import SIDEBAR_MENU
+from .roles import *
 
 def my_setting(request):
     return {'MY_SETTING': settings}
@@ -68,7 +69,7 @@ def sidebar_context(request):
 
     # ---- SIDEBAR TITLE ----
     sidebar_title = "Archivault"
-    if role == "superviseur" and getattr(user, "cellule", None):
+    if is_responsable(user) or is_superviseur(user) or is_gestionnaire(user) :
         sidebar_title = user.cellule.nom
 
     return {

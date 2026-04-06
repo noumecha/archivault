@@ -10,17 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
-import random
-import string
 from pathlib import Path
-
-from dotenv import load_dotenv
-from str2bool import str2bool
 from datetime import timedelta
-
+from django.contrib.messages import constants as messages
 from .template import  THEME_LAYOUT_DIR, THEME_VARIABLES
-
-load_dotenv()  # take environment variables from .env.
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,22 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-
-# Update secret key in .env file and .env.prod file
-# SECRET_KEY = os.environ.get("SECRET_KEY", default='')
-
-# SECURITY WARNING: keep the secret key used in production secret!
-# If using the .env file for SECRET_KEY then comment below random SECRET_KEY generation code.
-SECRET_KEY = os.environ.get("SECRET_KEY")
-if not SECRET_KEY:
-    SECRET_KEY = "".join(random.choice(string.ascii_lowercase) for i in range(32))
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", 'True').lower() in ['true', 'yes', '1']
-
-
-# https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Current DJANGO_ENVIRONMENT
 ENVIRONMENT = os.environ.get("DJANGO_ENVIRONMENT", default="local")
@@ -104,6 +84,14 @@ MIDDLEWARE = [
     'apps.users.middleware.JWTAuthMiddleware',
 ]
 
+MESSAGE_TAGS = {
+    messages.DEBUG: 'debug',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',
+}
+
 # disable autoreload in production left it only on development
 if ENVIRONMENT == "development":
     # autorelaod browser dev
@@ -153,33 +141,11 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-MYSQL_USER = os.getenv('MYSQL_USER' , None)
-MYSQL_PASSWORD     = os.getenv('MYSQL_PASSWORD', None)
-MYSQL_HOST     = os.getenv('MYSQL_HOST', None)
-MYSQL_PORT     = os.getenv('MYSQL_PORT', None)
-MYSQL_DATABASE     = os.getenv('MYSQL_DATABASE', None)
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': MYSQL_DATABASE,
-        'USER': MYSQL_USER,
-        'PASSWORD': MYSQL_PASSWORD,
-        'HOST': MYSQL_HOST,
-        'PORT': MYSQL_PORT,
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-        }
-    }
-}
-
-
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        #'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        # ou 'rest_framework.authentication.TokenAuthentication'
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -251,12 +217,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # For cookies: you probably want to set this in production
-if ENVIRONMENT == "production":
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-else:
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
+
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000','http://127.0.0.1:8000','http://148.230.123.18:8000/',
     'https://archivault.cm','https://www.archivault.cm',
@@ -269,3 +230,6 @@ LOGOUT_REDIRECT_URL = 'login'
 # managing files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1073741824  # 1 GB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1073741824  # 1 GB

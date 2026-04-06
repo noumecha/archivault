@@ -3,75 +3,24 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.db.models import Count
 from datetime import datetime
+from apps.dashboards.configs.configs import DASHBOARD_CONFIG
 from apps.documents.models import Document, EtatDocument, Theme
 from apps.documents.models import TypeDocument, SousTypeDocument
 from apps.users.models import RoleUtilisateur, Utilisateur
 from apps.administration.models import Cellule
+from .services.dashboard_service import DashboardService
 from web_project import TemplateLayout
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 import datetime
 import json
 
-DASHBOARD_CONFIG = {
-    "SUPERADMIN": [
-        "system_stats",
-        "cellules",
-        "utilisateurs",
-        "documents",
-        "configs",
-    ],
-    "ADMIN": [
-        "cellules",
-        "utilisateurs",
-        "documents",
-    ],
-    "SUPERVISEUR": [
-        "cellule_stats",
-        "cellule_documents",
-        "cellule_users",
-    ],
-    "GESTIONNAIRE": [
-        "my_documents",
-        "my_tasks",
-    ],
-    "RESPONSABLE": [
-        "my_documents",
-    ],
-}
-
-DASHBOARD_TYPE_BY_ROLE = {
-    "SUPERADMIN": "GLOBAL",
-    "ADMIN": "GLOBAL",
-    "SUPERVISEUR": "CELLULE",
-    "GESTIONNAIRE": "USER",
-    "RESPONSABLE": "USER",
-}
-
 class DashboardsView(TemplateView):
 
     template_name = "new_dashboard_analytics.html"
 
-    def get_sections_for_user(self, user):
-        return DASHBOARD_CONFIG.get(user.role.upper(), [])
-
-    def get_dashboard_type(self, user):
-        return DASHBOARD_TYPE_BY_ROLE.get(user.role.upper(), "USER")
-
-    def get_documents_queryset(self, user):
-        dashboard_type = self.get_dashboard_type(user)
-        if dashboard_type == "GLOBAL":
-            return Document.objects.all()
-        if dashboard_type == "CELLULE":
-            return Document.objects.filter(cellule=user.cellule)
-        # USER
-        return Document.objects.filter(
-            cellule=user.cellule,
-            cree_par=user
-        )
-
     def get_dashboard_resume(self, user):
-        dashboard_type = self.get_dashboard_type(user)
+        dashboard_type = DashboardService.get_dashboard_type(user)
         if dashboard_type == "GLOBAL":
             return {
                 "title": "Résumé global du système",
@@ -97,8 +46,10 @@ class DashboardsView(TemplateView):
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
         user = self.request.user
-        docs_qs = self.get_documents_queryset(user)
-        dashboard_type = self.get_dashboard_type(user)
+        docs_qs = DashboardService.get_documents_queryset(user)
+        dashboard_type = DashboardService.get_dashboard_type(user)
+        context["dashboard_type"] = dashboard_type
+        context["dashboard_sections"] = DASHBOARD_CONFIG.get(user.role, [])
 
         # --- Gestion du filtre par année pour le graphique ---
         available_years = docs_qs.dates('Date_creation', 'year', order='DESC')
@@ -109,8 +60,6 @@ class DashboardsView(TemplateView):
         context['available_years'] = available_years
         context['selected_year'] = selected_year
 
-        # for the sidebar menu
-        context["dashboard_sections"] = self.get_sections_for_user(user)
         # resume vars
         context["dashboard_resume"] = self.get_dashboard_resume(user)
         # cards menu link
@@ -126,6 +75,7 @@ class DashboardsView(TemplateView):
             ]
         # counts stats
         context["dashboard_type"] = dashboard_type
+        context['total_userdocs'] = docs_qs.filter(cree_par=user).count()
         context["total_docs"] = docs_qs.count()
         context["docs_valides"] = docs_qs.filter(etat=EtatDocument.VALIDE).count()
         context["docs_archives"] = docs_qs.filter(etat=EtatDocument.ARCHIVE).count()

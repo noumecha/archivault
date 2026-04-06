@@ -1,15 +1,9 @@
 {% extends layout_path %}
-
 {% load static %}
-
 {% load i18n %}
-
 {% load crispy_forms_tags %}
-
 {% load string_filters %}
-
 {% block title %}Modification d'un document{% endblock %}
-
 {% block content %}
 
 <div class="container py-4">
@@ -24,18 +18,24 @@
       {% endif %}
   </div>
 
-  <h3 class="mb-4 text-white">
-    {% if document.profil_document == 'modifiable' %}
-      Modifier le document
-    {% else %}
-      Prévisualisation du document
-    {% endif %}
-  </h3>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a class="text-white" href="{% url 'list_document' %}"><i class="ri-arrow-left-line"></i> Liste</a>
+    <h3 class="mb-4 text-white">
+      {% if can_edit %}
+        Modifier le document
+      {% else %}
+        Prévisualisation du document
+      {% endif %}
+    </h3>
+    <a href="{% url 'upload_document' %}" class="btn btn-light text-primary">
+      <i class="ri-file-upload-fill me-1"></i> Ajouter
+    </a>
+  </div>
 
   <!-- ✅ Aperçu du document -->
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-light">
-      <strong>Aperçu du document</strong>
+      <strong>Aperçu du document : {{ document.titre }}</strong>
     </div>
     <div class="card-body text-center">
       {% if document %}
@@ -64,34 +64,90 @@
       {% endif %}
     </div>
   </div>
+  <hr>
 
   <!-- Formulaire de mise à jour -->
-{% if document.profil_document == 'modifiable' %}
-  <div class="card p-3 shadow-sm">
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      {{ form|crispy }}
-      <div class="text-right mt-3">
-        <a href="{% url 'list_document' %}" class="btn btn-secondary">Retour</a>
-        <button class="btn btn-primary" type="submit">Enregistrer les modifications</button>
+  {% if can_edit %}
+    <div class="card p-3 shadow-sm">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% crispy form %}
+      </form>
+    </div>
+    <hr>
+    <!-- zone de version du docuemnt -->
+    <div class="card p-3 ps-6 pe-6 shadow-sm mb-4">
+      <div class="card-title">
+        <h5>Versions du document</h5>
       </div>
-    </form>
-  </div>
-  <hr>
-  <!-- Supprimer le document -->
-  <div class="card p-3 shadow-sm">
+      {% if document.versions.exists %}
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Date de création</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for version in document.versions.all %}
+            <tr>
+              <td>{{ version.numero_version }}</td>
+              <td>{{ version.date_creation|date:"d/m/Y H:i" }}</td>
+              <td>
+                <a href="{{ version.fichier.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                  <i class="ri-download-line"></i> Télécharger
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted">Aucune(s) version(s) disponible(s) pour ce document.</p>
+      {% endif %}
+    </div>
+    <hr>
+  {% endif %}
+
+  <!-- zone de supression -->
+  {% if can_delete %}
+  <div class="card p-3 ps-6 pe-6 shadow-sm">
     <div class="card-title">
       <h5 class="text-danger">Supprimer définitivement le document</h5>
     </div>
-    {% if user.is_superuser or user.role == 'admin' %}
-    <form action="{% url 'delete_document' document.pk %}" method="post" class="d-inline" onsubmit="return confirm('Confirmer la suppression ?');">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Supprimer</button>
-    </form>
-    {% endif %}
+    <div class="card-body p-0">
+      <a
+        href="#"
+        class="text-right btn btn-outline-danger"
+        data-bs-target="#delete-{{ document.pk }}"
+        data-bs-toggle="modal">
+        <i class="ri-delete-bin-6-line me-1"></i>Supprimer
+      </a>
+    </div>
+    <!-- Modal de suppression -->
+    <div class="modal fade" id="delete-{{ document.pk }}" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content p-0">
+          <form action="{% url 'delete_document' document.pk %}" method="post">
+            {% csrf_token %}
+            <div class="modal-header">
+              <h5 class="modal-title">Suppression de : {{ document.titre }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              Voulez-vous vraiment supprimer : {{ document }} ?
+            </div>
+            <div class="modal-footer flex-row-reverse">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+              <button type="submit" class="btn btn-primary">Supprimer</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
 </div>
 {% endblock content %}

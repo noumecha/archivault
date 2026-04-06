@@ -215,16 +215,52 @@ $(function () {
       showNextConflict();
     });
 
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function resetForm(formId) {
+    const $form = $(formId);
+    if (!$form.length) return;
+    $form[0].reset();
+  }
+
+  function resetUploadForm(formId) {
+    resetForm(formId);
+
+    $('#file-input').val('');
+    $('#previews').empty();
+
+    actions = [];
+    uploadQueue = [];
+    conflictQueue = [];
+    currentConflict = null;
+  }
+
   function submitFinalForm() {
     const formData = new FormData(uploadForm[0]);
-    // fichiers sans conflit
+    // ⚠️ Supprimer les fichiers auto-inclus par le FormData natif
+    formData.delete('fichiers');
+
+    // Fichiers sans conflit → action implicite "create"
     uploadQueue.forEach(f => {
-      formData.append('files[]', f);
+      formData.append('fichiers', f);
     });
 
-    // fichiers avec conflit + action choisie
+    // Fichiers avec conflit + action choisie
     actions.forEach(a => {
-      formData.append('files[]', a.file);
+      formData.append('fichiers', a.file); // ← même nom
       formData.append(
         'actions[]',
         JSON.stringify({
@@ -234,23 +270,56 @@ $(function () {
         })
       );
     });
-    console.log(`submit datas : ${JSON.stringify(formData)}`);
-    console.log(`actions : ${actions}`);
-    fetch('/upload/', {
-      method: 'POST',
-      body: formData
-    })
-      .then(r => r.json())
-      .then(data => {
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload/');
+    xhr.withCredentials = true;
+    xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+
+    xhr.upload.addEventListener('progress', function (e) {
+      if (e.lengthComputable) {
+        updateProgressBar((e.loaded / e.total) * 100);
+      }
+    });
+
+    xhr.onload = function () {
+      try {
+        const data = JSON.parse(xhr.responseText);
         if (data.success) {
-          console.log(`data : ${JSON.stringify(data)}`);
           showAlertMessage(data.message, '#form-success');
-          uploadForm[0].reset();
+          resetUploadForm('#upload-form');
         } else {
-          console.log(`data : ${JSON.stringify(data)}`);
-          showAlertMessage(data.errors, '#form-error');
+          console.error('Erreur serveur:', data);
+          showAlertMessage(JSON.stringify(data.errors || data.message || 'Erreur inconnue'), '#form-error');
         }
-      });
+      } catch (err) {
+        console.error('Erreur innatendue :', err);
+        showAlertMessage('Erreur inattendue (voir console)', '#form-error');
+      }
+    };
+
+    xhr.onerror = function () {
+      showAlertMessage('Erreur réseau', '#form-error');
+    };
+
+    xhr.send(formData);
+  }
+
+  function updateProgressBar(percent) {
+    const container = document.getElementById('progress-container');
+    const bar = document.getElementById('upload-progress');
+
+    container.style.display = 'block';
+    bar.style.width = percent + '%';
+    bar.innerText = Math.round(percent) + '%';
+
+    // Masquer une fois terminé
+    if (percent >= 100) {
+      setTimeout(() => {
+        container.style.display = 'none';
+        bar.style.width = '0%';
+      }, 1500);
+    }
   }
 
   /* ---------------------------------------------------------

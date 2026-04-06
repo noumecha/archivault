@@ -1,8 +1,9 @@
+{# ajax modal button #}
 {% load static %}
 {% load i18n %}
 {% load crispy_forms_tags %}
-
-<div class="row">
+{% load utils_tags %}
+{% if can_create_metadata %}
   <div class="col-md-10">
     {{ field|as_crispy_field }}
   </div>
@@ -16,4 +17,8 @@
       <i class="menu-icon ri-add-line"></i> Ajouter
     </button>
   </div>
-</div>
+{% else %}
+  <div class="col-md-{{ fields_per_row|col_size }}">
+    {{ field|as_crispy_field }}
+  </div>
+{% endif %}
