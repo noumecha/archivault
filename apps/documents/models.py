@@ -1,3 +1,4 @@
+# apps/documents/models.py
 from django.db import models
 from apps.administration.models import Cellule
 from apps.users.models import Utilisateur, RoleUtilisateur

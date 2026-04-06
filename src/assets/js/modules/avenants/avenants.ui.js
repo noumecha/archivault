@@ -1,4 +1,4 @@
-// modules/aventants/aventants.ui.js
+// modules/avenants/avenants.ui.js
 export const AvenantUI = (function () {
   function renderList(container, data) {
     $(container).html(data.html);

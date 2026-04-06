@@ -1,0 +1,40 @@
+{% extends layout_path %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}Circulations des documents{% endblock %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+<h2>Circulations en cours</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Document</th>
+            <th>Titre</th>
+            <th>Initié par</th>
+            <th>Statut</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for circulation in circulations %}
+        <tr>
+            <td>{{ circulation.document.titre }}</td>
+            <td>{{ circulation.titre }}</td>
+            <td>{{ circulation.initie_par }}</td>
+            <td><span class="badge bg-{{ circulation.statut|slice:":3" }}">{{ circulation.get_statut_display }}</span></td>
+            <td>{{ circulation.Date_creation|date:"d/m/Y H:i" }}</td>
+            <td><a href="{% url 'circulation:circulation_detail' circulation.pk %}" class="btn btn-sm btn-primary">Voir</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">Aucune circulation</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+{% block extra_js %}
+{% endblock %}

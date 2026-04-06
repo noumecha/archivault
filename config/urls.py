@@ -41,7 +41,7 @@ urlpatterns = [
     # apps urls
     path('', include('apps.documents.urls')),
     path('', include('apps.administration.urls')),
-    path('circulation', include('apps.circulation.urls')),
+    path('', include('apps.circulation.urls')),
     path('historique', include('apps.historique.urls')),
     path('thematique', include('apps.thematique.urls')),
     path('rapports', include('apps.rapports.urls')),

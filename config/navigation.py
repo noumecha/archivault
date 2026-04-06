@@ -6,7 +6,38 @@ SIDEBAR_MENU = [
         "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
         "url_prefix": "/dashboard/",
     },
-
+    # CIRCULATION
+    {
+        "header": "Circulation",
+        "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
+    },
+    {
+        "title": "Circulation",
+        "icon": "ri-file-list-3-fill",
+        "url_prefix": "/circulations/",
+        "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
+        "children": [
+            {
+                "title": "Circulation",
+                "url_prefix": "/circulations/",
+                "url_name": "circulation_list",
+                "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
+            },
+            {
+                "title": "Taches",
+                "url_prefix": "/taches/",
+                "url_name": "tache_list",
+                "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
+            },
+            {
+                "title": "Audit",
+                "url_name": "audit_log_list",
+                "url_prefix": "/audit/",
+                "roles": ["superadmin", "administrateur", "superviseur"],
+            },
+        ],
+    },
+    # Documents
     {
         "header": "Gestion des documents",
         "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],

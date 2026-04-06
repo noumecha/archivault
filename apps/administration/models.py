@@ -1,3 +1,4 @@
+# apps/administration/models.py
 from django.db import models
 
 # statut
