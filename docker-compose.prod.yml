@@ -1,5 +1,44 @@
 # docker-compose.prod.yml
 services:
+  db:
+    env_file:
+      - .env
+    image: mysql:8.0
+    container_name: thebail_db_prod
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data_prod:/var/lib/mysql
+    networks:
+      - archivault_network
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      timeout: 20s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: archivault_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      # Augmenter les limites d'upload et d'exécution
+      UPLOAD_LIMIT: 512M
+      MEMORY_LIMIT: 2048M
+      MAX_EXECUTION_TIME: 600
+    ports:
+      - '8082:80'
+    depends_on:
+      - db
+    networks:
+      - archivault_network
+
   web:
     ports:
       - '8000:8000'
