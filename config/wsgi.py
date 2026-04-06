@@ -1,16 +1,14 @@
-"""
-WSGI config for web_project project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/howto/deployment/wsgi/
-"""
-
+# config/wsgi.py
 import os
-
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+environment = os.environ.get("DJANGO_ENVIRONMENT", "development")
+
+if environment == "production":
+    settings_module = "config.production"
+else:
+    settings_module = "config.development"
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
 
 application = get_wsgi_application()
