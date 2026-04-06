@@ -35,3 +35,7 @@ services:
 
 volumes:
   mysql_data:
+
+networks:
+  archivault_network:
+    driver: bridge
