@@ -4,7 +4,7 @@ services:
     env_file:
       - .env
     image: mysql:8.0
-    container_name: thebail_db_prod
+    container_name: archivault_db_prod
     restart: always
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
