@@ -34,8 +34,6 @@ services:
       retries: 10
     env_file:
       - .env
-    networks:
-      - archivault_network
 
 volumes:
   mysql_data:
