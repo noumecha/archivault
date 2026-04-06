@@ -15,7 +15,7 @@ SIDEBAR_MENU = [
         "title": "Ajouter",
         "icon": "ri-sticky-note-add-line",
         "url_prefix": "/upload/",
-        "url_name": "upload_document",
+        "url_name": "upload_page",
         "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
     },
     {

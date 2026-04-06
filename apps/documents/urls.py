@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import *
+from .views.views import *
+from .views.api_views import *
 from config.utils.urls import *
 
 urlpatterns = [
@@ -12,7 +13,8 @@ urlpatterns = [
     *get_crud_urls(AvenantsView, "avenant/avenants", "avenants"),
     *get_crud_urls(DocumentView, "document/documents", "documents"),
     # documents
-    path('upload/', DocumentCreateMultipleView.as_view(), name='upload_document'),
+    path('upload/', DocumentCreateMultipleView.as_view(), name='upload_page'),
+    path('api/upload/', DocumentUploadAPIView.as_view(), name='upload_document'),
     path('documents/list/', DocumentListView.as_view(), name='list_document'),
     path('edit/<int:pk>/', DocumentUpdateView.as_view(), name='edit_document'),
     path('delete/<int:pk>/', DocumentDeleteView.as_view(), name='delete_document'),

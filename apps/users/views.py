@@ -5,10 +5,11 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+
+from apps.users.serializers import GroupSerializer
 from .models import *
 from apps.administration.models import *
 from .forms import *
-from .serializers import GroupSerializer, UserSerializer
 from web_project import TemplateLayout
 from config.views import *
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -16,7 +17,6 @@ from django.conf import settings
 from django.shortcuts import render, redirect
 from rest_framework_simplejwt.tokens import RefreshToken
 from .services.user_service import UserService
-from django.core.exceptions import PermissionDenied
 from config.roles import *
 from config.mixins.permissions import *
 from django.db.models import Q

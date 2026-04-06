@@ -4,29 +4,30 @@
   {% if not navbar_full %}
   <div class="app-brand demo">
     <a href="{% url 'index' %}" class="app-brand-link">
-      <img class="avatar"
+      <img class="avatar mt-3"
           style="
-              height: 50px;
-              width: 50px;
+              height: 75px;
+              width: 75px;
               object-fit: contain;
           "
           src="{% static 'img/logo/logo.png' %}"
           alt="Archivault" width="">
-          <span class="app-brand-text text-wrap demo text-heading fw-semibold">
-            {{ sidebar_title }}
-          </span>
     </a>
-
     <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
       <i class="menu-toggle-icon d-xl-block align-middle"></i>
     </a>
   </div>
   {% endif %}
+  <!--div class="menu-inner-shadow"></div-->
+  <ul class="menu-inner mt-2 py-1">
+    <!-- title of section or archivault Title -->
+    <div class="bg-primary p-2 ps-5 d-flex w-100 mt-1 mb-2">
+      <span class="app-brand-text  text-white fw-semibold">
+        {{ sidebar_title }}
+      </span>
+    </div>
 
-
-  <div class="menu-inner-shadow"></div>
-
-  <ul class="menu-inner py-1">
+    <!-- menu items -->
     {% for item in sidebar_menu %}
 
       {% if item.header %}
