@@ -13,6 +13,7 @@ urlpatterns = [
     *get_crud_urls(AvenantsView, "avenant/avenants", "avenants"),
     *get_crud_urls(DocumentView, "document/documents", "documents"),
     # documents
+    path('details/<int:pk>/', DocumentDetailView.as_view(), name='document_detail'),
     path('upload/', DocumentCreateMultipleView.as_view(), name='upload_page'),
     path('api/upload/', DocumentUploadAPIView.as_view(), name='upload_document'),
     path('documents/list/', DocumentListView.as_view(), name='list_document'),

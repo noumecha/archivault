@@ -1,18 +1,20 @@
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from apps.documents.models import Document
-from apps.users.models import Utilisateur
-# -*- coding: utf-8 -*-
+from apps.users.models import Utilisateur, RoleUtilisateur
 
-# Circulation documents
-"""class CirculationDocument(models.Model):
-    document = models.OneToOneField(Document, on_delete=models.CASCADE)
-    utilisateurs = models.ManyToManyField(Utilisateur, related_name='circulations')
-    date_debut = models.DateTimeField(auto_now_add=True)
-    date_fin = models.DateTimeField(null=True, blank=True)
 
-    def __str__(self):
-        return f"Circulation de {self.document.titre}"""
+# ─────────────────────────────────────────────
+# PERMISSIONS CUSTOM
+# ─────────────────────────────────────────────
+
+class PermissionTache(models.TextChoices):
+    CREER_TACHE = 'creer_tache', 'Créer des tâches'
+    ASSIGNER_TACHE = 'assigner_tache', 'Assigner des tâches'
+    VALIDER_TACHE = 'valider_tache', 'Valider des tâches'
+    VOIR_TOUTES_TACHES = 'voir_toutes_taches', 'Voir toutes les tâches'
+
 
 # ─────────────────────────────────────────────
 # CIRCULATION
@@ -30,7 +32,6 @@ class StatutCirculation(models.TextChoices):
 class CirculationDocument(models.Model):
     """
     Représente un circuit de circulation d'un document.
-    Un document peut avoir plusieurs circuits (ex: v1, v2...).
     """
     document      = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='circulations')
     titre         = models.CharField(max_length=255)
@@ -110,10 +111,16 @@ class Tache(models.Model):
     Date_miseajour   = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-Date_creation']
+        ordering = ['-priorite', '-Date_creation']
 
     def __str__(self):
         return f"[{self.priorite.upper()}] {self.titre} → {self.assignee_a}"
+
+    def is_overdue(self):
+        """Vérifier si la tâche est en retard."""
+        if self.date_echeance and self.statut != StatutTache.TERMINEE:
+            return timezone.now().date() > self.date_echeance
+        return False
 
 
 class CommentaireTache(models.Model):
@@ -154,20 +161,17 @@ class ActionAudit(models.TextChoices):
 class AuditLog(models.Model):
     """
     Journal d'audit complet — toutes les actions du système.
-    Différent de l'historique de circulation.
     """
     utilisateur   = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
     action        = models.CharField(max_length=30, choices=ActionAudit.choices)
-    # Objet concerné (générique)
-    objet_type    = models.CharField(max_length=100)          # ex: 'Document', 'Tache', 'CirculationDocument'
+    objet_type    = models.CharField(max_length=100)
     objet_id      = models.PositiveIntegerField(null=True, blank=True)
-    objet_label   = models.CharField(max_length=255, blank=True) # ex: titre du document
-    # Détails
-    details       = models.JSONField(blank=True, null=True)   # données avant/après, champs modifiés...
+    objet_label   = models.CharField(max_length=255, blank=True)
+    details       = models.JSONField(blank=True, null=True)
     ip_address    = models.GenericIPAddressField(null=True, blank=True)
     user_agent    = models.TextField(blank=True)
     # timestamp
-    Date_creation    = models.DateTimeField(auto_now=True)
+    Date_creation    = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-Date_creation']

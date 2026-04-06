@@ -1,13 +1,16 @@
 import json
 import os
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 from django.views.generic import ListView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from apps.circulation.models import ActionAudit, CirculationDocument, Tache
+from apps.circulation.services.audit_service import AuditService
 from ..forms import *
 from django.views.generic import DeleteView
 from django.urls import reverse_lazy
 from django.urls import reverse_lazy
 from django.db.models import Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from config.views import BaseCRUDView
 from django.db import transaction
@@ -349,7 +352,8 @@ class DocumentListView(ListView):
         return self.apply_filters(qs)
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
+        ctx = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        #ctx = super().get_context_data(**kwargs)
         user = self.request.user
         ctx['types'] = DocumentMetadataService.get_types(user)
         ctx['sous_types'] = DocumentMetadataService.get_sous_types(user)
@@ -365,6 +369,38 @@ class DocumentListView(ListView):
         ctx['date_debut'] = self.request.GET.get('date_debut', '')
         ctx['date_fin'] = self.request.GET.get('date_fin', '')
         return ctx
+
+class DocumentDetailView(LoginRequiredMixin, TemplateView):
+    template_name = "document_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context = TemplateLayout.init(self, context)
+
+        document = get_object_or_404(Document, pk=self.kwargs['pk'])
+
+        # Récupérer les tâches associées
+        taches = Tache.objects.filter(document=document).select_related('assignee_a', 'assignee_par')
+
+        # utilisateurs
+        utilisateurs = Utilisateur.objects.all()
+        print("utilisateurs : ", utilisateurs)
+        context['utilisateurs'] = utilisateurs
+
+        # Récupérer les circulations associées
+        circulations = CirculationDocument.objects.filter(document=document).select_related('initie_par')
+
+        # Log de consultation
+        AuditService.log(self.request, ActionAudit.CONSULTATION, document)
+
+        context.update({
+            'document': document,
+            'taches': taches,
+            'circulations': circulations,
+            'utilisateurs': utilisateurs
+        })
+
+        return context
 
 class DocumentUpdateView(UpdateView):
     model = Document

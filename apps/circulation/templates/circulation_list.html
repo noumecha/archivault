@@ -1,40 +1,67 @@
 {% extends layout_path %}
-
 {% load static %}
-{% load i18n %}
-
-{% block title %}Circulations des documents{% endblock %}
-
-{% load crispy_forms_tags %}
 
 {% block content %}
-<h2>Circulations en cours</h2>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Document</th>
-            <th>Titre</th>
-            <th>Initié par</th>
-            <th>Statut</th>
-            <th>Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for circulation in circulations %}
-        <tr>
-            <td>{{ circulation.document.titre }}</td>
-            <td>{{ circulation.titre }}</td>
-            <td>{{ circulation.initie_par }}</td>
-            <td><span class="badge bg-{{ circulation.statut|slice:":3" }}">{{ circulation.get_statut_display }}</span></td>
-            <td>{{ circulation.Date_creation|date:"d/m/Y H:i" }}</td>
-            <td><a href="{% url 'circulation:circulation_detail' circulation.pk %}" class="btn btn-sm btn-primary">Voir</a></td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6">Aucune circulation</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container-xxl flex-grow-1 container-p-y">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold text-white mb-0">
+      <span class="text-white fw-light">Circulations /</span> Circulations
+    </h4>
+  </div>
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Liste des circulations</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Document</th>
+              <th>Titre</th>
+              <th>Initié par</th>
+              <th>Étapes</th>
+              <th>Statut</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for circulation in circulations %}
+            <tr>
+              <td>{{ circulation.document.titre }}</td>
+              <td>{{ circulation.titre }}</td>
+              <td>{{ circulation.initie_par }}</td>
+              <td>
+                <span class="badge bg-label-primary">{{ circulation.etapes.count }} étape(s)</span>
+              </td>
+              <td>
+                <span class="badge bg-label-{% if circulation.statut == 'clos' %}success{% elif circulation.statut == 'en_cours' %}primary{% elif circulation.statut == 'rejete' %}danger{% else %}secondary{% endif %}">
+                  {{ circulation.get_statut_display }}
+                </span>
+              </td>
+              <td>{{ circulation.Date_creation|date:"d/m/Y H:i" }}</td>
+              <td>
+                <a href="{% url 'circulation_detail' circulation.pk %}" class="btn btn-sm btn-icon btn-outline-primary">
+                  <i class="ri-info-i"></i>
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">Aucune circulation trouvée.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
 {% endblock %}
+
 {% block extra_js %}
 {% endblock %}

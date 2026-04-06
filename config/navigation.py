@@ -8,31 +8,43 @@ SIDEBAR_MENU = [
     },
     # CIRCULATION
     {
-        "header": "Circulation",
+        "header": "Circulation & Tâches",
         "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
     },
     {
         "title": "Circulation",
         "icon": "ri-file-list-3-fill",
-        "url_prefix": "/circulations/",
+        "url_prefix": "/circulation/",
         "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
         "children": [
             {
-                "title": "Circulation",
-                "url_prefix": "/circulations/",
+                "title": "Circulations",
+                "url_prefix": "/circulation/circulations/",
                 "url_name": "circulation_list",
-                "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
+                "roles": ["superadmin", "administrateur", "superviseur"],
             },
             {
-                "title": "Taches",
-                "url_prefix": "/taches/",
+                "title": "Mes tâches",
+                "url_prefix": "/circulation/taches/",
                 "url_name": "tache_list",
                 "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
             },
             {
+                "title": "Gestion des tâches",
+                "url_prefix": "/circulation/taches-management/",
+                "url_name": "tache_management",
+                "roles": ["superadmin", "administrateur", "superviseur"],
+            },
+            {
+                "title": "Créer une tâche",
+                "url_prefix": "/circulation/taches/create/",
+                "url_name": "tache_create",
+                "roles": ["superadmin", "administrateur", "superviseur"],
+            },
+            {
                 "title": "Audit",
                 "url_name": "audit_log_list",
-                "url_prefix": "/audit/",
+                "url_prefix": "/circulation/audit/",
                 "roles": ["superadmin", "administrateur", "superviseur"],
             },
         ],
@@ -58,7 +70,7 @@ SIDEBAR_MENU = [
             {
                 "title": "Listes",
                 "url_name": "list_document",
-                "url_prefix": "/documents/list/",
+                "url_prefix": "/documents/",
                 "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"]
             },
             {
@@ -79,18 +91,12 @@ SIDEBAR_MENU = [
                 "url_prefix": "/theme/themes/",
                 "roles": ["superadmin", "administrateur", "superviseur"]
             },
-            {
-                "title": "Niveau d'accès",
-                "url_name": "niveauaccess_list",
-                "url_prefix": "/niveauaccess/niveauaccesss/",
-                "roles": ["superadmin", "administrateur", "superviseur"]
-            },
         ],
     },
 
     {
         "header": "Utilisateurs & Rôles",
-        "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
+        "roles": ["superadmin", "administrateur", "superviseur"],
     },
     {
         "title": "Profil",
@@ -108,7 +114,7 @@ SIDEBAR_MENU = [
                 "title": "Listes",
                 "url_name": "utilisateur_list",
                 "url_prefix": "/utilisateur/",
-                "roles" : ["superadmin", "administrateur", "superviseur"]
+                "roles": ["superadmin", "administrateur", "superviseur"]
             },
         ],
     },

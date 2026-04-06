@@ -1,0 +1,219 @@
+{% extends layout_path %}
+{% load static %}
+
+{% block title %}{{ document.titre }}{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="fw-bold text-white mb-1">Documents / détail / <span>{{ document.titre }}</span></h4>
+      <span class="badge text-bg-info me-2">{{ document.get_etat_display }}</span>
+      <span class="badge text-bg-secondary">{{ document.get_profil_document_display }}</span>
+    </div>
+    <div>
+      <a href="{{ document.fichier.url }}" target="_blank" class="btn btn-primary me-2">
+        <i class="ri-chat-download-line"></i> Télécharger
+      </a>
+      <a href="{% url 'list_document' %}" class="btn btn-outline-light">
+        <i class="ri-arrow-left-line"></i> Retour
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <!-- Infos document -->
+    <div class="col-md-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header"><h5 class="mb-0">Informations</h5></div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li class="mb-2">
+              <span class="text-muted">Type :</span>
+              <strong>{{ document.type_document.libelle }}</strong>
+            </li>
+            <li class="mb-2">
+              <span class="text-muted">Sous-type :</span>
+              <strong>{{ document.sous_type.libelle|default:"—" }}</strong>
+            </li>
+            <li class="mb-2">
+              <span class="text-muted">Thème :</span>
+              <strong>{{ document.theme.libelle|default:"—" }}</strong>
+            </li>
+            <li class="mb-2">
+              <span class="text-muted">Cellule :</span>
+              <strong>{{ document.cellule.nom|default:"—" }}</strong>
+            </li>
+            <li class="mb-2">
+              <span class="text-muted">Créé par :</span>
+              <strong>{{ document.cree_par }}</strong>
+            </li>
+            <li class="mb-2">
+              <span class="text-muted">Date création :</span>
+              <strong>{{ document.Date_creation|date:"d/m/Y H:i" }}</strong>
+            </li>
+            <li class="mb-2">
+              <span class="text-muted">Niveau d'accès :</span>
+              <span class="badge bg-label-{{ document.niveau_acces }}">{{ document.get_niveau_acces_display }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tâches -->
+    <div class="col-md-8 mb-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Tâches assignées</h5>
+        </div>
+        <div class="card-body p-0">
+          {% if taches %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Tâche</th>
+                  <th>Assignée à</th>
+                  <th>Priorité</th>
+                  <th>Statut</th>
+                  <th>Échéance</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for tache in taches %}
+                <tr>
+                  <td><strong>{{ tache.titre }}</strong></td>
+                  <td>{{ tache.assignee_a }}</td>
+                  <td>
+                    <span class="badge bg-label-{{ tache.priorite }}">{{ tache.get_priorite_display }}</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-label-{{ tache.statut }}">{{ tache.get_statut_display }}</span>
+                  </td>
+                  <td>{{ tache.date_echeance|date:"d/m/Y"|default:"—" }}</td>
+                  <td>
+                    <a href="{% url 'tache_detail' tache.pk %}" class="btn btn-sm btn-icon btn-outline-primary">
+                      <i class="bx bx-show"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="p-4 text-center text-muted">
+            <i class="bx bx-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucune tâche assignée.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Circulations -->
+  <div class="row">
+    <div class="col-12 mb-4">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Circulations</h5>
+          <!-- button to open circulation modal -->
+          <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addCirculationModal">
+            <i class="bx bx-plus me-1"></i> Ajouter
+          </button>
+        </div>
+        <div class="card-body p-0">
+          {% if circulations %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Titre</th>
+                  <th>Initié par</th>
+                  <th>Étapes</th>
+                  <th>Statut</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for circulation in circulations %}
+                <tr>
+                  <td><strong>{{ circulation.titre }}</strong></td>
+                  <td>{{ circulation.initie_par }}</td>
+                  <td><span class="badge bg-label-primary">{{ circulation.etapes.count }} étape(s)</span></td>
+                  <td>
+                    <span class="badge bg-label-{% if circulation.statut == 'clos' %}success{% elif circulation.statut == 'en_cours' %}primary{% elif circulation.statut == 'rejete' %}danger{% else %}secondary{% endif %}">
+                      {{ circulation.get_statut_display }}
+                    </span>
+                  </td>
+                  <td>{{ circulation.Date_creation|date:"d/m/Y H:i" }}</td>
+                  <td>
+                    <a href="{% url 'circulation_detail' circulation.pk %}" class="btn btn-sm btn-icon btn-outline-primary">
+                      <i class="ri-info-i"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="p-4 text-center text-muted">
+            <i class="bx bx-share" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucune circulation en cours.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Ajouter une circulation -->
+  <div class="modal fade" id="addCirculationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ajouter une circulation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="{% url 'circulation_create' document.pk %}">
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Titre <span class="text-danger">*</span></label>
+              <input type="text" name="titre" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea name="description" class="form-control" rows="3" placeholder="Contexte, instructions..."></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Destinataires <span class="text-danger">*</span>
+                <small class="text-muted">(sélectionner dans l'ordre de traitement)</small>
+              </label>
+              <select name="destinataires[]" class="form-select select2" multiple required>
+                {% for user in utilisateurs %}
+                  <option value="{{ user.pk }}">{{ user.get_full_name|default:user.username }} — {{ user.get_role_display }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Créer la circulation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

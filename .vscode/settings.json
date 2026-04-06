@@ -83,4 +83,5 @@
   "npm.packageManager": "yarn",
   "python-envs.pythonProjects": [],
   "python-envs.defaultEnvManager": "ms-python.python:system",
+  "commentTranslate.hover.enabled": false,
 }
