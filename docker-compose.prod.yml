@@ -45,6 +45,3 @@ services:
     environment:
       DJANGO_ENVIRONMENT: production
       DEBUG: 'False'
-
-  db:
-    ports: []
