@@ -221,7 +221,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 # For cookies: you probably want to set this in production
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000','http://127.0.0.1:8000','http://148.230.123.18:8000/',
+    'http://localhost:8000','http://127.0.0.1:8000','http://192.64.82.124:8000/',
     'https://archivault.cm','https://www.archivault.cm',
 ]
 AUTH_USER_MODEL = 'users.Utilisateur'
