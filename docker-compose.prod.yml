@@ -1,3 +1,4 @@
+# docker-compose.prod.yml
 services:
   web:
     ports:
@@ -5,6 +6,16 @@ services:
     environment:
       DJANGO_ENVIRONMENT: production
       DEBUG: 'False'
-
   db:
     ports: []
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: archivault_phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - '8080:80'
