@@ -380,7 +380,7 @@ class DocumentDetailView(LoginRequiredMixin, TemplateView):
         document = get_object_or_404(Document, pk=self.kwargs['pk'])
 
         # Récupérer les tâches associées
-        taches = Tache.objects.filter(document=document).select_related('assignee_a', 'assignee_par')
+        taches = Tache.objects.filter(document=document)
 
         # utilisateurs
         utilisateurs = Utilisateur.objects.all()
@@ -388,7 +388,7 @@ class DocumentDetailView(LoginRequiredMixin, TemplateView):
         context['utilisateurs'] = utilisateurs
 
         # Récupérer les circulations associées
-        circulations = CirculationDocument.objects.filter(document=document).select_related('initie_par')
+        circulations = CirculationDocument.objects.filter(document=document)
 
         # Log de consultation
         AuditService.log(self.request, ActionAudit.CONSULTATION, document)

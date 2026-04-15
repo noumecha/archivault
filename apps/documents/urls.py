@@ -13,12 +13,12 @@ urlpatterns = [
     *get_crud_urls(AvenantsView, "avenant/avenants", "avenants"),
     *get_crud_urls(DocumentView, "document/documents", "documents"),
     # documents
-    path('details/<int:pk>/', DocumentDetailView.as_view(), name='document_detail'),
-    path('upload/', DocumentCreateMultipleView.as_view(), name='upload_page'),
-    path('api/upload/', DocumentUploadAPIView.as_view(), name='upload_document'),
-    path('documents/list/', DocumentListView.as_view(), name='list_document'),
-    path('edit/<int:pk>/', DocumentUpdateView.as_view(), name='edit_document'),
-    path('delete/<int:pk>/', DocumentDeleteView.as_view(), name='delete_document'),
+    path('document/details/<int:pk>/', DocumentDetailView.as_view(), name='document_detail'),
+    path('document/upload/', DocumentCreateMultipleView.as_view(), name='upload_page'),
+    path('document/api/upload/', DocumentUploadAPIView.as_view(), name='upload_document'),
+    path('document/documents/list/', DocumentListView.as_view(), name='list_document'),
+    path('document/edit/<int:pk>/', DocumentUpdateView.as_view(), name='edit_document'),
+    path('document/delete/<int:pk>/', DocumentDeleteView.as_view(), name='delete_document'),
     # autocomplete
     path('typedocument/autocomplete/', TypeDocumentAutocomplete.as_view(), name='typedocument_autocomplete'),
     path('soustypedocument/autocomplete/', SousTypeDocumentAutocomplete.as_view(), name='soustypedocument_autocomplete'),
