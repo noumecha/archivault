@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# archivault/docker/django/entrypoint.sh
 DB_HOST=${MYSQL_HOST:-db}
 DB_PORT=${MYSQL_PORT:-3306}
 
