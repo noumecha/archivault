@@ -1,22 +1,21 @@
+# apps/users/web/views.py
 from django.views.generic import TemplateView, View
 from django.contrib.auth import login, logout, authenticate
 from rest_framework.views import APIView
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from apps.users.serializers import GroupSerializer
-from .models import *
+from ..models import *
 from apps.administration.models import *
-from .forms import *
+from ..forms import *
 from web_project import TemplateLayout
 from config.views import *
-from rest_framework_simplejwt.views import TokenObtainPairView
 from django.conf import settings
 from django.shortcuts import render, redirect
 from rest_framework_simplejwt.tokens import RefreshToken
-from .services.user_service import UserService
+from ..services.user_service import UserService
 from config.roles import *
 from config.mixins.permissions import *
 from django.db.models import Q
@@ -35,34 +34,6 @@ class LoginView(View):
             return redirect("index")
         return render(request, self.template_name)
 
-    def post(self, request):
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-
-        user = authenticate(request, username=username, password=password)
-        print(user)
-        if user is not None:
-            # ✅ Création des tokens JWT
-            refresh = RefreshToken.for_user(user)
-            access = str(refresh.access_token)
-
-            response = redirect("index")
-            # ✅ Cookies sécurisés
-            response.set_cookie(
-                "access_token", access,
-                httponly=True, secure=not settings.DEBUG,
-                samesite="Lax", max_age=60*15
-            )
-            response.set_cookie(
-                "refresh_token", str(refresh),
-                httponly=True, secure=not settings.DEBUG,
-                samesite="Lax", max_age=60*60*24*7
-            )
-            login(request, user)
-            return response
-
-        return render(request, self.template_name, {"error": "Identifiants invalides"})
-
 class LogoutView(View):
     def get(self, request):
         logout(request)
@@ -70,49 +41,6 @@ class LogoutView(View):
         response.delete_cookie('access_token')
         response.delete_cookie('refresh_token')
         return response
-
-# api view
-class LoginAPIView(TokenObtainPairView):
-    """
-    Authentifie l’utilisateur et crée les cookies JWT (access + refresh).
-    """
-    def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        if response.status_code == 200:
-            data = response.data
-            access = data.get('access')
-            refresh = data.get('refresh')
-
-            # ✅ Crée la réponse finale avec cookies sécurisés
-            res = Response({'message': 'Connexion réussie'}, status=status.HTTP_200_OK)
-            res.set_cookie(
-                'access_token',
-                access,
-                httponly=True,
-                secure=not settings.DEBUG,
-                samesite='Lax',
-                max_age=60 * 15  # 15 min
-            )
-            res.set_cookie(
-                'refresh_token',
-                refresh,
-                httponly=True,
-                secure=not settings.DEBUG,
-                samesite='Lax',
-                max_age=60 * 60 * 24 * 7  # 7 jours
-            )
-            return res
-        return response
-
-class LogoutAPIView(APIView):
-    """
-    Supprime les cookies JWT.
-    """
-    def post(self, request):
-        res = Response({'message': 'Déconnexion réussie'}, status=status.HTTP_200_OK)
-        res.delete_cookie('access_token')
-        res.delete_cookie('refresh_token')
-        return res
 
 # user CRUD view
 class UserView(RoleRequiredMixin, BaseCRUDView):

@@ -1,3 +1,4 @@
+// modules/users/users.controllers.js
 import { UserService } from './users.services.js';
 import { UserUi } from './users.ui.js';
 import { initCRUD } from '../../helpers/crud-helper.js';

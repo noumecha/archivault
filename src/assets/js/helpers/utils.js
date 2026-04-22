@@ -76,6 +76,15 @@ function ajaxModal(modalId, formnContainerId, formId, fetchUrl, selectItemId = n
   });
 }
 
+// loader functions
+function startLoader(loaderId) {
+  $(loaderId).removeClass('d-none');
+}
+
+function closeLoader(loaderId) {
+  $(loaderId).addClass('d-none');
+}
+
 // function to load modal content
 function loadModal(modalId, formContainer, baseUrl) {
   const formContent = $(formContainer);
@@ -142,16 +151,15 @@ function refresh(refreshBtn, url, formId, containerId) {
 
 function fetchDatas(url, formId = null, containerId) {
   const formData = formId ? $(formId).serialize() : '';
-  const loader = $('#table-loader');
   const table_container = $('#data-table');
-  loader.removeClass('d-none');
+  startLoader($('#table-loader'));
   table_container.hide();
   $.ajax({
     url: url,
     data: formData,
     type: 'GET',
     beforeSend: function () {
-      loader.removeClass('d-none');
+      closeLoader('#table-loader');
     },
     success: function (data) {
       if (data.success) {
@@ -164,7 +172,7 @@ function fetchDatas(url, formId = null, containerId) {
       console.error('AJAX Error:', error);
     },
     complete: function () {
-      loader.addClass('d-none');
+      closeLoader('#table-loader');
       table_container.show();
     }
   });
@@ -230,7 +238,7 @@ function submitForm(formId, baseUrl, fetchUrl, modalId = null) {
 }
 
 // set the success message after form submission is successful
-function showAlertMessage(msg, id) {
+function showAlertMessage(msg, id, loader = null) {
   const msgBlock = $(id);
   msgBlock.stop(true, true).empty();
   if (typeof msg === 'object' && !Array.isArray(msg)) {
@@ -251,13 +259,17 @@ function showAlertMessage(msg, id) {
     msgBlock.append($('<p class="text-center mb-0"></p>').text(msg));
   }
 
+  if (loader) {
+    startLoader(loader);
+    setTimeout(() => closeLoader(loader), 5000);
+  }
   msgBlock.fadeIn().css('display', 'block');
   setTimeout(() => msgBlock.fadeOut(), 5000);
 }
 
 // show message
-function showMessage() {
-  container = $('#message-show');
+function showMessage(container = $('#message-show')) {
+  console.log('container ', container);
   container.fadeIn().css('display', 'block');
   setTimeout(() => container.fadeOut(), 5000);
 }
@@ -324,3 +336,40 @@ function disabledCSS(el) {
     opacity: '1'
   });
 }
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      // Does this cookie string begin with the name we want?
+      if (cookie.substring(0, name.length + 1) === name + '=') {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+export {
+  showMessage,
+  showAlertMessage,
+  setMessage,
+  setSelect2,
+  ajaxModal,
+  loadModal,
+  closeModal,
+  clearSearch,
+  filteringDatas,
+  refresh,
+  fetchDatas,
+  submitForm,
+  setVisible,
+  toogleFormset,
+  disabledCSS,
+  getCookie,
+  startLoader,
+  closeLoader
+};

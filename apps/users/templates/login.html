@@ -1,3 +1,4 @@
+{# apps/users/templates/login.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="en"
@@ -80,6 +81,8 @@
                     </div>
                   </div>
                 </div>
+                <div id="message-show" style="display: none;" class="alert alert-danger text-center mt-3" role="alert">
+                </div>
                 <div class="mb-5 pb-2 d-flex justify-content-between pt-2 align-items-center">
                   <div class="form-check mb-0">
                     <input class="form-check-input" type="checkbox" id="remember-me">
@@ -89,13 +92,13 @@
                   </div>
                 </div>
                 <div class="mb-5">
-                  <button class="btn btn-primary d-grid w-100" type="submit">Connexion</button>
+                  <button class="d-flex justify-content-center align-items-center btn btn-primary d-grid w-100" type="submit">
+                    Connexion
+                    <div id="login-loader" class="d-none text-center">
+                      <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+                    </div>
+                  </button>
                 </div>
-                {% if error %}
-                  <div id="message-show" style="display: none;" class="alert alert-danger text-center mt-3" role="alert">
-                    {{ error }}
-                  </div>
-                {% endif %}
               </form>
             </div>
           </div>
@@ -115,8 +118,8 @@
     <script src="{% static 'vendor/js/menu.js' %}"></script>
     <script src="{% static 'vendor/js/helpers.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
-    <script src="{% static 'js/helpers/utils.js' %}"></script>
-    <script src="{% static 'js/login.js' %}"></script>
+    <!--script src="{% static 'js/helpers/utils.js' %}"></script-->
+    <script type="module" src="{% static 'js/modules/users/auth.controller.js' %}"></script>
     <script async defer src="https://buttons.github.io/buttons.js"></script>
   </body>
 

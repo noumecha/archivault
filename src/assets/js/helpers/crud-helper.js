@@ -4,6 +4,16 @@
  * Initialize CRUD module dynamically
  * @param {Object} config
  */
+import {
+  loadModal,
+  submitForm,
+  fetchDatas,
+  filteringDatas,
+  refresh,
+  clearSearch,
+  showMessage,
+  closeModal
+} from './utils.js';
 export function initCRUD(config) {
   const {
     moduleName,
@@ -23,7 +33,7 @@ export function initCRUD(config) {
   submitForm(formSelector, baseUrl, fetchUrl, modalSelector);
   // Fetch initial data
   fetchDatas(fetchUrl, searchFormSelector, tableContainerSelector);
-  filteringDatas(searchInputSelector, fetchUrl, searchFormSelector, tableContainerSelector); // automatic refresh when change filter
+  filteringDatas(searchInputSelector, fetchUrl, searchFormSelector, tableContainerSelector);
   // Clear search field
   clearSearch(clearBtnSelector, searchInputSelector);
   // refresh

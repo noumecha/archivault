@@ -1,3 +1,4 @@
+# config/urls.py
 from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
@@ -14,9 +15,6 @@ urlpatterns = [
 
     # Pages urls
     path("", include("apps.pages.urls")),
-
-    # Auth urls
-    path("", include("apps.authentication.urls")),
 
     # Card urls
     path("", include("apps.cards.urls")),

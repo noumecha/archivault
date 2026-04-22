@@ -1,3 +1,4 @@
+// modules/users/users.services.js
 export const UserService = (function () {
   function fetchAll() {
     return $.get('/users/users/all/');
