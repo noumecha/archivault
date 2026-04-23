@@ -1,3 +1,4 @@
+# config/views.py
 from django.shortcuts import redirect, get_object_or_404, render
 from django.views.generic import TemplateView
 from django.http import JsonResponse

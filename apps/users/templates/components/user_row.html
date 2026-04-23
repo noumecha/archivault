@@ -1,0 +1,36 @@
+{# apps/users/templates/components/user_row.html #}
+{# Template réutilisable pour une ligne utilisateur #}
+<tr data-user-id="{{ user.id }}">
+  <td>{{ user.username }}</td>
+  <td>{{ user.first_name }}</td>
+  <td>
+    <span class="badge rounded-pill bg-primary">{{ user.role_display }}</span>
+  </td>
+  <td>{{ user.email }}</td>
+  <td>
+    <span class="badge rounded-pill "
+          data-status="{{ user.is_active }}"
+          :class="user.is_active === True ? 'bg-success' : 'bg-danger'">
+      {{ user.is_active }}
+    </span>
+  </td>
+  <td>
+    <div class="dropdown">
+      <button class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+        <i class="ri-more-2-line"></i>
+      </button>
+      <div class="dropdown-menu">
+        <a href="#" class="dropdown-item" data-action="edit" data-id="{{ user.id }}">
+          <i class="ri-pencil-line me-1"></i>Modifier
+        </a>
+        <a href="#" class="dropdown-item text-danger" data-action="delete" data-id="{{ user.id }}">
+          <i class="ri-delete-bin-6-line me-1"></i>Supprimer
+        </a>
+        <a href="#" class="dropdown-item" data-action="toggle-status" data-id="{{ user.id }}">
+          <i class="ri-check-double-line me-1"></i>
+          {% if user.is_active == True %}Désactiver{% else %}Activer{% endif %}
+        </a>
+      </div>
+    </div>
+  </td>
+</tr>

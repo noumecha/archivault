@@ -1,5 +1,15 @@
 // helpers/utils.js
 
+// standard function to reset form via dom or via jquery
+function resetForm(formSelector) {
+  const form = $(formSelector);
+  if (form.length) {
+    form[0].reset();
+  } else {
+    console.warn(`Form with selector "${formSelector}" not found.`);
+  }
+}
+
 // function to set select2 on element of type select
 function setSelect2(selector, placeholder, modalId) {
   if ($(selector).is('select')) {
@@ -371,5 +381,6 @@ export {
   disabledCSS,
   getCookie,
   startLoader,
-  closeLoader
+  closeLoader,
+  resetForm
 };

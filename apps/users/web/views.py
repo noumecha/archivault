@@ -5,13 +5,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-
-from apps.users.serializers import GroupSerializer
+from apps.users.serializers import GroupSerializer, UserSerializer
 from ..models import *
 from apps.administration.models import *
 from ..forms import *
 from web_project import TemplateLayout
 from config.views import *
+from config.api.base_api_view import BaseAPIView
 from django.conf import settings
 from django.shortcuts import render, redirect
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -47,11 +47,20 @@ class UserView(RoleRequiredMixin, BaseCRUDView):
     model = Utilisateur
     form_class = UtilisateurForm
     list_route = 'utilisateur_list'
-    list_template = "user_list.html"
+    list_template = "pages/user_list.html"
     filters = [
         ('cellule', Cellule, 'Unité de traitement'),
         ('role', RoleUtilisateur),
     ]
+    # list of all roles for the form
+    roles = RoleUtilisateur
+    cellules = Cellule.objects.all()
+    # the surchage context for roles and cellues to use in template
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        context['roles'] = self.roles
+        context['cellules'] = self.cellules
+        return context
     context_object_name = 'users'
     search_fields = ['username', 'first_name']
     headers = ["Nom", "Prenom", "Role", "Email"]
@@ -62,38 +71,6 @@ class UserView(RoleRequiredMixin, BaseCRUDView):
         RoleUtilisateur.ADMIN,
         RoleUtilisateur.SUPERVISEUR
     ]
-
-    def post(self, request, *args, **kwargs):
-        if request.user.role not in ["superadmin", "administrateur", "superviseur"]:
-            return JsonResponse({"success": False}, status=403)
-        return super().post(request, *args, **kwargs)
-
-    def get_queryset(self, search_query=None):
-
-        # queryset autorisé selon le role
-        qs = UserService.get_users_queryset(self.request.user)
-
-        request = self.request
-
-        # 🔹 filtres dynamiques
-        filters = {}
-        for key, value in request.GET.items():
-            if key in ['search', 'page']:
-                continue
-            if value:
-                filters[key] = value
-
-        if filters:
-            qs = qs.filter(**filters)
-
-        # 🔹 recherche texte
-        if search_query and self.search_fields:
-            q_objects = Q()
-            for field in self.search_fields:
-                q_objects |= Q(**{f"{field}__icontains": search_query})
-            qs = qs.filter(q_objects)
-
-        return qs.order_by('-Date_creation')
 
 class GroupAPIView(APIView):
     authentication_classes = [TokenAuthentication]

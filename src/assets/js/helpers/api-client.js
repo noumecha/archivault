@@ -20,9 +20,11 @@ export const ApiClient = {
       data = { error: 'Erreur de réponse serveur' };
     }
 
-    if (!response.ok) {
+    console.log('response : ', response);
+    console.log('datas : ', data);
+    /*if (!response.ok) {
       return Promise.reject(data);
-    }
+    }*/
 
     return data;
   }

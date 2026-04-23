@@ -1,0 +1,21 @@
+{# apps/users/templates/components/user_table.html #}
+<div id="table-loader" class="d-none text-center my-4">
+  <i class="ri-loader-2-fill ri-2x spin text-primary"></i>
+  <p class="mt-2">Chargement des données...</p>
+</div>
+
+<table class="table" id="data-table">
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Prénom</th>
+      <th>Rôle</th>
+      <th>Email</th>
+      <th>Statut</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody class="table-border-bottom-0" id="users-tbody">
+    {# JS injectera les lignes ici #}
+  </tbody>
+</table>

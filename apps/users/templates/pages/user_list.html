@@ -1,0 +1,93 @@
+{# apps/users/templates/pages/users_list.html #}
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="card p-3">
+  <div class="card-header">
+    <div class="row d-flex justify-content-between align-items-center">
+      <div class="col-md-8">
+        <h3>Listes des Utilisateurs</h3>
+        <p class="text-sm">Gérer les Utilisateurs</p>
+      </div>
+      <div class="col-md-4 text-end">
+        <button type="button" class="btn" id="refresh-button">
+          <i class="menu-icon ri-restart-line"></i> Rafraîchir
+        </button>
+        <button type="button" class="btn btn-lg btn-dark btn-primary text-white"
+                id="add-button" data-bs-toggle="modal" data-bs-target="#create-utilisateur-modal">
+          <i class="menu-icon ri-add-line"></i> Ajouter
+        </button>
+      </div>
+    </div>
+
+    {# Formulaire de recherche et filtres #}
+    <form class="row d-flex mt-3" id="utilisateur-search-form">
+      <div class="col-md-12">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Rechercher un utilisateur" name="search" id="search">
+          <button class="btn btn-outline-primary" type="button" id="clearSearch">
+            <i class="menu-icon ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+
+      {% for filter in filters %}
+        <div class="col-md-6 col-lg-6 d-flex mt-2 gap-2">
+          <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
+            <option value="">-- {{ filter.label|capfirst }} --</option>
+            {% for item in filter.items %}
+              {% if item.value %}
+                <option value="{{ item.value }}">{{ item.label }}</option>
+              {% else %}
+                <option value="{{ item.id }}">{{ item }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      {% endfor %}
+    </form>
+
+    <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show"></div>
+  </div>
+
+  {# Conteneur pour la table (injecté par JS) #}
+  <div id="utilisateur-table-container">
+    {% include 'components/user_table.html' %}
+  </div>
+</div>
+
+{# Modal Création/Édition #}
+<div class="modal fade" id="create-utilisateur-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content p-0">
+      <form id="utilisateurForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modal-title">Enregistrement utilisateur</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="utilisateur-form-content">
+            {% include 'components/user_form.html' %}
+          </div>
+          <div class="alert alert-success" style="display: none;" id="form-success"></div>
+          <div class="alert alert-danger" style="display: none;" id="form-error"></div>
+          <input type="hidden" name="id" id="update-id">
+        </div>
+        <div class="modal-footer flex-row-reverse">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="submit" id="save-btn" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script type="module" src="{% static 'js/modules/users/index.js' %}"></script>
+{% endblock %}
