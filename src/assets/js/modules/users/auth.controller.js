@@ -5,8 +5,9 @@ import { showAlertMessage, startLoader, closeLoader } from '../../helpers/utils.
 export const AuthController = {
   init() {
     $('#formAuthentication').on('submit', async e => {
-      startLoader('#login-loader');
       e.preventDefault();
+      e.stopPropagation();
+      startLoader('#login-loader');
       const data = {
         username: $('#username').val(),
         password: $('#password').val()
@@ -16,9 +17,10 @@ export const AuthController = {
         const res = await AuthService.login(data);
         window.location.href = '/';
       } catch (err) {
-        console.error('Erreur capturée:', err);
-        const message = err.error || 'Erreur serveur';
-        showAlertMessage(message, '#message-show', $('#login-loader'));
+        const errorMessage = err.data?.error || err.data?.message || 'Identifiants incorrects';
+        showAlertMessage(errorMessage, '#message-show', $('#login-loader'));
+      } finally {
+        closeLoader('#login-loader');
       }
     });
   }

@@ -8,7 +8,8 @@ class UtilisateurSerializer(serializers.ModelSerializer):
     """Serializer pour l'API utilisateurs."""
 
     role_display = serializers.CharField(source='get_role_display', read_only=True)
-    cellule_nom = serializers.CharField(source='cellule.__str__', read_only=True)
+    #cellule_nom = serializers.CharField(source='cellule.__str__', read_only=True)
+    cellule_nom = serializers.StringRelatedField(source='cellule', read_only=True)
 
     class Meta:
         model = Utilisateur
@@ -23,7 +24,7 @@ class UtilisateurSerializer(serializers.ModelSerializer):
             'cellule',
             'cellule_nom',
             'is_active',
-            'Date_creation',
+            'Date_creation','password'
         ]
         read_only_fields = ['id', 'Date_creation']
         extra_kwargs = {

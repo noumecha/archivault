@@ -2,6 +2,7 @@
 
 import { UserService } from './users.services.js';
 import { UserUi } from './users.ui.js';
+import { startLoader, closeLoader } from '../../helpers/utils.js';
 
 export const UserController = {
   async init() {
@@ -13,7 +14,7 @@ export const UserController = {
 
   async loadUsers(params = {}) {
     try {
-      $('#table-loader').removeClass('d-none');
+      startLoader('#table-loader');
       const res = await UserService.fetchAll(params);
       console.log('Utilisateurs chargés:', res);
       UserUi.renderTable(res);
@@ -21,13 +22,37 @@ export const UserController = {
       console.error('Erreur:', err);
       UserUi.showError(err.data?.message || 'Erreur serveur');
     } finally {
-      $('#table-loader').addClass('d-none');
+      closeLoader('#table-loader');
     }
   },
 
   // ─── Événements ─────────────────────────────────────────────────────────
 
   bindEvents() {
+    //Gestion de la sélection multiple
+    $(document).on('change', '#check-all-users', function () {
+      const isChecked = $(this).is(':checked');
+      $('.user-checkbox').prop('checked', isChecked);
+      this.toggleBulkButton();
+    });
+
+    $(document).on('change', '.user-checkbox', function () {
+      this.toggleBulkButton();
+    });
+
+    // Gestion des clics de pagination
+    $(document).on('click', '#users-pagination .page-link', async function (e) {
+      e.preventDefault();
+      const page = $(this).data('page');
+      const pageUrl = $(this).data('page-url');
+
+      let params = UserController.getCurrentParams();
+      if (page) params.page = page;
+
+      // Si vous utilisez l'URL complète de DRF (pageUrl), il faut parser le numéro de page
+      await UserController.loadUsers(params);
+    });
+
     // Recherche & filtres
     let searchTimer;
     $('#utilisateur-search-form').on('input change', 'input, select', () => {
@@ -60,6 +85,48 @@ export const UserController = {
       }
     });
 
+    // suppression groupée
+    $(document).on('click', '#btn-bulk-delete', function (e) {
+      e.preventDefault();
+      const ids = $('.user-checkbox:checked')
+        .map(function () {
+          return $(this).val();
+        })
+        .get();
+
+      if (ids.length === 0) {
+        return;
+      }
+
+      const modalElement = document.getElementById('bulk-delete-modal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+
+      modalInstance.show();
+
+      $('#confirm-bulk-delete-btn')
+        .off('click')
+        .on('click', async () => {
+          const $btn = $('#confirm-bulk-delete-btn');
+
+          try {
+            $btn.prop('disabled', true);
+            startLoader('#bulk-delete-loader');
+            const res = await UserService.bulkDelete(ids);
+            UserUi.showSuccess(res.message);
+            modalInstance.hide();
+            const currentParams = UserController.getCurrentParams();
+            await UserController.loadUsers(currentParams);
+          } catch (err) {
+            console.error('Erreur suppression:', err);
+            const message = err.data?.message || 'Erreur lors de la suppression groupée';
+            UserUi.showError(message, '#bulk-delete-form-error');
+          } finally {
+            $btn.prop('disabled', false);
+            closeLoader('#bulk-delete-loader');
+          }
+        });
+    });
+
     // Basculer statut
     $(document).on('click', '[data-action="toggle-status"]', async e => {
       e.preventDefault();
@@ -74,51 +141,79 @@ export const UserController = {
     });
 
     // Supprimer
-    $(document).on('click', '[data-action="delete"]', async e => {
+    $(document).on('click', '[data-action="delete"]', e => {
       e.preventDefault();
       const id = $(e.currentTarget).data('id');
-      if (!confirm('Confirmer la suppression ?')) return;
-      try {
-        await UserService.remove(id);
-        UserUi.showSuccess('Utilisateur supprimé');
-        await this.loadUsers(this.getCurrentParams());
-      } catch (err) {
-        UserUi.showError(err.data?.message || 'Erreur');
-      }
+      const modalElement = document.getElementById('delete-utilisateur-modal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+
+      modalInstance.show();
+
+      $('#confirm-delete-btn')
+        .off('click')
+        .on('click', async () => {
+          const $btn = $('#confirm-delete-btn');
+
+          try {
+            $btn.prop('disabled', true);
+            startLoader('#delete-loader');
+
+            await UserService.remove(id);
+
+            modalInstance.hide();
+            UserUi.showSuccess('Utilisateur supprimé avec succès');
+
+            await this.loadUsers(this.getCurrentParams());
+          } catch (err) {
+            console.error('Erreur suppression:', err);
+            const message = err.data?.message || 'Impossible de supprimer cet utilisateur';
+            UserUi.showError(message, '#delete-form-error');
+          } finally {
+            $btn.prop('disabled', false);
+            closeLoader('#delete-loader');
+          }
+        });
     });
 
-    // Soumettre formulaire
+    // Soumettre formulaire (create & update)
     $('#utilisateurForm').on('submit', async e => {
       e.preventDefault();
-      const id = $('#update-id').val();
-      const data = Object.fromEntries(
-        $('#utilisateurForm')
-          .serializeArray()
-          .map(({ name, value }) => [name, value])
-      );
+      const $form = $('#utilisateurForm');
+      const $saveBtn = $('#save-btn');
+      $saveBtn.prop('disabled', true);
 
-      await UserService.validate(data);
+      const formData = new FormData($form[0]);
+      const rawData = Object.fromEntries(formData.entries());
 
       try {
+        const id = $('#update-id').val();
+        await UserService.validate(rawData);
+        const data = {
+          ...rawData,
+          password: rawData.password1,
+          is_active: rawData.is_active === 'on'
+        };
+        delete data.password1;
+        delete data.password2;
+        let response;
         if (id) {
-          const rest = await UserService.update(id, data);
-          UserUi.showSuccess('Utilisateur mis à jour avec succès', '#form-success');
+          response = await UserService.update(id, data);
         } else {
-          const res = await UserService.create(data);
-          if (!res.data?.success) {
-            const errors = res.data?.errors;
-            const message = errors ? Object.values(errors).flat().join(' | ') : res.data?.message;
-            UserUi.showError(message, '#form-error');
-            return;
-          }
-          UserUi.showSuccess('Utilisateur créé avec succès', '#form-success');
+          response = await UserService.create(data);
         }
-        bootstrap.Modal.getInstance(document.getElementById('create-utilisateur-modal')).hide();
-        await this.loadUsers(this.getCurrentParams());
+        UserUi.showSuccess(response.message || 'Opération réussie', '#form-success');
+        setTimeout(async () => {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-utilisateur-modal'));
+          if (modalInstance) modalInstance.hide();
+          await this.loadUsers(this.getCurrentParams());
+          $form[0].reset();
+        }, 3000);
       } catch (err) {
-        const errors = err.data?.errors;
-        const message = errors ? Object.values(errors).flat().join(' | ') : err.data?.message || 'Erreur serveur';
-        UserUi.showError(message, '#form-error');
+        console.error('Erreur capturée:', err);
+        const errorData = err.data?.errors || err.data?.message || err.data?.error || 'Erreur inconnue';
+        UserUi.showError(errorData, '#form-error');
+      } finally {
+        $saveBtn.prop('disabled', false);
       }
     });
   },
@@ -141,5 +236,15 @@ export const UserController = {
         .filter(({ value }) => value)
         .map(({ name, value }) => [name, value])
     );
+  },
+
+  toggleBulkButton() {
+    const selectedCount = $('.user-checkbox:checked').length;
+    if (selectedCount > 0) {
+      $('#bulk-actions-container').removeClass('d-none');
+      $('#selected-count').text(selectedCount);
+    } else {
+      $('#bulk-actions-container').addClass('d-none');
+    }
   }
 };

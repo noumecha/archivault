@@ -62,7 +62,7 @@
                 l'application web d'archivage thématisé et de circulation des dossiers
               </p>
 
-              <form method="post" id="formAuthentication" class="mb-5" action="{% url 'login' %}">
+              <form id="formAuthentication" class="mb-5">
                 {% csrf_token %}
                 <div class="form-floating form-floating-outline mb-5">
                   <input type="text" class="form-control" id="username" name="username" placeholder="Entrez votre nom d'utilisateur" autofocus>
@@ -118,9 +118,8 @@
     <script src="{% static 'vendor/js/menu.js' %}"></script>
     <script src="{% static 'vendor/js/helpers.js' %}"></script>
     <script src="{% static 'js/main.js' %}"></script>
-    <!--script src="{% static 'js/helpers/utils.js' %}"></script-->
     <script type="module" src="{% static 'js/modules/users/auth.controller.js' %}"></script>
-    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <!--script async defer src="https://buttons.github.io/buttons.js"></script-->
   </body>
 
 </html>

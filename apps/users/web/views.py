@@ -23,7 +23,7 @@ from django.db.models import Q
 # login view
 
 class LoginView(View):
-    template_name = "login.html"
+    template_name = "pages/login.html"
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, {})
@@ -55,7 +55,7 @@ class UserView(RoleRequiredMixin, BaseCRUDView):
     # list of all roles for the form
     roles = RoleUtilisateur
     cellules = Cellule.objects.all()
-    # the surchage context for roles and cellues to use in template
+
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
         context['roles'] = self.roles

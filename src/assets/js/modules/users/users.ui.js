@@ -2,7 +2,82 @@
 import { showAlertMessage, resetForm } from '../../helpers/utils.js';
 export const UserUi = {
   // ─── Rendu de la table ───────────────────────────────────────────────────
-  renderTable(datas) {
+
+  renderTable(response) {
+    const tbody = $('#users-tbody');
+    tbody.empty();
+
+    // DRF renvoie { count, next, previous, results: [] } avec la pagination
+    const users = response.results || response;
+
+    if (!users || users.length === 0) {
+      tbody.html('<tr><td colspan="7" class="text-center">Aucun utilisateur trouvé</td></tr>');
+      this.renderPagination(0);
+      return;
+    }
+
+    const rows = users.map(user => this.createUserRow(user)).join('');
+    tbody.html(rows);
+
+    // Gérer la pagination
+    this.renderPagination(response);
+    // Réinitialiser la checkbox globale
+    $('#check-all-users').prop('checked', false);
+    $('#bulk-actions-container').addClass('d-none');
+  },
+
+  createUserRow(user) {
+    const statusBadge = user.is_active
+      ? '<span class="badge rounded-pill bg-success">Activé</span>'
+      : '<span class="badge rounded-pill bg-danger">Désactivé</span>';
+
+    return `
+      <tr data-user-id="${user.id}">
+        <th style="width: 40px;">
+          <div class="form-check mb-0">
+            <input class="form-check-input user-checkbox" type="checkbox" value="${user.id}">
+          </div>
+        </th>
+        <td>${user.username}</td>
+        <td>${user.first_name || '-'}</td>
+        <td><span class="badge rounded-pill bg-primary">${user.role_display}</span></td>
+        <td>${user.email}</td>
+        <td>${statusBadge}</td>
+        <td>
+            ...
+        </td>
+      </tr>
+    `;
+  },
+
+  renderPagination(data) {
+    const container = $('#users-pagination');
+    container.empty();
+
+    if (!data.count || data.count <= 20) return; // CustomPagination.page_size = 20
+
+    const totalPages = Math.ceil(data.count / 20);
+    // Logique simplifiée : Précédent | Pages | Suivant
+    let html = `
+      <li class="page-item ${!data.previous ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page-url="${data.previous}">Précédent</a>
+      </li>
+    `;
+
+    for (let i = 1; i <= totalPages; i++) {
+      // Note: Ici il faudrait une logique pour marquer la page "active"
+      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    }
+
+    html += `
+      <li class="page-item ${!data.next ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page-url="${data.next}">Suivant</a>
+      </li>
+    `;
+    container.html(html);
+  },
+
+  /*renderTable(datas) {
     const tbody = $('#users-tbody');
     tbody.empty();
     let users = datas.results || datas; // Supporte à la fois les réponses paginées et non paginées
@@ -55,7 +130,7 @@ export const UserUi = {
         </td>
       </tr>
     `;
-  },
+  },*/
 
   // ─── Remplissage du formulaire ───────────────────────────────────────────
   renderForm(user = null) {
@@ -68,12 +143,12 @@ export const UserUi = {
       $('#role').val(user.role);
       $('#is_active').prop('checked', user.is_active);
       $('#modal-title').text('Modifier un utilisateur');
-      $('#save-btn').text('Mettre à jour');
+      $('#save-btn-text').text('Mettre à jour');
     } else {
       //$('#utilisateurForm').reset();
       resetForm('#utilisateurForm');
       $('#update-id').val('');
-      $('#save-btn').text('Enregistrer');
+      $('#save-btn-text').text('Enregistrer');
     }
   },
 
@@ -86,11 +161,11 @@ export const UserUi = {
     $msg.text(message).fadeIn().delay(3000).fadeOut();
   },
 
-  showError(message, id = '#message-show') {
-    showAlertMessage(message, id);
+  showError(message, id = '#message-show', loader = $('#form-loader')) {
+    showAlertMessage(message, id, loader);
   },
 
-  showSuccess(message, id = '#message-show') {
-    showAlertMessage(message, id);
+  showSuccess(message, id = '#message-show', loader = $('#form-loader')) {
+    showAlertMessage(message, id, loader);
   }
 };
