@@ -1,7 +1,7 @@
 # apps/users/api/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import reverse, status
 from rest_framework.permissions import AllowAny
 from django.conf import settings
 from django.contrib.auth import login as django_login
@@ -207,5 +207,9 @@ class ProfileAPIView(BaseAPIView):
             user.save()
             # déconnexion de l'utilisateur
             django_logout(request)
-            return Response({'success': True, 'message': 'Mot de passe modifié'})
+            return Response({
+                'success': True,
+                'message': 'Mot de passe modifié',
+                #'redirect_url': reverse('login')
+            })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -72,8 +72,8 @@ export const ProfileController = {
         $(e.target).find('button[type="submit"]').prop('disabled', true);
         showToast('Déconnexion en cours...', 'info');
         setTimeout(() => {
-          window.location.href = '/';
-        }, 2000);
+          window.location.href = '/login/';
+        }, 5000);
       } catch (err) {
         console.error('Erreur lors de la mise à jour:', err);
         e.target.reset();
