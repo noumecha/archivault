@@ -38,32 +38,50 @@
       <div class="card-body">
         <form id="formAccountSettings">
           <div class="row g-5">
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="text" id="firstName" value="{{ user.first_name }}" />
-                <label>Nom</label>
+
+            <div class="col-md-6 form-group mb-2">
+              <div class="input-group input-group-merge">
+                <div class="form-floating form-floating-outline">
+                  <input type="text" id="first_name" class="form-control" name="first_name"
+                    placeholder="Entrez votre Nom" value="{{ user.first_name }}" aria-describedby="first_name" />
+                  <label for="first_name">Nom</label>
+                </div>
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="text" id="lastName" value="{{ user.last_name }}" />
-                <label>Prénom</label>
+
+            <div class="col-md-6 form-group mb-2">
+              <div class="input-group input-group-merge">
+                <div class="form-floating form-floating-outline">
+                  <input type="text" id="last_name" class="form-control" name="last_name"
+                    placeholder="Entrez votre Prénom" value="{{ user.last_name }}" aria-describedby="last_name" />
+                  <label for="last_name">Prénom</label>
+                </div>
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="email" id="email" value="{{ user.email }}" />
-                <label>E-mail</label>
+
+            <div class="col-md-6 form-group mb-2">
+              <div class="input-group input-group-merge">
+                <div class="form-floating form-floating-outline">
+                  <input type="email" id="email" class="form-control" name="email"
+                    placeholder="email@example.com" aria-describedby="email" value="{{ user.email }}"/>
+                  <label for="email">Email</label>
+                </div>
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="text" value="{{ user.username }}" readonly disabled />
-                <label>Nom d'utilisateur (Non modifiable)</label>
+
+            <div class="col-md-6 form-group mb-2">
+              <div class="input-group input-group-merge">
+                <div class="form-floating form-floating-outline">
+                  <input class="form-control" type="text" value="{{ user.username }}" readonly disabled id="username" name="username"
+                    placeholder="Entrez votre nom d'utilisateur"
+                    aria-describedby="username" />
+                  <label for="username">Nom d'utilisateur</label>
+                </div>
               </div>
             </div>
           </div>
 
+          <hr class="my-0">
           {# Messages d'erreur/succès #}
           <div class="alert alert-success" id="form-success" style="display: none; margin-top: 1rem;"></div>
           <div class="alert alert-danger" id="form-error" style="display: none; margin-top: 1rem;"></div>
@@ -78,7 +96,7 @@
           </div>
         </form>
 
-        <div class="toast top-0 align-items-center mt-2 bg-opacity-25 bg-info" id="toast-container" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast top-0 align-items-center mt-2 bg-info" id="toast-container" role="alert" aria-live="assertive" aria-atomic="true">
           <div class="d-flex">
             <div class="toast-body text-white" id="toast-message">
               <!-- Message de toast injecté par JS -->

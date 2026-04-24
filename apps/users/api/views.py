@@ -189,7 +189,6 @@ class ProfileAPIView(BaseAPIView):
         'change_password': 'change_password',
     }
 
-
     def update_profile(self, request):
         serializer = self.get_serializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
@@ -206,5 +205,7 @@ class ProfileAPIView(BaseAPIView):
 
             user.set_password(serializer.data.get('new_password'))
             user.save()
+            # déconnexion de l'utilisateur
+            django_logout(request)
             return Response({'success': True, 'message': 'Mot de passe modifié'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

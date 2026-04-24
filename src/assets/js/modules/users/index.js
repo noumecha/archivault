@@ -1,5 +1,5 @@
 // modules/users/index.js
-import { UserController } from './users.controllers.js';
+import { UserController } from './users.controller.js';
 $(function () {
   UserController.init();
 });

@@ -58,7 +58,9 @@ export const UserService = {
   // methode pour valider les données du formulaire
   validate(data) {
     const errors = {};
-    if (!data.username) errors.username = ["Le nom d'utilisateur est requis"];
+    if (data.username && data.username.length <= 0) errors.username = ["Le nom d'utilisateur est requis"];
+    if (data.first_name && data.first_name.length <= 0) errors.first_name = ['Le prénom est requis'];
+    if (data.last_name && data.last_name.length <= 0) errors.last_name = ['Le nom est requis'];
     //if (!data.email) errors.email = ["L'email est requis"];
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.email = ["L'email n'est pas valide"];
@@ -78,6 +80,22 @@ export const UserService = {
     //if (data.password1 && !/[!@#$%^&*]/.test(data.password1))
     //  errors.password = ['Le mot de passe doit contenir au moins un caractère spécial'];
     if (data.password1 && data.password1 !== data.password2)
+      errors.confirm_password = ['Les mots de passe ne correspondent pas'];
+
+    if (Object.keys(errors).length > 0) {
+      throw { data: { errors: errors, message: 'Validation locale échouée' } };
+    }
+    return true;
+  },
+
+  passwordValidate(data) {
+    const errors = {};
+    if (!data.old_password) errors.old_password = ['Le mot de passe actuel est requis'];
+    if (!data.new_password) errors.new_password = ['Le nouveau mot de passe est requis'];
+    if (data.new_password && data.new_password.length < 8) errors.new_password = ['Trop court (minimum 8 caractères)'];
+    if (data.new_password && data.new_password === data.old_password)
+      errors.new_password = ["Le nouveau mot de passe doit être différent de l'ancien"];
+    if (data.new_password && data.confirm_password && data.new_password !== data.confirm_password)
       errors.confirm_password = ['Les mots de passe ne correspondent pas'];
 
     if (Object.keys(errors).length > 0) {

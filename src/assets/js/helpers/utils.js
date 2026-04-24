@@ -375,8 +375,12 @@ function toggleBulkButton(selectCounterSelector, bulkActionsContainerSelector) {
 }
 
 // reusable function for showing toast base on his id , message and type (success, error, info) with a timeout
-function showToast(toastId = '#toast-container', message, type = 'info', delay = 5000) {
+function showToast(message, type = 'info', toastId = '#toast-container', delay = 5000) {
   const $toastEl = $(toastId);
+  if ($toastEl.length === 0) {
+    console.error('Toast container non trouvé :', toastId);
+    return;
+  }
   const $toastBody = $toastEl.find('.toast-body');
 
   $toastBody.text(message);
