@@ -363,6 +363,30 @@ function getCookie(name) {
   return cookieValue;
 }
 
+// reusable toogleBulk Button function
+function toggleBulkButton(selectCounterSelector, bulkActionsContainerSelector) {
+  const selectedCount = $(selectCounterSelector).length;
+  if (selectedCount > 0) {
+    $(bulkActionsContainerSelector).removeClass('d-none');
+    $(`${selectCounterSelector}, #selected-count`).text(selectedCount);
+  } else {
+    $(bulkActionsContainerSelector).addClass('d-none');
+  }
+}
+
+// reusable function for showing toast base on his id , message and type (success, error, info) with a timeout
+function showToast(toastId = '#toast-container', message, type = 'info', delay = 5000) {
+  const $toastEl = $(toastId);
+  const $toastBody = $toastEl.find('.toast-body');
+
+  $toastBody.text(message);
+  $toastEl.removeClass('bg-success bg-danger bg-info').addClass(`bg-${type}`);
+
+  const toast = new bootstrap.Toast($toastEl[0], { delay: delay });
+  toast.show();
+}
+
+// export
 export {
   showMessage,
   showAlertMessage,
@@ -382,5 +406,7 @@ export {
   getCookie,
   startLoader,
   closeLoader,
-  resetForm
+  toggleBulkButton,
+  resetForm,
+  showToast
 };

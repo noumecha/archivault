@@ -11,7 +11,13 @@ class RoleUtilisateur(models.TextChoices):
     RESPONSABLE = 'responsable', 'Responsable' # utilisateur avec des droits spécifiques
 
 # Utilisateur personnalisé
+
+def user_avatar_path(instance, filename):
+    # Stockage propre : avatars/user_1/mon_image.jpg
+    return f'avatars/user_{instance.id}/{filename}'
+
 class Utilisateur(AbstractUser):
+    avatar = models.ImageField(upload_to=user_avatar_path, null=True, blank=True)
     role = models.CharField(max_length=255, choices=RoleUtilisateur.choices, default=RoleUtilisateur.RESPONSABLE)
     cellule = models.ForeignKey('administration.Cellule', on_delete=models.SET_NULL, null=True, blank=True, default=None)
     groups = models.ManyToManyField(

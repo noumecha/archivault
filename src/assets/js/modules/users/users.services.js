@@ -34,17 +34,41 @@ export const UserService = {
     });
   },
 
+  updateUserAvatar(formData) {
+    return ApiClient.request('/api/users/profile/update/', {
+      method: 'PATCH',
+      body: formData
+    });
+  },
+
+  updateUserProfil(data) {
+    return ApiClient.request('/api/users/profile/update/', {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  changeUserPassword(data) {
+    return ApiClient.request('/api/users/profile/change-password/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
   // methode pour valider les données du formulaire
   validate(data) {
-    console.log('data : ', data);
     const errors = {};
     if (!data.username) errors.username = ["Le nom d'utilisateur est requis"];
     //if (!data.email) errors.email = ["L'email est requis"];
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.email = ["L'email n'est pas valide"];
     }
-    if (!data.password1) errors.password = ['Le mot de passe est requis'];
-    if (data.password1 && data.password1.length < 8) errors.password = ['Trop court (min 8)'];
+    if (data.password1 && data.password1.length <= 0) errors.password = ['Le mot de passe est requis'];
+    if (data.password1 && data.password1.length < 8) errors.password = ['Trop court (minimum 8 caractères)'];
+    // if the role is set to responsable or superviseur or gestionnaire, the cellule field is required
+    if (['responsable', 'superviseur', 'gestionnaire'].includes(data.role) && !data.cellule) {
+      errors.cellule = ['La cellule est requise pour ce rôle'];
+    }
     //if (data.password1 && !/[A-Z]/.test(data.password1))
     //  errors.password = ['Le mot de passe doit contenir au moins une lettre majuscule'];
     //if (data.password1 && !/[a-z]/.test(data.password1))
@@ -66,6 +90,13 @@ export const UserService = {
   toggleStatus(id) {
     return ApiClient.request(`/api/users/${id}/toggle-status/`, {
       method: 'POST'
+    });
+  },
+
+  bulkToggleStatus(ids) {
+    return ApiClient.request('/api/users/bulk-toggle-status/', {
+      method: 'POST',
+      body: JSON.stringify({ ids })
     });
   },
 

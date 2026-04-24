@@ -69,7 +69,7 @@ def sidebar_context(request):
 
     # ---- SIDEBAR TITLE ----
     sidebar_title = "Archivault"
-    if is_responsable(user) or is_superviseur(user) or is_gestionnaire(user) :
+    if (is_responsable(user) or is_superviseur(user) or is_gestionnaire(user)) and user.cellule:
         sidebar_title = user.cellule.nom
 
     return {

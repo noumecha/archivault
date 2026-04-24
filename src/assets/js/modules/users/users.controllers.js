@@ -2,7 +2,7 @@
 
 import { UserService } from './users.services.js';
 import { UserUi } from './users.ui.js';
-import { startLoader, closeLoader } from '../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton } from '../../helpers/utils.js';
 
 export const UserController = {
   async init() {
@@ -16,7 +16,7 @@ export const UserController = {
     try {
       startLoader('#table-loader');
       const res = await UserService.fetchAll(params);
-      console.log('Utilisateurs chargés:', res);
+      res.current_page = parseInt(params.page) || 1;
       UserUi.renderTable(res);
     } catch (err) {
       console.error('Erreur:', err);
@@ -33,23 +33,27 @@ export const UserController = {
     $(document).on('change', '#check-all-users', function () {
       const isChecked = $(this).is(':checked');
       $('.user-checkbox').prop('checked', isChecked);
-      this.toggleBulkButton();
+      toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container');
     });
 
     $(document).on('change', '.user-checkbox', function () {
-      this.toggleBulkButton();
+      toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container');
     });
 
     // Gestion des clics de pagination
     $(document).on('click', '#users-pagination .page-link', async function (e) {
       e.preventDefault();
-      const page = $(this).data('page');
-      const pageUrl = $(this).data('page-url');
+      const $this = $(this);
+      const page = $this.data('page');
 
+      if (!page || $this.parent().hasClass('disabled') || $this.parent().hasClass('active')) {
+        return;
+      }
+
+      // On récupère les filtres actuels ET on ajoute la page
       let params = UserController.getCurrentParams();
-      if (page) params.page = page;
+      params.page = page;
 
-      // Si vous utilisez l'URL complète de DRF (pageUrl), il faut parser le numéro de page
       await UserController.loadUsers(params);
     });
 
@@ -67,7 +71,12 @@ export const UserController = {
     });
 
     // Refresh
-    $('#refresh-button').on('click', () => this.loadUsers());
+    $('#refresh-button').on('click', () => {
+      this.loadUsers();
+      // reset filter forms
+      $('#utilisateur-search-form').trigger('reset');
+      $('#clearSearch').trigger('click');
+    });
 
     // Ajouter
     $('#add-button').on('click', () => UserUi.renderForm(null));
@@ -83,6 +92,48 @@ export const UserController = {
       } catch (err) {
         UserUi.showError('Erreur chargement utilisateur');
       }
+    });
+
+    // activation/desaction groupée
+    $(document).on('click', '#btn-bulk-toggle-status', function (e) {
+      e.preventDefault();
+      const ids = $('.user-checkbox:checked')
+        .map(function () {
+          return $(this).val();
+        })
+        .get();
+
+      if (ids.length === 0) {
+        return;
+      }
+
+      const modalElement = document.getElementById('bulk-toggle-status-modal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+
+      modalInstance.show();
+
+      $('#confirm-bulk-toggle-status-btn')
+        .off('click')
+        .on('click', async () => {
+          const $btn = $('#confirm-bulk-toggle-status-btn');
+
+          try {
+            $btn.prop('disabled', true);
+            startLoader('#bulk-toggle-status-loader');
+            const res = await UserService.bulkToggleStatus(ids);
+            UserUi.showSuccess(res.message);
+            modalInstance.hide();
+            const currentParams = UserController.getCurrentParams();
+            await UserController.loadUsers(currentParams);
+          } catch (err) {
+            console.error('Erreur activation/désactivation:', err);
+            const message = err.data?.message || 'Erreur lors de la mise à jour du statut';
+            UserUi.showError(message, '#bulk-toggle-status-form-error');
+          } finally {
+            $btn.prop('disabled', false);
+            closeLoader('#bulk-toggle-status-loader');
+          }
+        });
     });
 
     // suppression groupée
@@ -187,6 +238,11 @@ export const UserController = {
 
       try {
         const id = $('#update-id').val();
+        // on update the password is no required
+        if (!rawData.password1) {
+          delete rawData.password1;
+          delete rawData.password2;
+        }
         await UserService.validate(rawData);
         const data = {
           ...rawData,
@@ -236,15 +292,5 @@ export const UserController = {
         .filter(({ value }) => value)
         .map(({ name, value }) => [name, value])
     );
-  },
-
-  toggleBulkButton() {
-    const selectedCount = $('.user-checkbox:checked').length;
-    if (selectedCount > 0) {
-      $('#bulk-actions-container').removeClass('d-none');
-      $('#selected-count').text(selectedCount);
-    } else {
-      $('#bulk-actions-container').addClass('d-none');
-    }
   }
 };

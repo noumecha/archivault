@@ -1,8 +1,26 @@
 // modules/users/users.ui.js
 import { showAlertMessage, resetForm } from '../../helpers/utils.js';
 export const UserUi = {
-  // ─── Rendu de la table ───────────────────────────────────────────────────
+  // Mapper des couleurs par rôle
+  roleColors: {
+    superadmin: 'bg-danger', // Rouge pour le niveau critique
+    administrateur: 'bg-primary', // Bleu standard pour l'admin
+    superviseur: 'bg-warning', // Orange/Jaune pour le superviseur
+    gestionnaire: 'bg-info', // Bleu clair pour le gestionnaire
+    responsable: 'bg-secondary' // Gris pour le responsable
+  },
 
+  // Helper pour générer le badge de rôle
+  getRoleBadge(user) {
+    // On récupère la couleur, sinon 'bg-secondary' par défaut
+    const colorClass = this.roleColors[user.role] || 'bg-secondary';
+
+    return `<span class="badge rounded-pill ${colorClass}">
+              ${user.role_display}
+            </span>`;
+  },
+
+  // ─── Rendu de la table ───────────────────────────────────────────────────
   renderTable(response) {
     const tbody = $('#users-tbody');
     tbody.empty();
@@ -26,11 +44,12 @@ export const UserUi = {
     $('#bulk-actions-container').addClass('d-none');
   },
 
+  // Rendu d'une ligne utilisateur
   createUserRow(user) {
     const statusBadge = user.is_active
       ? '<span class="badge rounded-pill bg-success">Activé</span>'
       : '<span class="badge rounded-pill bg-danger">Désactivé</span>';
-
+    const roleBadge = this.getRoleBadge(user);
     return `
       <tr data-user-id="${user.id}">
         <th style="width: 40px;">
@@ -40,73 +59,7 @@ export const UserUi = {
         </th>
         <td>${user.username}</td>
         <td>${user.first_name || '-'}</td>
-        <td><span class="badge rounded-pill bg-primary">${user.role_display}</span></td>
-        <td>${user.email}</td>
-        <td>${statusBadge}</td>
-        <td>
-            ...
-        </td>
-      </tr>
-    `;
-  },
-
-  renderPagination(data) {
-    const container = $('#users-pagination');
-    container.empty();
-
-    if (!data.count || data.count <= 20) return; // CustomPagination.page_size = 20
-
-    const totalPages = Math.ceil(data.count / 20);
-    // Logique simplifiée : Précédent | Pages | Suivant
-    let html = `
-      <li class="page-item ${!data.previous ? 'disabled' : ''}">
-        <a class="page-link" href="#" data-page-url="${data.previous}">Précédent</a>
-      </li>
-    `;
-
-    for (let i = 1; i <= totalPages; i++) {
-      // Note: Ici il faudrait une logique pour marquer la page "active"
-      html += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    }
-
-    html += `
-      <li class="page-item ${!data.next ? 'disabled' : ''}">
-        <a class="page-link" href="#" data-page-url="${data.next}">Suivant</a>
-      </li>
-    `;
-    container.html(html);
-  },
-
-  /*renderTable(datas) {
-    const tbody = $('#users-tbody');
-    tbody.empty();
-    let users = datas.results || datas; // Supporte à la fois les réponses paginées et non paginées
-    if (!users.length) {
-      tbody.html(`
-        <tr>
-          <td colspan="6" class="text-center">Aucun utilisateur trouvé</td>
-        </tr>
-      `);
-      return;
-    }
-
-    // Pour chaque utilisateur, crée une ligne HTML
-    const rows = users.map(user => this.createUserRow(user)).join('');
-    tbody.html(rows);
-  },
-
-  // ─── Création d'une ligne utilisateur ────────────────────────────────────
-  createUserRow(user) {
-    const statusBadge =
-      user.is_active === true
-        ? '<span class="badge rounded-pill bg-success">Activé</span>'
-        : '<span class="badge rounded-pill bg-danger">Désactivé</span>';
-
-    return `
-      <tr data-user-id="${user.id}">
-        <td>${user.username}</td>
-        <td>${user.first_name || '-'}</td>
-        <td><span class="badge rounded-pill bg-primary">${user.role_display}</span></td>
+        <td>${roleBadge}</td>
         <td>${user.email}</td>
         <td>${statusBadge}</td>
         <td>
@@ -130,7 +83,53 @@ export const UserUi = {
         </td>
       </tr>
     `;
-  },*/
+  },
+
+  // Rendu de la pagination
+  renderPagination(data) {
+    const $container = $('#users-pagination');
+    const $info = $('#pagination-info');
+    $container.empty();
+    $info.empty();
+
+    if (!data.count || data.count === 0) return;
+
+    const pageSize = data.page_size || 10;
+    const totalPages = Math.ceil(data.count / pageSize);
+    const currentPage = data.current_page || 1;
+
+    const startEntry = (currentPage - 1) * pageSize + 1;
+    const endEntry = Math.min(currentPage * pageSize, data.count);
+    $info.text(`Affichage de ${startEntry} à ${endEntry} sur ${data.count} éléments`);
+
+    if (totalPages <= 1) return;
+
+    let html = '';
+
+    html += `
+        <li class="page-item ${!data.previous ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}"><i class="ri-arrow-left-s-line"></i></a>
+        </li>`;
+
+    const delta = 1;
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+        html += `
+                <li class="page-item ${currentPage === i ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>`;
+      } else if (i === currentPage - delta - 1 || i === currentPage + delta + 1) {
+        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+      }
+    }
+
+    html += `
+        <li class="page-item ${!data.next ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}"><i class="ri-arrow-right-s-line"></i></a>
+        </li>`;
+
+    $container.html(html);
+  },
 
   // ─── Remplissage du formulaire ───────────────────────────────────────────
   renderForm(user = null) {
@@ -154,11 +153,6 @@ export const UserUi = {
 
   resetForm(formSelector) {
     $(formSelector)[0].reset();
-  },
-
-  showMessage(message, selector) {
-    const $msg = $(selector);
-    $msg.text(message).fadeIn().delay(3000).fadeOut();
   },
 
   showError(message, id = '#message-show', loader = $('#form-loader')) {

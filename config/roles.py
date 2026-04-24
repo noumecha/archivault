@@ -3,7 +3,7 @@ from apps.users.models import RoleUtilisateur
 """ Role helper methods """
 @staticmethod
 def is_admin(user):
-    return user.role in  [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]
+    return user.role in  [RoleUtilisateur.ADMIN]
 
 @staticmethod
 def is_superviseur(user):

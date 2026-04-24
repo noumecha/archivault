@@ -53,13 +53,41 @@ class UserView(RoleRequiredMixin, BaseCRUDView):
         ('role', RoleUtilisateur),
     ]
     # list of all roles for the form
-    roles = RoleUtilisateur
-    cellules = Cellule.objects.all()
-
     def get_context_data(self, **kwargs):
+        # On initialise le layout
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
-        context['roles'] = self.roles
-        context['cellules'] = self.cellules
+        user = self.request.user
+
+        # --- FILTRAGE DES RÔLES ---
+        all_roles = list(RoleUtilisateur)
+        if user.role == RoleUtilisateur.SUPERADMIN:
+            filtered_roles = all_roles
+        elif user.role == RoleUtilisateur.ADMIN:
+            # Exclure superadmin et admin
+            filtered_roles = [r for r in all_roles if r.value != RoleUtilisateur.SUPERADMIN and r.value != RoleUtilisateur.ADMIN]
+        else: # Superviseur
+            # Uniquement gestionnaire et responsable
+            allowed = [RoleUtilisateur.GESTIONNAIRE, RoleUtilisateur.RESPONSABLE]
+            filtered_roles = [r for r in all_roles if r.value in allowed]
+
+        # --- FILTRAGE DES CELLULES ---
+        if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
+            filtered_cellules = Cellule.objects.all()
+        else:
+            # Le superviseur est limité à SA cellule
+            filtered_cellules = Cellule.objects.filter(id=user.cellule_id) if user.cellule else Cellule.objects.none()
+
+        context['roles'] = filtered_roles
+        context['cellules'] = filtered_cellules
+
+        # IMPORTANT: Mettre à jour les filtres de recherche pour qu'ils
+        # correspondent aux options autorisées
+        for f in context.get('filters', []):
+            if f['name'] == 'role':
+                f['items'] = filtered_roles
+            if f['name'] == 'cellule':
+                f['items'] = filtered_cellules
+
         return context
     context_object_name = 'users'
     search_fields = ['username', 'first_name']
@@ -83,14 +111,14 @@ class GroupAPIView(APIView):
 
 # users views
 class UserProfileView(TemplateView):
-    template_name = "user_profile.html"
+    template_name = "pages/profile.html"
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
         return context
 
 class UserPasswordView(TemplateView):
-    template_name = "user_password_update.html"
+    template_name = "pages/password_update.html"
 
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))

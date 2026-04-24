@@ -55,6 +55,10 @@
       <button id="btn-bulk-delete" class="btn btn-danger btn-sm">
         <i class="ri-delete-bin-line"></i> Supprimer la sélection (<span id="selected-count">0</span>)
       </button>
+
+      <button id="btn-bulk-toggle-status" class="btn btn-secondary btn-sm">
+        <i class="ri-toggle-line"></i> Activer/Désactiver la sélection (<span id="selected-count">0</span>)
+      </button>
     </div>
 
     <div class="alert alert-success col-12 text-center mt-2" style="display:none;" id="message-show"></div>
@@ -75,7 +79,8 @@
           <h5 class="modal-title" id="modal-title">Enregistrement utilisateur</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
+        <hr>
+        <div class="modal-body pb-0">
           <div id="utilisateur-form-content">
             {% include 'components/user_form.html' %}
           </div>
@@ -83,6 +88,7 @@
           <div class="alert alert-danger" style="display: none;" id="form-error"></div>
           <input type="hidden" name="id" id="update-id">
         </div>
+        <hr>
         <div class="modal-footer flex-row-reverse">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
           <button id="save-btn" class="d-flex justify-content-center align-items-center btn btn-primary no-transform" type="submit">
@@ -105,10 +111,12 @@
         <h5 class="modal-title">Supprimer l'utilisateur</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
+      <hr>
+      <div class="modal-body pb-0">
         <p>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</p>
         <div class="alert alert-danger" style="display: none;" id="delete-form-error"></div>
       </div>
+      <hr>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
         <button id="confirm-delete-btn" class="d-flex justify-content-center align-items-center btn btn-danger" type="button">
@@ -130,15 +138,44 @@
         <h5 class="modal-title">Supprimer les utilisateurs sélectionnés</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
+      <hr>
+      <div class="modal-body pb-0">
         <p>Êtes-vous sûr de vouloir supprimer les utilisateurs sélectionnés ?</p>
         <div class="alert alert-danger" style="display: none;" id="bulk-delete-form-error"></div>
       </div>
+      <hr>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
         <button id="confirm-bulk-delete-btn" class="d-flex justify-content-center align-items-center btn btn-danger" type="button">
           <span class="" id="bulk-delete-btn-text">Supprimer</span>
           <div id="bulk-delete-loader" class="d-none text-center">
+            <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Modal activation/desactivation de masse #}
+<div class="modal fade" id="bulk-toggle-status-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Activer/Désactiver les utilisateurs sélectionnés</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <hr>
+      <div class="modal-body pb-0">
+        <p>Êtes-vous sûr de vouloir activer/désactiver les utilisateurs sélectionnés ?</p>
+        <div class="alert alert-danger" style="display: none;" id="bulk-toggle-status-form-error"></div>
+      </div>
+      <hr>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button id="confirm-bulk-toggle-status-btn" class="d-flex justify-content-center align-items-center btn btn-secondary" type="button">
+          <span class="" id="bulk-toggle-status-btn-text">Confirmer</span>
+          <div id="bulk-toggle-status-loader" class="d-none text-center">
             <i class="ri-loader-2-fill ri-2x spin text-white"></i>
           </div>
         </button>

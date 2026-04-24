@@ -2,16 +2,24 @@
 import { getCookie } from './utils.js';
 export const ApiClient = {
   async request(url, options = {}) {
-    const defaults = {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')
-      }
+    const csrfToken = getCookie('csrftoken');
+
+    // On ne met le JSON par défaut QUE si ce n'est pas du FormData
+    const isFormData = options.body instanceof FormData;
+    const headers = {
+      ...(!isFormData && { 'Content-Type': 'application/json' }),
+      ...options.headers
     };
 
-    const config = { ...defaults, ...options };
-
+    if (csrfToken) {
+      headers['X-CSRFToken'] = csrfToken;
+    }
+    const config = {
+      ...options,
+      method: options.method || 'GET',
+      headers: headers,
+      credentials: 'same-origin'
+    };
     const response = await fetch(url, config);
     let data = {};
     try {

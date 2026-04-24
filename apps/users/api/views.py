@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from .serializers import UtilisateurSerializer
+from .serializers import ChangePasswordSerializer, UtilisateurProfileSerializer, UtilisateurSerializer
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -91,22 +91,17 @@ class UserAPIView(DRFRoleRequiredMixin, BaseAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     # QUERYSET PERSONNALISÉ
     # ─────────────────────────────────────────────────────────────────────────
-
     def get_queryset(self):
         """
         Retourne le queryset selon le rôle de l'utilisateur.
         Utilise UserService pour la logique métier.
         """
-        # Récupère le queryset de base selon les permissions
         qs = UserService.get_users_queryset(self.request.user)
-
-        # Applique les filtres et recherche (hérité de BaseAPIView)
-        return super().get_queryset()
+        return super().get_queryset(queryset=qs)
 
     # ─────────────────────────────────────────────────────────────────────────
     # OVERRIDE DES ACTIONS POUR AJOUTER DES PERMISSIONS
     # ─────────────────────────────────────────────────────────────────────────
-
     def create_action(self, request, *args, **kwargs):
         """Création avec vérification du rôle."""
         self.check_role_permission(request)
@@ -125,11 +120,32 @@ class UserAPIView(DRFRoleRequiredMixin, BaseAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     # ACTIONS PERSONNALISÉES
     # ─────────────────────────────────────────────────────────────────────────
-
     custom_actions = {
         'toggle_status': 'action_toggle_status',
         'bulk_delete': 'action_bulk_delete',
+        'bulk_toggle_status': 'action_bulk_toggle_status'
     }
+
+    def action_bulk_toggle_status(self, request, *args, **kwargs):
+        """Basculer le statut de plusieurs utilisateurs."""
+        self.check_role_permission(request)
+
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({
+                'success': False,
+                'message': 'Aucun ID fourni'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        users = Utilisateur.objects.filter(id__in=ids)
+        for user in users:
+            user.is_active = not user.is_active
+            user.save()
+
+        return Response({
+            'success': True,
+            'message': f'Statut de {users.count()} utilisateur(s) modifié(s)'
+        })
 
     def action_toggle_status(self, request, pk=None, *args, **kwargs):
         """Basculer le statut d'un utilisateur."""
@@ -164,3 +180,31 @@ class UserAPIView(DRFRoleRequiredMixin, BaseAPIView):
             'message': f'{deleted_count} utilisateur(s) supprimé(s)',
             'deleted_count': deleted_count
         })
+
+
+class ProfileAPIView(BaseAPIView):
+    serializer_class = UtilisateurProfileSerializer
+    custom_actions = {
+        'update_profile': 'update_profile',
+        'change_password': 'change_password',
+    }
+
+
+    def update_profile(self, request):
+        serializer = self.get_serializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'message': 'Profil mis à jour'})
+        return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    def change_password(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.data.get('old_password')):
+                return Response({'old_password': ['Ancien mot de passe incorrect']}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(serializer.data.get('new_password'))
+            user.save()
+            return Response({'success': True, 'message': 'Mot de passe modifié'})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -68,9 +68,13 @@
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
         <select class="form-select" id="cellule" name="cellule" aria-describedby="cellule">
-          <option value="">-- Sélectionner une cellule --</option>
+          {% if cellules|length > 1 %}
+            <option value="">-- Sélectionner une cellule --</option>
+          {% endif %}
           {% for cellule in cellules %}
-            <option value="{{ cellule.id }}">{{ cellule }}</option>
+            <option value="{{ cellule.id }}" {% if cellules|length == 1 %}selected{% endif %}>
+                {{ cellule }}
+            </option>
           {% endfor %}
         </select>
         <label for="cellule">Cellule</label>
@@ -82,7 +86,7 @@
   <div class="col-md-12 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <select class="form-select" id="role" name="role" required aria-describedby="role">
+        <select class="form-select" id="role" name="role" required required aria-describedby="role">
           <option value="">-- Sélectionner un rôle --</option>
           {% for role in roles %}
             <option value="{{ role.value }}">{{ role.label }}</option>

@@ -10,9 +10,18 @@ from django.core.exceptions import FieldDoesNotExist
 
 
 class CustomPagination(pagination.PageNumberPagination):
-    page_size = 20
+    page_size = 15
     page_size_query_param = 'page_size'
     max_page_size = 100
+    def get_paginated_response(self, data):
+        # On ajoute page_size à la réponse pour le frontend
+        return Response({
+            'count': self.page.paginator.count,
+            'page_size': self.page_size, # <--- Très important
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data
+        })
 
 class BaseAPIView(GenericAPIView):
     """
@@ -38,7 +47,6 @@ class BaseAPIView(GenericAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     # UTILITAIRES
     # ─────────────────────────────────────────────────────────────────────────
-
     def _get_query_params(self):
         """
         Récupère les query params de manière compatible DRF/Django.
@@ -54,17 +62,17 @@ class BaseAPIView(GenericAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     # QUERYSET
     # ─────────────────────────────────────────────────────────────────────────
-
-    def get_queryset(self):
+    def get_queryset(self, queryset=None):
         """
         Retourne le queryset avec filtres et recherche appliqués.
         Compatible DRF et Django.
         """
-        if self.model is None:
+        if self.model is None and queryset is None:
             return super().get_queryset()
 
-        # Queryset de base, trié par date de création si le champ existe
-        queryset = self.model.objects.all()
+        if queryset is None:
+            queryset = self.model.objects.all()
+
         try:
             self.model._meta.get_field('Date_creation')
             queryset = queryset.order_by('-Date_creation')
@@ -97,7 +105,6 @@ class BaseAPIView(GenericAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     # ACTIONS CRUD
     # ─────────────────────────────────────────────────────────────────────────
-
     def list_action(self, request, *args, **kwargs):
         """Action pour lister les objets avec pagination."""
         queryset = self.filter_queryset(self.get_queryset())
@@ -180,7 +187,6 @@ class BaseAPIView(GenericAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     # DISPATCH
     # ─────────────────────────────────────────────────────────────────────────
-
     def dispatch(self, request, *args, **kwargs):
         """
         Corrigé pour supporter DRF Request (query_params, data, etc.)
