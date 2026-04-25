@@ -1,12 +1,16 @@
 {# apps/users/templates/components/user_row.html #}
 {# Template réutilisable pour une ligne utilisateur #}
 <tr data-user-id="{{ user.id }}">
+  <!-- adding user image -->
+  <td>
+    <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}{% static 'img/avatars/1.png' %}{% endif %}" alt class="w-px-40 h-auto rounded-circle">
+  </td>
   <td>{{ user.username }}</td>
   <td>{{ user.first_name }}</td>
   <td>
     <span class="badge rounded-pill bg-primary">{{ user.role_display }}</span>
   </td>
-  <td>{{ user.email }}</td>
+  <td>{{ user.email | default:'-' }}</td>
   <td>
     <span class="badge rounded-pill "
           data-status="{{ user.is_active }}"

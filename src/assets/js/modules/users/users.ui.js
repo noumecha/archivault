@@ -57,10 +57,13 @@ export const UserUi = {
             <input class="form-check-input user-checkbox" type="checkbox" value="${user.id}">
           </div>
         </th>
+        <td>
+          <img src="${user.avatar_url || '/static/img/avatars/1.png'}" alt="${user.username}" class="w-px-40 h-auto rounded-circle">
+        </td>
         <td>${user.username}</td>
         <td>${user.first_name || '-'}</td>
         <td>${roleBadge}</td>
-        <td>${user.email}</td>
+        <td>${user.email || '-'}</td>
         <td>${statusBadge}</td>
         <td>
           <div class="dropdown">
