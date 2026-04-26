@@ -63,36 +63,40 @@ class BaseAPIView(GenericAPIView):
     # QUERYSET
     # ─────────────────────────────────────────────────────────────────────────
     def get_queryset(self, queryset=None):
-        """
-        Retourne le queryset avec filtres et recherche appliqués.
-        Compatible DRF et Django.
-        """
         if self.model is None and queryset is None:
             return super().get_queryset()
 
         if queryset is None:
             queryset = self.model.objects.all()
 
+        # Tri par date si le champ existe
         try:
             self.model._meta.get_field('Date_creation')
             queryset = queryset.order_by('-Date_creation')
         except FieldDoesNotExist:
             pass
 
-        # ✅ Récupère les query params de manière sécurisée
         query_params = self._get_query_params()
-
-        # 1. Filtres dynamiques exacts (query_params)
         filters = {}
-        for field in self.filter_fields:
-            value = query_params.get(field)
-            if value:
-                filters[field] = value
+
+        # 1. Filtres dynamiques (Support Liste et Dictionnaire)
+        if isinstance(self.filter_fields, dict):
+            # Cas Dictionnaire : {'nom_url': 'nom_db'}
+            for url_param, db_field in self.filter_fields.items():
+                value = query_params.get(url_param)
+                if value:
+                    filters[db_field] = value
+        else:
+            # Cas Liste : ['champ1', 'champ2']
+            for field in self.filter_fields:
+                value = query_params.get(field)
+                if value:
+                    filters[field] = value
 
         if filters:
             queryset = queryset.filter(**filters)
 
-        # 2. Recherche textuelle (__icontains)
+        # 2. Recherche textuelle
         search_query = query_params.get('search', '').strip()
         if search_query and self.search_fields:
             q_objects = Q()

@@ -1,0 +1,31 @@
+{# apps/documents/templates/components/rows/theme_row.html #}
+{# Template réutilisable pour une ligne theme #}
+<tr data-theme-id="{{ theme.id }}">
+  <td>
+    <div class="form-check mb-0">
+      <input class="form-check-input theme-checkbox" type="checkbox" data-id="{{ theme.id }}">
+    </div>
+  </td>
+  <td>{{ theme.name }}</td>
+  <td>{{ theme.description | default:'-' }}</td>
+  <td>{{ theme.cellule_info.nom | default:'-' }}</td>
+  <td>
+    <div class="dropdown">
+      <button class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+        <i class="ri-more-2-line"></i>
+      </button>
+      <div class="dropdown-menu">
+        <a href="#" class="dropdown-item" data-action="edit" data-id="{{ theme.id }}">
+          <i class="ri-pencil-line me-1"></i>Modifier
+        </a>
+        <a href="#" class="dropdown-item text-danger" data-action="delete" data-id="{{ theme.id }}">
+          <i class="ri-delete-bin-6-line me-1"></i>Supprimer
+        </a>
+        <!--a href="#" class="dropdown-item" data-action="toggle-status" data-id="{{ theme.id }}">
+          <i class="ri-check-double-line me-1"></i>
+          {% if theme.is_active == True %}Désactiver{% else %}Activer{% endif %}
+        </a-->
+      </div>
+    </div>
+  </td>
+</tr>

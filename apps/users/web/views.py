@@ -93,7 +93,6 @@ class UserView(RoleRequiredMixin, BaseCRUDView):
     search_fields = ['username', 'first_name']
     headers = ["Nom", "Prenom", "Role", "Email"]
     fields = ['username', 'first_name', 'role', 'email']
-    delete_url = "utilisateur_delete"
     allowed_roles = [
         RoleUtilisateur.SUPERADMIN,
         RoleUtilisateur.ADMIN,

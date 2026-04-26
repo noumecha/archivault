@@ -1,5 +1,5 @@
 // modules/users/users.ui.js
-import { showAlertMessage, resetForm } from '../../helpers/utils.js';
+import { showAlertMessage, resetForm, renderPagination } from '../../helpers/utils.js';
 export const UserUi = {
   // Mapper des couleurs par rôle
   roleColors: {
@@ -58,7 +58,7 @@ export const UserUi = {
           </div>
         </th>
         <td>
-          <img src="${user.avatar_url || '/static/img/avatars/1.png'}" alt="${user.username}" class="w-px-40 h-auto rounded-circle">
+          <img src="${user.avatar || '/static/img/avatars/1.png'}" alt="${user.username}" class="w-px-40 h-auto rounded-circle">
         </td>
         <td>${user.username}</td>
         <td>${user.first_name || '-'}</td>
@@ -90,48 +90,7 @@ export const UserUi = {
 
   // Rendu de la pagination
   renderPagination(data) {
-    const $container = $('#users-pagination');
-    const $info = $('#pagination-info');
-    $container.empty();
-    $info.empty();
-
-    if (!data.count || data.count === 0) return;
-
-    const pageSize = data.page_size || 10;
-    const totalPages = Math.ceil(data.count / pageSize);
-    const currentPage = data.current_page || 1;
-
-    const startEntry = (currentPage - 1) * pageSize + 1;
-    const endEntry = Math.min(currentPage * pageSize, data.count);
-    $info.text(`Affichage de ${startEntry} à ${endEntry} sur ${data.count} éléments`);
-
-    if (totalPages <= 1) return;
-
-    let html = '';
-
-    html += `
-        <li class="page-item ${!data.previous ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-page="${currentPage - 1}"><i class="ri-arrow-left-s-line"></i></a>
-        </li>`;
-
-    const delta = 1;
-    for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
-        html += `
-                <li class="page-item ${currentPage === i ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i}</a>
-                </li>`;
-      } else if (i === currentPage - delta - 1 || i === currentPage + delta + 1) {
-        html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-      }
-    }
-
-    html += `
-        <li class="page-item ${!data.next ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-page="${currentPage + 1}"><i class="ri-arrow-right-s-line"></i></a>
-        </li>`;
-
-    $container.html(html);
+    renderPagination(data, '#users-pagination', '#pagination-info');
   },
 
   // ─── Remplissage du formulaire ───────────────────────────────────────────
@@ -158,11 +117,11 @@ export const UserUi = {
     $(formSelector)[0].reset();
   },
 
-  showError(message, id = '#message-show', loader = $('#form-loader')) {
+  showError(message, id = '#message-show-error', loader = $('#form-loader')) {
     showAlertMessage(message, id, loader);
   },
 
-  showSuccess(message, id = '#message-show', loader = $('#form-loader')) {
+  showSuccess(message, id = '#message-show-success', loader = $('#form-loader')) {
     showAlertMessage(message, id, loader);
   }
 };

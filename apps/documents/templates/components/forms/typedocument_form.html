@@ -1,0 +1,48 @@
+{# apps/documents/templates/components/forms/typedocument_form.html #}
+<div class="row">
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="libelle" class="form-control" name="libelle" placeholder="Entrez le libellé du type" />
+        <label for="libelle">Libellé</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea id="description_typedocument" class="form-control" name="description_typedocument" placeholder="Description du type" style="height: 60px;"></textarea>
+        <label for="description_typedocument">Description</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="cellule" name="cellule">
+          {% if cellules|length > 1 %}<option value="">-- Sélectionner une unité de traitement --</option>{% endif %}
+          {% for cellule in cellules %}
+            <option value="{{ cellule.id }}" {% if cellules|length == 1 %}selected{% endif %}>{{ cellule }}</option>
+          {% endfor %}
+        </select>
+        <label for="cellule">Unité de Traitement</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="parent_type" name="parent_type">
+          <option value="">-- Aucun (Type Principal) --</option>
+          {% for pt in parent_types %}
+            <option value="{{ pt.id }}">{{ pt.libelle }}</option>
+          {% endfor %}
+        </select>
+        <label for="parent_type">Type Parent (Optionnel)</label>
+      </div>
+    </div>
+  </div>
+</div>

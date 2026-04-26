@@ -1,0 +1,157 @@
+{% extends layout_path %}
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+{% load string_filters %}
+{% block title %}Modification d'un document{% endblock %}
+{% block content %}
+
+<div class="container py-4">
+
+  <div class="row">
+      {% if messages %}
+          {% for msg in messages %}
+              <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show">
+                  {{ msg }}
+              </div>
+          {% endfor %}
+      {% endif %}
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a class="text-white" href="{% url 'list_document' %}"><i class="ri-arrow-left-line"></i> Liste</a>
+    <h3 class="mb-4 text-white">
+      {% if can_edit %}
+        Modifier le document
+      {% else %}
+        Prévisualisation du document
+      {% endif %}
+    </h3>
+    <a href="{% url 'upload_document' %}" class="btn btn-light text-primary">
+      <i class="ri-file-upload-fill me-1"></i> Ajouter
+    </a>
+  </div>
+
+  <!-- ✅ Aperçu du document -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+      <strong>Aperçu du document : {{ document.titre }}</strong>
+    </div>
+    <div class="card-body text-center">
+      {% if document %}
+        {% if document.fichier|lower|endswith:".pdf" %}
+          <object data="/media/{{ document.fichier }}" type="application/pdf" width="100%" height="600px">
+            <p>
+              Impossible d’afficher le PDF.
+              <a href="/media/{{ document.fichier }}" target="_blank">Ouvrir le document ici</a>.
+            </p>
+          </object>
+        {% elif document.fichier|lower|endswith:".jpg" or document.fichier|lower|endswith:".jpeg" or document.fichier|lower|endswith:".png" %}
+          <img src="/media/{{ document.fichier }}" alt="{{ document.titre }}" class="img-fluid rounded shadow-sm" style="max-height: 500px;">
+        {% elif document.fichier|lower|endswith:".mp4" or document.fichier|lower|endswith:".webm" %}
+          <video width="100%" height="auto" controls class="rounded shadow-sm">
+            <source src="/media/{{ document.fichier }}" type="video/mp4">
+            Votre navigateur ne supporte pas la lecture vidéo.
+          </video>
+        {% else %}
+          <p class="text-muted">Aucune prévisualisation disponible pour ce type de fichier.</p>
+          <a href="/media/{{ document.fichier }}" target="_blank" class="btn btn-outline-primary mt-2">
+            <i class="bi bi-box-arrow-up-right"></i> Ouvrir le document
+          </a>
+        {% endif %}
+      {% else %}
+        <p class="text-danger">Aucun fichier associé à ce document.</p>
+      {% endif %}
+    </div>
+  </div>
+  <hr>
+
+  <!-- Formulaire de mise à jour -->
+  {% if can_edit %}
+    <div class="card p-3 shadow-sm">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% crispy form %}
+      </form>
+    </div>
+    <hr>
+    <!-- zone de version du docuemnt -->
+    <div class="card p-3 ps-6 pe-6 shadow-sm mb-4">
+      <div class="card-title">
+        <h5>Versions du document</h5>
+      </div>
+      {% if document.versions.exists %}
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Date de création</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for version in document.versions.all %}
+            <tr>
+              <td>{{ version.numero_version }}</td>
+              <td>{{ version.date_creation|date:"d/m/Y H:i" }}</td>
+              <td>
+                <a href="{{ version.fichier.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                  <i class="ri-download-line"></i> Télécharger
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted">Aucune(s) version(s) disponible(s) pour ce document.</p>
+      {% endif %}
+    </div>
+    <hr>
+  {% endif %}
+
+  <!-- zone de supression -->
+  {% if can_delete %}
+  <div class="card p-3 ps-6 pe-6 shadow-sm">
+    <div class="card-title">
+      <h5 class="text-danger">Supprimer définitivement le document</h5>
+    </div>
+    <div class="card-body p-0">
+      <a
+        href="#"
+        class="text-right btn btn-outline-danger"
+        data-bs-target="#delete-{{ document.pk }}"
+        data-bs-toggle="modal">
+        <i class="ri-delete-bin-6-line me-1"></i>Supprimer
+      </a>
+    </div>
+    <!-- Modal de suppression -->
+    <div class="modal fade" id="delete-{{ document.pk }}" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content p-0">
+          <form action="{% url 'delete_document' document.pk %}" method="post">
+            {% csrf_token %}
+            <div class="modal-header">
+              <h5 class="modal-title">Suppression de : {{ document.titre }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              Voulez-vous vraiment supprimer : {{ document }} ?
+            </div>
+            <div class="modal-footer flex-row-reverse">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+              <button type="submit" class="btn btn-primary">Supprimer</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script src="{% static 'js/document-edit.js' %}"></script>
+{% endblock %}

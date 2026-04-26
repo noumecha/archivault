@@ -1,0 +1,269 @@
+{% extends layout_path %}
+
+{% load static %}
+{% load i18n %}
+{% load string_filters %}
+
+{% block title %}Documents{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold text-white mb-0">
+      <span class="text-white fw-light">Documents /</span> Liste
+    </h4>
+    <a href="{% url 'upload_page' %}" class="btn btn-light">
+      <i class="bx bx-upload me-1"></i> Ajouter un document
+    </a>
+  </div>
+
+  <div class="row">
+
+    <!-- Sidebar Filtres -->
+    <div class="col-md-3 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Filtres</h5>
+        </div>
+        <div class="card-body">
+          <form method="get" id="filterForm">
+
+            <!-- Recherche -->
+            <div class="mb-3">
+              <label class="form-label">Recherche</label>
+              <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Titre, description...">
+            </div>
+
+            <!-- Type -->
+            <div class="mb-3">
+              <label class="form-label">Type</label>
+              <select name="type" class="form-select">
+                <option value="">Tous</option>
+                {% for t in types %}
+                <option value="{{ t.id }}" {% if selected_type|stringformat:"s" == t.id|stringformat:"s" %}selected{% endif %}>
+                  {{ t.libelle }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Sous-Type -->
+            <div class="mb-3">
+              <label class="form-label">Sous-Type</label>
+              <select name="sous_type" class="form-select">
+                <option value="">Tous</option>
+                {% for st in sous_types %}
+                <option value="{{ st.id }}" {% if selected_sous_type|stringformat:"s" == st.id|stringformat:"s" %}selected{% endif %}>
+                  {{ st.libelle }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Thème -->
+            <div class="mb-3">
+              <label class="form-label">Thème</label>
+              <select name="theme" class="form-select">
+                <option value="">Tous</option>
+                {% for th in themes %}
+                <option value="{{ th.id }}" {% if selected_theme|stringformat:"s" == th.id|stringformat:"s" %}selected{% endif %}>
+                  {{ th.libelle }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Profil -->
+            <div class="mb-3">
+              <label class="form-label">Profil</label>
+              <select name="profil" class="form-select">
+                <option value="">Tous</option>
+                {% for key, value in profils %}
+                <option value="{{ key }}" {% if selected_profil == key %}selected{% endif %}>
+                  {{ value }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- État -->
+            <div class="mb-3">
+              <label class="form-label">État</label>
+              <select name="etat" class="form-select">
+                <option value="">Tous</option>
+                {% for key, value in etats %}
+                <option value="{{ key }}" {% if selected_etat == key %}selected{% endif %}>
+                  {{ value }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Dates -->
+            <div class="mb-3">
+              <label class="form-label">Date de création - De</label>
+              <input type="date" name="date_debut" value="{{ date_debut }}" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Date de création - À</label>
+              <input type="date" name="date_fin" value="{{ date_fin }}" class="form-control">
+            </div>
+
+            <!-- Extension -->
+            <div class="mb-3">
+              <label class="form-label">Extension</label>
+              <input type="text" name="ext" value="{{ ext }}" class="form-control" placeholder="pdf, docx, jpg...">
+            </div>
+
+            <!-- Boutons -->
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bx bx-filter me-1"></i> Filtrer
+              </button>
+              <a href="{% url 'list_document' %}" class="btn btn-outline-secondary">
+                <i class="bx bx-reset me-1"></i> Réinitialiser
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Grid -->
+    <div class="col-md-9">
+
+      <!-- Résumé -->
+      <div class="row mb-4">
+        <div class="col-sm-6 col-xl-3 mb-3">
+          <div class="card text-center">
+            <div class="card-body">
+              <h3>{{ paginator.count }}</h3>
+              <small class="text-muted">documents</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grille de documents -->
+      <div class="row">
+        {% for doc in documents %}
+        <div class="col-6 col-sm-4 col-md-3 mb-4">
+          <div class="card h-100 position-relative">
+
+            <!-- Image/Aperçu -->
+            <a href="{% url 'document_detail' doc.pk %}" class="text-decoration-none text-dark">
+              {% if doc.fichier.name|lower|endswith:".jpg" or doc.fichier.name|lower|endswith:".jpeg" or doc.fichier.name|lower|endswith:".png" or doc.fichier.name|lower|endswith:".gif" %}
+                <img src="{{ doc.fichier.url }}" class="card-img-top" style="height:150px; object-fit:cover;">
+              {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light" style="height:150px;">
+                  <div class="text-center">
+                    <i class="bx bx-file" style="font-size:2rem;"></i>
+                    <br>
+                    <strong>{{ doc.fichier.name|slice:"-4:"|upper }}</strong>
+                  </div>
+                </div>
+              {% endif %}
+            </a>
+
+            <!-- Contenu -->
+            <div class="card-body p-2">
+              <h6 class="card-title mb-1" style="font-size:0.9rem;">
+                <a href="{% url 'document_detail' doc.pk %}" class="text-decoration-none">{{ doc.titre }}</a>
+              </h6>
+              <p class="mb-1" style="font-size:0.8rem;">
+                <small class="text-muted">{{ doc.type_document.libelle }}</small>
+              </p>
+
+              <!-- Badges -->
+              <div class="mb-2">
+                {% if doc.profil_document == 'consultatif' %}
+                  <span class="badge bg-secondary">Consultatif</span>
+                {% elif doc.profil_document == 'imprimable' %}
+                  <span class="badge bg-info text-dark">Imprimable</span>
+                {% elif doc.profil_document == 'modifiable' %}
+                  <span class="badge bg-success">Modifiable</span>
+                {% endif %}
+
+                {% if doc.etat == 'en_attente' %}
+                  <span class="badge bg-warning">En attente</span>
+                {% elif doc.etat == 'en_traitement' %}
+                  <span class="badge bg-primary">En traitement</span>
+                {% elif doc.etat == 'valide' %}
+                  <span class="badge bg-success">Validé</span>
+                {% elif doc.etat == 'archive' %}
+                  <span class="badge bg-secondary">Archivé</span>
+                {% endif %}
+              </div>
+
+              <small class="text-muted d-block">{{ doc.Date_creation|date:"d/m/Y" }}</small>
+            </div>
+
+            <!-- Actions rapides -->
+            <div class="card-footer bg-transparent border-top p-2">
+              <div class="btn-group w-100" role="group">
+                <a href="{% url 'document_detail' doc.pk %}" class="btn btn-sm btn-outline-primary" title="Détails">
+                  <i class="ri-info-i"></i>
+                </a>
+                <a href="{% url 'edit_document' doc.pk %}" class="btn btn-sm btn-outline-primary" title="Modifier">
+                  <i class="ri-pencil-line"></i>
+                </a>
+                <a href="{{ doc.fichier.url }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Télécharger">
+                  <i class="ri-chat-download-line"></i>
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#taskModal{{ doc.pk }}" title="Ajouter tâche">
+                  <i class="ri-task-line"></i>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        {% empty %}
+        <div class="col-12">
+          <div class="alert alert-info">Aucun document trouvé.</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination -->
+      {% if is_paginated %}
+      <nav aria-label="Pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if q %}&q={{ q }}{% endif %}">Première</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">Précédent</a>
+          </li>
+          {% endif %}
+
+          {% for num in paginator.page_range %}
+          <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}">{{ num }}</a>
+          </li>
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}">Suivant</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}">Dernière</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{# apps/documents/templates/components/forms/theme_form #}
+<div class="row">
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="libelle" class="form-control" name="libelle"
+          placeholder="Entrez le libellé du thème"
+          aria-describedby="libelle" />
+        <label for="libelle">Libellé</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea id="description_theme" class="form-control" name="description_theme"
+          placeholder="Entrez la description du thème"
+          aria-describedby="description_theme"
+          style="height: 60px;"></textarea>
+        <label for="description_theme">Description</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- unité de traitement -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="cellule" name="cellule" aria-describedby="cellule">
+          {% if cellules|length > 1 %}
+            <option value="">-- Sélectionner une unité de traitement --</option>
+          {% endif %}
+          {% for cellule in cellules %}
+            <option value="{{ cellule.id }}" {% if cellules|length == 1 %}selected{% endif %}>
+                {{ cellule }}
+            </option>
+          {% endfor %}
+        </select>
+        <label for="cellule">Unité de Traitement</label>
+      </div>
+    </div>
+  </div>
+</div>

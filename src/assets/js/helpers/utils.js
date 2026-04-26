@@ -1,5 +1,52 @@
 // helpers/utils.js
 
+/**
+ * Gère le rendu universel de la pagination et des informations de compteurs
+ * pour les listes interfacées avec DRF.
+ */
+function renderPagination(data, containerSelector, infoSelector) {
+  const $container = $(containerSelector);
+  const $info = $(infoSelector);
+  $container.empty();
+  $info.empty();
+
+  if (!data || !data.count || data.count === 0) return;
+
+  const pageSize = data.page_size || 10;
+  const totalPages = Math.ceil(data.count / pageSize);
+  const currentPage = data.current_page || 1;
+
+  const startEntry = (currentPage - 1) * pageSize + 1;
+  const endEntry = Math.min(currentPage * pageSize, data.count);
+  $info.text(`Affichage de ${startEntry} à ${endEntry} sur ${data.count} éléments`);
+
+  if (totalPages <= 1) return;
+
+  let html = `
+    <li class="page-item ${!data.previous ? 'disabled' : ''}">
+      <a class="page-link" href="#" data-page="${currentPage - 1}"><i class="ri-arrow-left-s-line"></i></a>
+    </li>`;
+
+  const delta = 1;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+      html += `
+        <li class="page-item ${currentPage === i ? 'active' : ''}">
+          <a class="page-link" href="#" data-page="${i}">${i}</a>
+        </li>`;
+    } else if (i === currentPage - delta - 1 || i === currentPage + delta + 1) {
+      html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+    }
+  }
+
+  html += `
+    <li class="page-item ${!data.next ? 'disabled' : ''}">
+      <a class="page-link" href="#" data-page="${currentPage + 1}"><i class="ri-arrow-right-s-line"></i></a>
+    </li>`;
+
+  $container.html(html);
+}
+
 // standard function to reset form via dom or via jquery
 function resetForm(formSelector) {
   const form = $(formSelector);
@@ -412,5 +459,6 @@ export {
   closeLoader,
   toggleBulkButton,
   resetForm,
-  showToast
+  showToast,
+  renderPagination
 };

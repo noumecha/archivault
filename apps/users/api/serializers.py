@@ -31,7 +31,8 @@ class UtilisateurSerializer(serializers.ModelSerializer):
             'cellule_nom',
             'is_active',
             'Date_creation',
-            'password'
+            'password',
+            'avatar'
         ]
         read_only_fields = ['id', 'Date_creation']
         extra_kwargs = {
