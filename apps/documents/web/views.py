@@ -125,16 +125,29 @@ class BailleursView(RoleRequiredMixin, BaseCRUDView):
         RoleUtilisateur.ADMIN,
         RoleUtilisateur.SUPERVISEUR
     ]
+    filters = [
+        ('cellule', Cellule, 'Unité de traitement')
+    ]
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        user = self.request.user
+        if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
+            context['cellules_list'] = Cellule.objects.all()
+        else:
+            context['cellules_list'] = Cellule.objects.filter(id=user.cellule_id) if user.cellule else Cellule.objects.none()
+
+        for f in context.get('filters', []):
+            if f['name'] == 'cellule':
+                f['items'] = context['cellules_list']
+        return context
     model = Bailleurs
     form_class = BailleursFrom
     list_route = 'bailleurs_list'
     list_template = 'pages/bailleurs_list.html'
     context_object_name = 'bailleurs',
     search_fields = ["abrevation","libelle","description"]
-    filters = []
     headers = ["Abrevation","Libelle"]
     fields = ["abrevation","libelle"]
-    delete_url = "bailleurs_delete"
     object_name = 'bailleur'
 
 class AvenantsView(RoleRequiredMixin, BaseCRUDView):
@@ -143,6 +156,19 @@ class AvenantsView(RoleRequiredMixin, BaseCRUDView):
         RoleUtilisateur.ADMIN,
         RoleUtilisateur.SUPERVISEUR
     ]
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        user = self.request.user
+        if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
+            context['bailleurs_list'] = Bailleurs.objects.all()
+        else:
+            context['bailleurs_list'] = Bailleurs.objects.filter(cellule_id=user.cellule_id) if user.cellule else Bailleurs.objects.none()
+
+        for f in context.get('filters', []):
+            if f['name'] == 'bailleur':
+                f['items'] = context['bailleurs_list']
+        return context
+
     model = Avenants
     form_class = AvenantsForm
     list_route = 'avenants_list'
@@ -154,7 +180,6 @@ class AvenantsView(RoleRequiredMixin, BaseCRUDView):
     ]
     headers = ["Nom","Prenom","Bailleur"]
     fields = ["nom","prenom","bailleur"]
-    delete_url = "avenants_delete"
     object_name = 'avenant'
 
 

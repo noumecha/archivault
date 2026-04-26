@@ -37,7 +37,7 @@ class Division(models.Model):
     nom = models.CharField(max_length=255, unique=True)
     ministere = models.ForeignKey(Ministere, on_delete=models.CASCADE, related_name='divisions')
     direction_generale = models.ForeignKey(DirectionGenerale, on_delete=models.CASCADE, related_name='divisions', blank=True, null=True)
-    statut = models.CharField(max_length=255, choices=Statut.choices, default=Statut.DESACTIVE)
+    statut = models.BooleanField(default=False, blank=True, null=True)
     description = models.TextField(blank=True, name='description_division')
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)

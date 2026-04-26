@@ -4,13 +4,13 @@ from rest_framework.response import Response
 from apps.documents.services.visibility_service import VisibilityService
 from config.api.base_api_view import BaseAPIView
 from config.mixins.drf_permissions import DRFRoleRequiredMixin
-from ..models import Document, TypeDocument, Theme, SousTypeDocument
+from ..models import Document, TypeDocument, Theme, SousTypeDocument, Bailleurs, Avenants
 from ..services.permissions import DocumentPermissionService
 from ..services.document_service import DocumentService as DocBusinessService
 from ..forms import UploadMultipleForm
 from apps.users.models import RoleUtilisateur
 from rest_framework.permissions import IsAuthenticated
-from .serializers import DocumentSerializer, ThemeSerializer, TypeDocumentSerializer, SousTypeDocumentSerializer
+from .serializers import DocumentSerializer, ThemeSerializer, TypeDocumentSerializer, SousTypeDocumentSerializer, AvenantSerializer, BailleurSerializer
 import os, json
 
 class DocumentAPIView(BaseAPIView):
@@ -18,6 +18,7 @@ class DocumentAPIView(BaseAPIView):
     API pour la gestion des documents.
 
     Endpoints :
+
         GET    /api/documents/              → Liste (paginée, filtrée, recherchée)
         POST   /api/documents/create              → Créer
         GET    /api/documents/<id>/         → Détail
@@ -124,6 +125,7 @@ class ThemeAPIView(DRFRoleRequiredMixin, BaseAPIView):
     API pour la gestion des themes.
 
     Endpoints :
+
         GET    /api/themes/              → Liste (paginée, filtrée, recherchée)
         POST   /api/themes/create              → Créer
         GET    /api/themes/<id>/         → Détail
@@ -205,6 +207,7 @@ class TypeDocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
     API pour la gestion des types de documents.
 
     Endpoints :
+
         GET    /api/typedocuments/              → Liste (paginée, filtrée, recherchée)
         POST   /api/typedocuments/create              → Créer
         GET    /api/typedocuments/<id>/         → Détail
@@ -264,6 +267,7 @@ class SousTypeDocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
     """API pour la gestion des sous-types de documents.
 
     Endpoints :
+
         GET    /api/soustypedocuments/              → Liste (paginée, filtrée, recherchée)
         POST   /api/soustypedocuments/create              → Créer
         GET    /api/soustypedocuments/<id>/         → Détail
@@ -323,5 +327,134 @@ class SousTypeDocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
         return Response({
             'success': True,
             'message': f'{deleted_count} sous-type(s) supprimé(s)',
+            'deleted_count': deleted_count
+        })
+
+
+class AvenantAPIView(DRFRoleRequiredMixin, BaseAPIView):
+    """API pour la gestion des avenants.
+
+    Endpoints :
+
+        GET    /api/avenants/              → Liste (paginée, filtrée, recherchée)
+        POST   /api/avenants/create              → Créer
+        GET    /api/avenants/<id>/         → Détail
+        PUT    /api/avenants/<id>/update         → Mise à jour complète
+        PATCH  /api/avenants/<id>/update         → Mise à jour partielle
+        DELETE /api/avenants/<id>/delete         → Supprimer
+    """
+    model = Avenants
+    serializer_class = AvenantSerializer
+    permission_classes = [IsAuthenticated]
+
+    search_fields = ['libelle', 'numero']
+    filter_fields = ['bailleur']
+
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
+
+    def get_queryset(self):
+        # Filtrage indirect : Avenant -> Bailleur -> Cellule
+        base_qs = self.model.objects.select_related('bailleur__cellule').all()
+        filtered_qs = VisibilityService.filter_by_cellule(
+            base_qs,
+            self.request.user,
+            field_name='bailleur__cellule'
+        )
+        return super().get_queryset(filtered_qs)
+
+    def create_action(self, request, *args, **kwargs):
+        self.check_role_permission(request)
+        return super().create_action(request, *args, **kwargs)
+
+    def update_action(self, request, pk=None, *args, **kwargs):
+        self.check_role_permission(request)
+        return super().update_action(request, pk, *args, **kwargs)
+
+    def delete_action(self, request, pk=None, *args, **kwargs):
+        self.check_role_permission(request)
+        return super().delete_action(request, pk, *args, **kwargs)
+
+    custom_actions = {
+        'bulk_delete': 'action_bulk_delete',
+    }
+
+    def action_bulk_delete(self, request, *args, **kwargs):
+        self.check_role_permission(request)
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'success': False, 'message': 'Aucun ID fourni'}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count, _ = self.model.objects.filter(id__in=ids).delete()
+        return Response({
+            'success': True,
+            'message': f'{deleted_count} avenant(s) supprimé(s)',
+            'deleted_count': deleted_count
+        })
+
+
+class BailleurAPIView(DRFRoleRequiredMixin, BaseAPIView):
+    """API pour la gestion des bailleurs.
+
+    Endpoints :
+
+        GET    /api/bailleurs/              → Liste (paginée, filtrée, recherchée)
+        POST   /api/bailleurs/create              → Créer
+        GET    /api/bailleurs/<id>/         → Détail
+        PUT    /api/bailleurs/<id>/update         → Mise à jour complète
+        PATCH  /api/bailleurs/<id>/update         → Mise à jour partielle
+        DELETE /api/bailleurs/<id>/delete         → Supprimer
+    """
+    model = Bailleurs
+    serializer_class = BailleurSerializer
+    permission_classes = [IsAuthenticated]
+
+    search_fields = ['abrevation', 'libelle', 'description', 'cellule__nom']
+    filter_fields = ['cellule']
+
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
+
+    def get_queryset(self):
+        base_qs = self.model.objects.select_related('cellule').all()
+        filtered_qs = VisibilityService.filter_by_cellule(
+            base_qs,
+            self.request.user,
+            field_name='cellule'
+        )
+        return super().get_queryset(filtered_qs)
+
+    def create_action(self, request, *args, **kwargs):
+        self.check_role_permission(request)
+        return super().create_action(request, *args, **kwargs)
+
+    def update_action(self, request, pk=None, *args, **kwargs):
+        self.check_role_permission(request)
+        return super().update_action(request, pk, *args, **kwargs)
+
+    def delete_action(self, request, pk=None, *args, **kwargs):
+        self.check_role_permission(request)
+        return super().delete_action(request, pk, *args, **kwargs)
+
+    custom_actions = {
+        'bulk_delete': 'action_bulk_delete',
+    }
+
+    def action_bulk_delete(self, request, *args, **kwargs):
+        self.check_role_permission(request)
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'success': False, 'message': 'Aucun ID fourni'}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count, _ = self.model.objects.filter(id__in=ids).delete()
+        return Response({
+            'success': True,
+            'message': f'{deleted_count} bailleurs(s) supprimé(s)',
             'deleted_count': deleted_count
         })

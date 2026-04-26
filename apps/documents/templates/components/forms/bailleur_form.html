@@ -1,0 +1,47 @@
+<div class="row">
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="abrevation" class="form-control" name="abrevation" placeholder="Abbréviation" />
+        <label for="abrevation">Abbréviation</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="libelle" class="form-control" name="libelle" placeholder="Libellé du bailleur" />
+        <label for="libelle">Libellé</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea id="description" class="form-control" name="description"
+          placeholder="Entrez la description du bailleur"
+          aria-describedby="description"
+          style="height: 60px;"></textarea>
+        <label for="description">Description</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="cellule" name="cellule">
+          <option value="">-- Sélectionner une unité de traitement --</option>
+          {% for cellule in cellules_list %}
+            <option value="{{ cellule.id }}">{{ cellule.nom }}</option>
+          {% endfor %}
+        </select>
+        <label for="cellule">Unité de traitement</label>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,31 @@
+<div class="row">
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="bailleur" name="bailleur">
+          <option value="">-- Sélectionner un bailleur --</option>
+          {% for b in bailleurs_list %}
+            <option value="{{ b.id }}">{{ b.libelle }}</option>
+          {% endfor %}
+        </select>
+        <label for="bailleur">Bailleur</label>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="libelle" class="form-control" name="libelle" placeholder="Libellé de l'avenant" />
+        <label for="libelle">Libellé</label>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="numero" class="form-control" name="numero" placeholder="Numéro de l'avenant" />
+        <label for="numero">Numéro</label>
+      </div>
+    </div>
+  </div>
+</div>

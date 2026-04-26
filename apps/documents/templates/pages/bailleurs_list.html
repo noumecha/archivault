@@ -3,14 +3,139 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Thèmes{% endblock %}
+{% block title %}Bailleurs{% endblock %}
 
 {% load crispy_forms_tags %}
 
 {% block content %}
-  {% include 'documents_blocs/bailleurs_bloc.html' %}
+  <div class="card p-3">
+    <div class="card-header">
+      <div class="row d-flex justify-content-between align-items-center">
+        <div class="col-md-8">
+          <h3 class="">Liste des bailleurs</h3>
+          <p class="text-sm">Gérer les organismes de financement et partenaires</p>
+        </div>
+        <div class="col-md-4 text-end">
+          <button type="button" class="btn" id="refresh-button">
+            <i class="menu-icon ri-restart-line"></i> Rafraîchir
+          </button>
+          <button type="button" class="btn btn-lg btn-dark btn-primary text-white" data-bs-toggle="modal" id="add-button" data-bs-target="#create-bailleur-modal">
+            <i class="menu-icon ri-add-line"></i> Ajouter
+          </button>
+        </div>
+      </div>
+      <form action="" class="row mt-3" id="bailleur-search-form">
+        <div class="col-md-12">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Rechercher un bailleur (nom, abbréviation...)" name="search" id="search">
+            <button class="btn btn-outline-primary" type="button" id="clearSearch">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+        </div>
+        {% for filter in filters %}
+          <div class="col-md-6 mt-2">
+            <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
+              <option value="">-- {{ filter.label|capfirst }} --</option>
+              {% for item in filter.items %}
+                <option value="{{ item.id }}">{{ item }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        {% endfor %}
+      </form>
+      <div id="bulk-actions-container" class="mt-2 d-none">
+        <button id="btn-bulk-delete" class="btn btn-danger btn-sm">
+          <i class="ri-delete-bin-line"></i> Supprimer la sélection (<span id="selected-count">0</span>)
+        </button>
+      </div>
+      <div class="alert alert-success mt-2" style="display:none;" id="message-show-success"></div>
+      <div class="alert alert-danger mt-2" style="display:none;" id="message-show-error"></div>
+    </div>
+
+    <div id="bailleur-table-container">
+      {% include 'components/tables/bailleur_table.html' %}
+    </div>
+  </div>
+
+  {# Modal Création/Édition #}
+  <div class="modal fade" id="create-bailleur-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form id="bailleurForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modal-title">Enregistrement d'un bailleur</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <hr class="my-0">
+          <div class="modal-body">
+            {% include 'components/forms/bailleur_form.html' %}
+            <div class="alert alert-success mt-2" style="display: none;" id="form-success"></div>
+            <div class="alert alert-danger mt-2" style="display: none;" id="form-error"></div>
+            <input type="hidden" name="id" id="update-id">
+          </div>
+          <hr class="my-0">
+          <div class="modal-footer flex-row-reverse">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
+              <span id="save-btn-text">Enregistrer</span>
+              <div id="form-loader" class="d-none ms-2">
+                <i class="ri-loader-2-fill spin text-white"></i>
+              </div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# Modal Suppression Unique #}
+  <div class="modal fade" id="delete-bailleur-modal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Supprimer le bailleur</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Êtes-vous sûr de vouloir supprimer ce bailleur ? Cette action supprimera également ses avenants associés.</p>
+          <div class="alert alert-danger" style="display: none;" id="delete-form-error"></div>
+        </div>
+        <div class="modal-footer text-end">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button id="confirm-delete-btn" class="btn btn-danger d-flex align-items-center" type="button">
+            <span>Supprimer</span>
+            <div id="delete-loader" class="d-none ms-2"><i class="ri-loader-2-fill spin text-white"></i></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Modal Suppression en Masse #}
+  <div class="modal fade" id="bulk-delete-modal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Suppression groupée</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Confirmer la suppression des bailleurs sélectionnés ?</p>
+          <div class="alert alert-danger" style="display: none;" id="bulk-delete-form-error"></div>
+        </div>
+        <div class="modal-footer text-end">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button id="confirm-bulk-delete-btn" class="btn btn-danger d-flex align-items-center" type="button">
+            <span>Supprimer la sélection</span>
+            <div id="bulk-delete-loader" class="d-none ms-2"><i class="ri-loader-2-fill spin text-white"></i></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
-    <script type="module" src="{% static 'js/modules/bailleurs/index.js' %}"></script>
+    <script type="module" src="{% static 'js/modules/documents/controllers/bailleur.controller.js' %}"></script>
 {% endblock %}

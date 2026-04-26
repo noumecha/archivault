@@ -1,0 +1,39 @@
+{# apps/administration/templates/components/forms/ministere_form.html #}
+{# Template réutilisable pour le formulaire #}
+<div class="row">
+  <div class="col-md-6 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="nom" class="form-control" name="nom"
+          placeholder="Entrez le nom du ministère"
+          aria-describedby="nom" />
+        <label for="nom">Nom du ministère</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="code" class="form-control" name="code"
+          placeholder="Entrez le code du ministère"
+          aria-describedby="code" />
+        <label for="code">Code du ministère</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row">
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea id="description_ministere" class="form-control" name="description_ministere"
+          placeholder="Entrez la description_ministere du ministère"
+          aria-describedby="description_ministere"></textarea>
+        <label for="description_ministere">description_ministere du ministère</label>
+      </div>
+    </div>
+  </div>
+</div>
