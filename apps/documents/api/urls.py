@@ -1,6 +1,6 @@
 # apps/documents/api/urls.py
 from django.urls import path
-from apps.documents.api.views import DocumentAPIView, ThemeAPIView, TypeDocumentAPIView, SousTypeDocumentAPIView
+from apps.documents.api.views import *
 
 from config.utils.urls import *
 
@@ -33,4 +33,18 @@ urlpatterns = [
     path('soustypedocuments/<int:pk>/update', SousTypeDocumentAPIView.as_view(), name='api_soustypedocument_update', kwargs={'action': 'update'}),
     path('soustypedocuments/<int:pk>/delete', SousTypeDocumentAPIView.as_view(), name='api_soustypedocument_delete', kwargs={'action': 'delete'}),
     path('soustypedocuments/bulk-delete/', SousTypeDocumentAPIView.as_view(), name='api_soustypedocument_bulk_delete', kwargs={'action': 'bulk_delete'}),
+    # urls for avenants
+    path('avenants/', AvenantAPIView.as_view(), name='api_avenant_list', kwargs={'action': 'list'}),
+    path('avenants/create', AvenantAPIView.as_view(), name='api_avenant_create', kwargs={'action': 'create'}),
+    path('avenants/<int:pk>/', AvenantAPIView.as_view(), name='api_avenant_detail', kwargs={'action': 'retrieve'}),
+    path('avenants/<int:pk>/update', AvenantAPIView.as_view(), name='api_avenant_update', kwargs={'action': 'update'}),
+    path('avenants/<int:pk>/delete', AvenantAPIView.as_view(), name='api_avenant_delete', kwargs={'action': 'delete'}),
+    path('avenants/bulk-delete/', AvenantAPIView.as_view(), name='api_avenant_bulk_delete', kwargs={'action': 'bulk_delete'}),
+    # urls for bailleurs
+    path('bailleurs/', BailleurAPIView.as_view(), name='api_bailleur_list', kwargs={'action': 'list'}),
+    path('bailleurs/create', BailleurAPIView.as_view(), name='api_bailleur_create', kwargs={'action': 'create'}),
+    path('bailleurs/<int:pk>/', BailleurAPIView.as_view(), name='api_bailleur_detail', kwargs={'action': 'retrieve'}),
+    path('bailleurs/<int:pk>/update', BailleurAPIView.as_view(), name='api_bailleur_update', kwargs={'action': 'update'}),
+    path('bailleurs/<int:pk>/delete', BailleurAPIView.as_view(), name='api_bailleur_delete', kwargs={'action': 'delete'}),
+    path('bailleurs/bulk-delete/', BailleurAPIView.as_view(), name='api_bailleur_bulk_delete', kwargs={'action': 'bulk_delete'}),
 ]

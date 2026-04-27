@@ -1,0 +1,53 @@
+{# apps/administration/templates/components/forms/cellule_form.html #}
+{# Template réutilisable pour le formulaire #}
+<div class="row">
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="nom" class="form-control" name="nom"
+          placeholder="Entrez le nom de l'unité de traitement"
+          aria-describedby="nom" />
+        <label for="nom">Nom de l'unité de traitement</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea id="description_cellule" class="form-control" name="description_cellule"
+          placeholder="Entrez la description de l'unité de traitement"
+          aria-describedby="description_cellule"></textarea>
+        <label for="description_cellule">Description de l'unité de traitement</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Division -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="division" name="division" aria-describedby="division">
+          {% if divisions|length > 1 %}
+            <option value="">-- Sélectionner une division --</option>
+          {% endif %}
+          {% for division in divisions %}
+            <option value="{{ division.id }}" {% if divisions|length == 1 %}selected{% endif %}>
+                {{ division }}
+            </option>
+          {% endfor %}
+        </select>
+        <label for="division">Division</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- statut -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="accepte_bailleurs" name="accepte_bailleurs">
+      <label class="form-check-label" for="accepte_bailleurs">Accepte les Bailleurs</label>
+    </div>
+  </div>
+
+</div>

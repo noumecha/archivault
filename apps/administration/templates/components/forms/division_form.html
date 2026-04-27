@@ -1,0 +1,72 @@
+{# apps/administration/templates/components/forms/divisions_form.html #}
+{# Template réutilisable pour le formulaire #}
+<div class="row">
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="nom" class="form-control" name="nom"
+          placeholder="Entrez le nom de la division"
+          aria-describedby="nom" />
+        <label for="nom">Nom de la division</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea id="description_division" class="form-control" name="description_division"
+          placeholder="Entrez la description de la division"
+          aria-describedby="description_division"></textarea>
+        <label for="description_division">Description de la division</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ministère -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="ministere" name="ministere" aria-describedby="ministere">
+          {% if ministeres|length > 1 %}
+            <option value="">-- Sélectionner un Ministère --</option>
+          {% endif %}
+          {% for ministere in ministeres %}
+            <option value="{{ ministere.id }}" {% if ministeres|length == 1 %}selected{% endif %}>
+                {{ ministere }}
+            </option>
+          {% endfor %}
+        </select>
+        <label for="ministere">Ministère</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direction générale -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="direction_generale" name="direction_generale" aria-describedby="direction_generale">
+          {% if direction_generales|length > 1 %}
+            <option value="">-- Sélectionner une direction generale --</option>
+          {% endif %}
+          {% for direction_generale in direction_generales %}
+            <option value="{{ direction_generale.id }}" {% if direction_generales|length == 1 %}selected{% endif %}>
+                {{ direction_generale }}
+            </option>
+          {% endfor %}
+        </select>
+        <label for="direction_generale">Direction générale</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- statut -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="statut" name="statut">
+      <label class="form-check-label" for="statut">Statut</label>
+    </div>
+  </div>
+
+</div>

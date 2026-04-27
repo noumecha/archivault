@@ -1,7 +1,7 @@
 from apps.documents.models import Avenants, Bailleurs, Document, EtatDocument, ProfilDoc, SousTypeDocument, Theme, TypeDocument
 from apps.users.models import RoleUtilisateur, Utilisateur
-from .models import *
-from .forms import *
+from ..models import *
+from ..forms import *
 from config.views import BaseCRUDView
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect, render
@@ -9,6 +9,7 @@ from django.contrib import messages
 from config.utils.utils import generates_filters
 from django.db.models import Count
 from config.mixins.permissions import *
+from web_project import TemplateLayout
 from config.roles import *
 
 class CelluleView(RoleRequiredMixin, BaseCRUDView):
@@ -20,14 +21,22 @@ class CelluleView(RoleRequiredMixin, BaseCRUDView):
     model = Cellule
     form_class = CellulesForm
     list_route = 'cellule_list'
-    list_template = 'cellules_list.html'
+    list_template = 'pages/cellules_list.html'
     context_object_name = 'cellules'
     object_label = 'Unité de traitement'
     search_fields = ["nom","description_cellule"]
     headers = ["Nom", "Description"]
     fields = ["nom", "description_cellule"]
-    delete_url = "cellule_delete"
     manage_url = "cellule_manage"
+    def get_context_data(self, **kwargs):
+        # On initialise le layout
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        filters = [
+            ('division', Division, 'Division'),
+        ]
+        context['divisions'] = Division.objects.all()
+        context['filters'] = generates_filters(filters)
+        return context
     manage_menu = [
         {"label": "Statistiques", "icon": "ri-bar-chart-line me-1", "section": "stats"},
         {"label": "Utilisateurs", "icon": "ri-user-2-line me-1", "section": "users"},
@@ -153,28 +162,23 @@ class DivisionView(RoleRequiredMixin, BaseCRUDView):
     model = Division
     form_class = DivisionForm
     list_route = 'division_list'
-    list_template = 'divisions_list.html'
+    list_template = 'pages/divisions_list.html'
     context_object_name = 'divisions'
-    search_fields = ["nom","description_division"]
+    search_fields = ["nom","description_division", "ministere", "direction_generale"]
     headers = ["Nom", "Description", "Statut"]
     fields = ["nom", "description_division", "statut"]
-    delete_url = "division_delete"
     manage_url = "division_manage"
-    # 🔹 Déclaration des actions personnalisées
-    custom_actions = {
-        "toggle_status": "toggle_status_action"
-    }
-
-    def toggle_status_action(self, request, pk):
-        """Active ou désactive une division"""
-        division = get_object_or_404(Division, pk=pk)
-        if division.statut == 'activé':
-            division.statut = 'desactivé'
-        else:
-            division.statut = 'activé'
-        division.save()
-        messages.success(request, f"La division '{division.nom}' a été {division.statut}.")
-        return redirect(self.list_route)
+    def get_context_data(self, **kwargs):
+        # On initialise le layout
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        filters = [
+            ('ministere', Ministere, 'Ministère'),
+            ('direction_generale', DirectionGenerale, 'Direction générales')
+        ]
+        context['ministeres'] = Ministere.objects.all()
+        context['direction_generales'] = DirectionGenerale.objects.all()
+        context['filters'] = generates_filters(filters)
+        return context
 
 class MinistereView(RoleRequiredMixin, BaseCRUDView):
     allowed_roles = [
@@ -183,26 +187,37 @@ class MinistereView(RoleRequiredMixin, BaseCRUDView):
     model = Ministere
     form_class = MinistereForm
     list_route = 'ministere_list'
-    list_template = 'ministeres_list.html'
+    list_template = 'pages/ministeres_list.html'
     context_object_name = 'ministeres'
     search_fields = ["nom","description_ministere","code","abrevation"]
     headers = ["Nom", "Description","Code","abrevation"]
     fields = ["nom", "description_ministere","code","abrevation"]
-    delete_url = "ministere_delete"
-    manage_url = "ministere_manage"
 
 class DirectionGeneraleView(RoleRequiredMixin, BaseCRUDView):
     allowed_roles = [
         RoleUtilisateur.SUPERADMIN,
     ]
     model = DirectionGenerale
-    form_class = DirectionGeneraleForm
     list_route = 'directiongenerale_list'
-    list_template = 'directiongenerales_list.html'
+    list_template = 'pages/directiongenerales_list.html'
     context_object_name = 'directiongenerales'
-    search_fields = ["nom","description_direction_generale"]
+    search_fields = ["nom","description_direction_generale", "ministere"]
     headers = ["Nom", "Description", "Ministere"]
     fields = ["nom", "description_direction_generale", "ministere"]
-    delete_url = "directiongenerale_delete"
     manage_url = "directiongenerale_manage"
     object_name = "directiongenerale"
+    filters = [
+        ('ministere', Ministere, 'Ministère')
+    ]
+    def get_context_data(self, **kwargs):
+        # On initialise le layout
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+
+        # Pour DirectionGenerale, on veut simplement s'assurer que les filtres
+        # de recherche sont bien initialisés avec les données des modèles.
+        filters = [
+            ('ministere', Ministere, 'Ministère'),
+        ]
+        context['ministeres'] = Ministere.objects.all()
+        context['filters'] = generates_filters(filters)
+        return context

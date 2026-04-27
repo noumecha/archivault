@@ -1,0 +1,31 @@
+{# apps/administration/templates/components/tables/divisions_table.html #}
+<div id="table-loader" class="d-none text-center my-4">
+  <i class="ri-loader-2-fill ri-2x spin text-primary"></i>
+  <p class="mt-2">Chargement des données...</p>
+</div>
+
+<table class="table" id="data-table">
+  <thead>
+    <tr>
+      <th style="width: 40px;">
+        <div class="form-check mb-0">
+          <input class="form-check-input" type="checkbox" id="check-all-divisions">
+        </div>
+      </th>
+      <th>Nom</th>
+      <th>Description</th>
+      <th>Statut</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody class="table-border-bottom-0" id="divisions-tbody">
+  </tbody>
+</table>
+
+<div class="ms-3 me-3 d-flex justify-content-between align-items-center mt-4">
+    <div id="pagination-info" class="text-muted small">
+    </div>
+    <nav aria-label="Page navigation">
+        <ul class="pagination mb-0" id="divisions-pagination"></ul>
+    </nav>
+</div>

@@ -1,6 +1,6 @@
 # apps/documents/api/serializers.py
 from rest_framework import serializers
-from ..models import Document, TypeDocument, Theme, SousTypeDocument
+from ..models import Document, TypeDocument, Theme, SousTypeDocument, Bailleurs, Avenants
 
 class DocumentSerializer(serializers.ModelSerializer):
     """
@@ -104,3 +104,19 @@ class SousTypeDocumentSerializer(serializers.ModelSerializer):
                 "nom": obj.type_document.cellule.nom
             }
         return None
+
+
+class AvenantSerializer(serializers.ModelSerializer):
+    bailleur_display = serializers.StringRelatedField(source='bailleur', read_only=True)
+
+    class Meta:
+        model = Avenants
+        fields = ['id', 'bailleur', 'bailleur_display', 'libelle', 'numero', 'Date_creation']
+        read_only_fields = ['id', 'Date_creation']
+
+class BailleurSerializer(serializers.ModelSerializer):
+    cellule_display = serializers.StringRelatedField(source='cellule', read_only=True)
+    class Meta:
+        model = Bailleurs
+        fields = ['id', 'libelle', 'Date_creation', 'cellule', 'cellule_display', 'abrevation', 'description']
+        read_only_fields = ['id', 'Date_creation']

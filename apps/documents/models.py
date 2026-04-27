@@ -90,14 +90,14 @@ class Bailleurs(models.Model):
 class Avenants(models.Model):
     # a avenant believe to a bailleur
     bailleur = models.ForeignKey(Bailleurs, on_delete=models.CASCADE, null=True, related_name= "avenant_bailleur")
-    nom = models.CharField(max_length=255, unique=True)
-    prenom = models.CharField(max_length=255, unique=True)
+    libelle = models.CharField(max_length=255, unique=True)
+    numero = models.CharField(max_length=255, unique=True)
     # timestamp
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.nom
+        return self.libelle
 
 class Document(models.Model):
     titre = models.CharField(max_length=255, unique=True)

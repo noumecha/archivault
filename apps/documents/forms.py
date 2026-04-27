@@ -170,7 +170,7 @@ class UploadMultipleForm(forms.Form):
     type_document = forms.ModelChoiceField(queryset=TypeDocument.objects.all(), required=False)
     sous_type = forms.ModelChoiceField(queryset=SousTypeDocument.objects.all(), required=False)
     theme = forms.ModelChoiceField(queryset=Theme.objects.all(), required=False)
-    cellule = forms.ModelChoiceField(queryset=Cellule.objects.filter(division__statut='activé'), required=False)
+    cellule = forms.ModelChoiceField(queryset=Cellule.objects.filter(division__statut=True), required=False)
     etat = forms.ChoiceField(choices=EtatDocument.choices, required=False)
     niveau_acces = forms.ChoiceField(choices=NiveauAcces.choices, required=False)
     profil_document = forms.ChoiceField(choices=ProfilDoc.choices, required=False)
@@ -445,14 +445,14 @@ class AvenantsForm(forms.ModelForm):
 
         fields = (
             "bailleur",
-            "nom",
-            "prenom",
+            "libelle",
+            "numero",
         )
 
         labels = {
             "bailleur" : "Selectionnez le bailleur",
-            "nom" : "Nom de l'avenant",
-            "prenom" : "Prenom de l'avenant",
+            "libelle" : "Libellé de l'avenant",
+            "numero" : "Numéro de l'avenant",
         }
 
         widgets = {
@@ -465,8 +465,8 @@ class AvenantsForm(forms.ModelForm):
             self.helper.layout = Layout(
                 Row(
                     Column(FloatingField("bailleur"), css_class='form-group col-md-12 mb-0'),
-                    Column(FloatingField("nom"), css_class='form-group col-md-12 mb-0'),
-                    Column(FloatingField("prenom"), css_class="form-group col-md-12 mb-2"),
+                    Column(FloatingField("libelle"), css_class='form-group col-md-12 mb-0'),
+                    Column(FloatingField("numero"), css_class="form-group col-md-12 mb-2"),
                     css_class='form-row p-3 pt-0'
                 ),
             )

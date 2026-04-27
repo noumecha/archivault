@@ -1,0 +1,44 @@
+{# apps/administration/templates/components/forms/directiongenerales_form.html #}
+{# Template réutilisable pour le formulaire #}
+<div class="row">
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="nom" class="form-control" name="nom"
+          placeholder="Entrez le nom de la direction générale"
+          aria-describedby="nom" />
+        <label for="nom">Nom de la direction générale</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea id="description_direction_generale" class="form-control" name="description_direction_generale"
+          placeholder="Entrez la description de la direction générale"
+          aria-describedby="description_direction_generale"></textarea>
+        <label for="description_direction_generale">Description de la direction générale</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ministere -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="ministere" name="ministere" aria-describedby="ministere">
+          {% if ministeres|length > 1 %}
+            <option value="">-- Sélectionner un ministere --</option>
+          {% endif %}
+          {% for ministere in ministeres %}
+            <option value="{{ ministere.id }}" {% if ministeres|length == 1 %}selected{% endif %}>
+                {{ ministere }}
+            </option>
+          {% endfor %}
+        </select>
+        <label for="ministere">Ministère</label>
+      </div>
+    </div>
+  </div>
+</div>
