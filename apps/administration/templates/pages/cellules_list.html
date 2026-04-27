@@ -1,92 +1,191 @@
+{# apps/administration/templates/pages/cellules_list.html #}
 {% extends layout_path %}
 
 {% load static %}
-{% load i18n %}
 
-{% block title %}unités de traitement{% endblock %}
-
-{% load crispy_forms_tags %}
+{% block title %}Unités de traitements{% endblock %}
 
 {% block content %}
-    <div class="card p-3">
-
-        <div class="card-header">
-            <div class="row d-flex justify-content-between align-items-center">
-                <div class="col-md-8 col-lg-8">
-                    <h3 class="">Listes des Unités de traitement</h3>
-                    <p class="text-sm">
-                        Gérer les unités de traitement
-                    </p>
-                </div>
-                <div class="col-md-4 col-lg-4 text-end">
-                    <button
-                        type="button"
-                        class="btn"
-                        id="refresh-button"
-                    >
-                      <i class="menu-icon ri-restart-line"></i> Rafraîchir
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-lg btn-dark btn-primary text-white"
-                        data-bs-toggle="modal"
-                        data-action = "create"
-                        id="add-button"
-                        data-bs-target="#create-cellule-modal"
-                    >
-                        <i class="menu-icon ri-add-line"></i> Ajouter
-                    </button>
-                </div>
-            </div>
-            <form action="" class="row mt-3" id="cellule-search-form">
-                <div class="col-md-12 col-lg-12">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Rechercher une unité de traitement" name="search" id="search">
-                        <button class="btn btn-outline-primary" type="button" id="clearSearch">
-                            <i class="ri-close-line"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
-            <div class="row">
-                {% if messages %}
-                    {% for msg in messages %}
-                        <div class="alert alert-success col-12 text-center mt-3" style="display:none;" id="message-show">
-                            {{ msg }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="container-flex" id="cellule-table-container">
-        </div>
+<div class="card p-3">
+  <div class="card-header">
+    <div class="row d-flex justify-content-between align-items-center">
+      <div class="col-md-8">
+        <h3>Listes des Unités de traitements</h3>
+        <p class="text-sm">Gérer les unités de traitements</p>
+      </div>
+      <div class="col-md-4 text-end">
+        <button type="button" class="btn" id="refresh-button">
+          <i class="menu-icon ri-restart-line"></i> Rafraîchir
+        </button>
+        <button type="button" class="btn btn-lg btn-dark btn-primary text-white"
+          id="add-button" data-bs-toggle="modal" data-bs-target="#create-cellule-modal">
+          <i class="menu-icon ri-add-line"></i> Ajouter
+        </button>
+      </div>
     </div>
-    <!-- create or update cellule -->
-    <div class="modal fade" id="create-cellule-modal" tabindex="-1" aria-labelledby="exampleModalLabel">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content p-0">
-                <form id="celluleForm">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title">Enregistrement des informations sur une unité de traitement</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="cellule-form-content">Chargement...</div>
-                        <div class="alert alert-success" style="display: none;" id="form-success"></div>
-                        <div class="alert alert-danger" style="display: none;" id="form-error"></div>
-                        <input type="hidden" value="" name="id" id="update-id">
-                    </div>
-                    <div class="modal-footer flex-row-reverse">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                        <button type="submit" id="save-btn" class="btn">...</button>
-                    </div>
-                </form>
-            </div>
+
+    {# Formulaire de recherche et filtres #}
+    <form class="row d-flex mt-3" id="cellule-search-form">
+      <div class="col-md-12">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Rechercher une unité de traitement" name="search" id="search">
+          <button class="btn btn-outline-primary" type="button" id="clearSearch">
+            <i class="menu-icon ri-close-line"></i>
+          </button>
         </div>
+      </div>
+
+      {% for filter in filters %}
+        <div class="col-md-6 col-lg-6 d-flex mt-2 gap-2">
+          <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
+            <option value="">-- {{ filter.label|capfirst }} --</option>
+            {% for item in filter.items %}
+              {% if item.value %}
+                <option value="{{ item.value }}">{{ item.label }}</option>
+              {% else %}
+                <option value="{{ item.id }}">{{ item }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      {% endfor %}
+    </form>
+
+    <div id="bulk-actions-container" class="mt-2 d-none">
+      <button id="btn-bulk-delete" class="btn btn-danger btn-sm">
+        <i class="ri-delete-bin-line"></i> Supprimer la sélection (<span id="selected-count">0</span>)
+      </button>
+      <button id="btn-bulk-toggle-acceptebailleurs" class="btn btn-secondary btn-sm">
+        <i class="ri-toggle-line"></i> Activer/Désactiver l'option bailleur à la sélection (<span id="selected-count">0</span>)
+      </button>
     </div>
+
+    <div class="alert alert-error col-12 text-center mt-2" style="display:none;" id="message-show-error"></div>
+    <div class="alert alert-success col-12 text-center mt-2" style="display:none;" id="message-show-success"></div>
+  </div>
+
+  {# Conteneur pour la table (injecté par JS) #}
+  <div id="cellule-table-container">
+    {% include 'components/tables/cellule_table.html' %}
+  </div>
+</div>
+
+{# Modal Création/Édition #}
+<div class="modal fade" id="create-cellule-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content p-0">
+      <form id="celluleForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modal-title">Enregistrement unité de traitement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <hr>
+        <div class="modal-body pb-0">
+          <div id="cellule-form-content">
+            {% include 'components/forms/cellule_form.html' %}
+          </div>
+          <div class="alert alert-success" style="display: none;" id="form-success"></div>
+          <div class="alert alert-danger" style="display: none;" id="form-error"></div>
+          <input type="hidden" name="id" id="update-id">
+        </div>
+        <hr>
+        <div class="modal-footer flex-row-reverse">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button id="save-btn" class="d-flex justify-content-center align-items-center btn btn-primary no-transform" type="submit">
+            <span class="" id="save-btn-text">Enregistrer</span>
+            <div id="form-loader" class="d-none text-center">
+              <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+            </div>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# Modal Suppression #}
+<div class="modal fade" id="delete-cellule-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer l'unité de traitement</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <hr>
+      <div class="modal-body pb-0">
+        <p>Êtes-vous sûr de vouloir supprimer cette unité de traitement ?</p>
+        <div class="alert alert-danger" style="display: none;" id="delete-form-error"></div>
+      </div>
+      <hr>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button id="confirm-delete-btn" class="d-flex justify-content-center align-items-center btn btn-danger" type="button">
+          <span class="" id="delete-btn-text">Supprimer</span>
+          <div id="delete-loader" class="d-none text-center">
+            <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Modal Suppression en masse #}
+<div class="modal fade" id="bulk-delete-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer les unités de traitement sélectionnées</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <hr>
+      <div class="modal-body pb-0">
+        <p>Êtes-vous sûr de vouloir supprimer les unités de traitement sélectionnées ?</p>
+        <div class="alert alert-danger" style="display: none;" id="bulk-delete-form-error"></div>
+      </div>
+      <hr>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button id="confirm-bulk-delete-btn" class="d-flex justify-content-center align-items-center btn btn-danger" type="button">
+          <span class="" id="bulk-delete-btn-text">Supprimer</span>
+          <div id="bulk-delete-loader" class="d-none text-center">
+            <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Modal activation/desactivation de masse #}
+<div class="modal fade" id="bulk-toggle-acceptebailleurs-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Gérer l'option accepatation de bailleurs sur les unités de traitement sélectionnées</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <hr>
+      <div class="modal-body pb-0">
+        <p>Êtes-vous sûr de vouloir activer/désactiver l'option accepatation de bailleurs sur les unités de traitement sélectionnées ?</p>
+        <div class="alert alert-danger" style="display: none;" id="bulk-toggle-acceptebailleurs-form-error"></div>
+      </div>
+      <hr>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button id="confirm-bulk-toggle-acceptebailleurs-btn" class="d-flex justify-content-center align-items-center btn btn-secondary" type="button">
+          <span class="" id="bulk-toggle-acceptebailleurs-btn-text">Confirmer</span>
+          <div id="bulk-toggle-acceptebailleurs-loader" class="d-none text-center">
+            <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
+
 {% block extra_js %}
-  <script type="module" src="{% static 'js/modules/cellules/index.js' %}"></script>
+  <script type="module" src="{% static 'js/modules/administration/controllers/cellule.controller.js' %}"></script>
 {% endblock %}

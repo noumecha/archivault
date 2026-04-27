@@ -38,7 +38,7 @@ export const DirectionGeneraleUi = {
         </th>
         <td>${directiongenerale.nom}</td>
         <td>${directiongenerale.description_direction_generale}</td>
-        <td>${directiongenerale.ministere}</td>
+        <td>${directiongenerale.ministere_display}</td>
         <td>
           <div class="dropdown">
             <button class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

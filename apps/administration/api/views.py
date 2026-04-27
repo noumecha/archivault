@@ -114,8 +114,10 @@ class DirectionGeneraleAPIView(DRFRoleRequiredMixin, BaseAPIView):
     permission_classes = [IsAuthenticated]
 
     # ── Recherche & Filtrage ─────────────────────────────────────────────────
-    search_fields = ['nom', 'description_direction_generale']
-    filter_fields = []
+    search_fields = ['nom', 'description_direction_generale', 'ministere__nom']
+    filter_fields = {
+        'ministere': 'ministere',
+    }
 
     # ── Permissions ──────────────────────────────────────────────────────────
     allowed_roles = [
@@ -126,7 +128,8 @@ class DirectionGeneraleAPIView(DRFRoleRequiredMixin, BaseAPIView):
     # QUERYSET PERSONNALISÉ
     # ─────────────────────────────────────────────────────────────────────────
     def get_queryset(self):
-        return super().get_queryset()
+        base_qs = self.model.objects.select_related('ministere').all()
+        return super().get_queryset(base_qs)
 
     # ─────────────────────────────────────────────────────────────────────────
     # OVERRIDE DES ACTIONS POUR AJOUTER DES PERMISSIONS
@@ -183,6 +186,8 @@ class DivisionAPIView(DRFRoleRequiredMixin, BaseAPIView):
         PUT    /api/divisions/<id>/update         → Mise à jour complète
         PATCH  /api/divisions/<id>/update         → Mise à jour partielle
         DELETE /api/divisions/<id>/delete         → Supprimer
+        STATUS /api/divisions/toggle-status
+        STATUS /api/divisions/bulk-toggle-status
     """
 
     # ── Configuration du modèle ──────────────────────────────────────────────
@@ -192,7 +197,7 @@ class DivisionAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     # ── Recherche & Filtrage ─────────────────────────────────────────────────
     search_fields = ['nom', 'description_division']
-    filter_fields = []
+    filter_fields = ['ministere','direction_generale']
 
     # ── Permissions ──────────────────────────────────────────────────────────
     allowed_roles = [
@@ -293,12 +298,15 @@ class CelluleAPIView(DRFRoleRequiredMixin, BaseAPIView):
     Remplace CelluleView (BaseCRUDView) en version full API.
 
     Endpoints :
+
         GET    /api/cellules/              → Liste (paginée, filtrée, recherchée)
         POST   /api/cellules/create              → Créer
         GET    /api/cellules/<id>/         → Détail
         PUT    /api/cellules/<id>/update         → Mise à jour complète
         PATCH  /api/cellules/<id>/update         → Mise à jour partielle
         DELETE /api/cellules/<id>/delete         → Supprimer
+        STATUS BAILLEUR TOGGLE /api/cellules/<id>/toggle-accepte-bailleurs      → Changer le status d'acceptation de bailleur
+        BULK STATUS BAILLEUR TOGGLE /api/cellules/bulk-toggle-accepte-bailleurs     → Changer le status d'acceptation de bailleur de plusieurs cellules
     """
 
     # ── Configuration du modèle ──────────────────────────────────────────────
@@ -308,7 +316,7 @@ class CelluleAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     # ── Recherche & Filtrage ─────────────────────────────────────────────────
     search_fields = ['nom', 'description_cellule']
-    filter_fields = []
+    filter_fields = ['division']
 
     # ── Permissions ──────────────────────────────────────────────────────────
     allowed_roles = [
@@ -344,7 +352,46 @@ class CelluleAPIView(DRFRoleRequiredMixin, BaseAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     custom_actions = {
         'bulk_delete': 'action_bulk_delete',
+        'toggle_accepte_bailleurs': 'action_toggle_accepte_bailleurs',
+        'bulk_toggle_accepte_bailleurs': 'action_bulk_toggle_accepte_bailleurs'
     }
+
+    def action_bulk_toggle_accepte_bailleurs(self, request, *args, **kwargs):
+        """Basculer le statut de plusieurs cellules."""
+        self.check_role_permission(request)
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({
+                'success': False,
+                'message': 'Aucun ID fourni'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        cellules = Cellule.objects.filter(id__in=ids)
+        for cel in cellules:
+            cel.accepte_bailleurs = not cel.accepte_bailleurs
+            cel.save()
+
+        return Response({
+            'success': True,
+            'message': f'{cellules.count()} unité(s) de traitement modifiée(s)'
+        })
+
+    def action_toggle_accepte_bailleurs(self, request, pk=None, *args, **kwargs):
+        """Basculer le statut d'une cellule."""
+        self.check_role_permission(request)
+
+        cellule = get_object_or_404(Cellule, pk=pk)
+        new_status = False if cellule.accepte_bailleurs == True else True
+        cellule.accepte_bailleurs = new_status
+        cellule.save()
+
+        serializer = self.get_serializer(cellule)
+
+        return Response({
+            'success': True,
+            'message': f'Statut de l\'unité de traitement (acceptation de bailleurs) modifié avec succès',
+            'data': serializer.data
+        })
 
     def action_bulk_delete(self, request, *args, **kwargs):
         """Suppression en masse."""
@@ -360,6 +407,6 @@ class CelluleAPIView(DRFRoleRequiredMixin, BaseAPIView):
         deleted_count, _ = Cellule.objects.filter(id__in=ids).delete()
         return Response({
             'success': True,
-            'message': f'{deleted_count} cellule(s) supprimée(s)',
+            'message': f'{deleted_count} unité(s) de traitement supprimée(s)',
             'deleted_count': deleted_count
         })

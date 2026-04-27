@@ -184,9 +184,9 @@ export const DirectionGeneraleController = {
         const id = $('#update-id').val();
         let response;
         if (id) {
-          response = await DirectionGeneraleService.update(id, data);
+          response = await DirectionGeneraleService.update(id, rawData);
         } else {
-          response = await DirectionGeneraleService.create(data);
+          response = await DirectionGeneraleService.create(rawData);
         }
         DirectionGeneraleUi.showSuccess(response.message || 'Opération réussie', '#form-success');
         setTimeout(async () => {

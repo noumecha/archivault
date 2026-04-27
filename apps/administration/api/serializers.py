@@ -28,8 +28,7 @@ class DivisionSerializer(serializers.ModelSerializer):
 
 class CelluleSerializer(serializers.ModelSerializer):
     division_display = serializers.StringRelatedField(source='division', read_only=True)
-    ministere_display = serializers.StringRelatedField(source='ministere', read_only=True)
     class Meta:
         model = Cellule
-        fields = ['id', 'nom', 'description_cellule', 'division', 'division_display', 'ministere', 'ministere_display', 'accepte_bailleurs', 'Date_creation', 'Date_miseajour']
+        fields = ['id', 'nom', 'description_cellule', 'division', 'division_display', 'accepte_bailleurs', 'Date_creation', 'Date_miseajour']
         read_only_fields = ['id', 'Date_creation', 'Date_miseajour']

@@ -20,6 +20,8 @@ urlpatterns = [
     path('cellules/<int:pk>/update', CelluleAPIView.as_view(), name='api_cellule_update', kwargs={'action': 'update'}),
     path('cellules/<int:pk>/delete', CelluleAPIView.as_view(), name='api_cellule_delete', kwargs={'action': 'delete'}),
     path('cellules/bulk-delete/', CelluleAPIView.as_view(), name='api_cellule_bulk_delete', kwargs={'action': 'bulk_delete'}),
+    path('cellules/<int:pk>/toggle-accepte-bailleurs/', CelluleAPIView.as_view(), name='api_cellule_accepte_bailleurs', kwargs={'action' : 'toggle_accepte_bailleurs'}),
+    path('cellules/toggle-accepte-bailleurs/', CelluleAPIView.as_view(), name='api_cellule_toggle_accepte_bailleurs', kwargs={'action': 'bulk_toggle_accepte_bailleurs'}),
     # directions generales api urls
     path('directiongenerales/', DirectionGeneraleAPIView.as_view(), name='api_directiongenerale_list', kwargs={'action': 'list'}),
     path('directiongenerales/create', DirectionGeneraleAPIView.as_view(), name='api_directiongenerale_create', kwargs={'action': 'create'}),
@@ -34,4 +36,6 @@ urlpatterns = [
     path('divisions/<int:pk>/update', DivisionAPIView.as_view(), name='api_division_update', kwargs={'action': 'update'}),
     path('divisions/<int:pk>/delete', DivisionAPIView.as_view(), name='api_division_delete', kwargs={'action': 'delete'}),
     path('divisions/bulk-delete/', DivisionAPIView.as_view(), name='api_division_bulk_delete', kwargs={'action': 'bulk_delete'}),
+    path('divisions/<int:pk>/toggle-status/', DivisionAPIView.as_view(), name='api_division_toggle_status', kwargs={'action' : 'toggle_status'}),
+    path('divisions/bulk-toggle-status/', DivisionAPIView.as_view(), name='api_division_bulk_toggle_status', kwargs={'action': 'bulk_toggle_status'}),
 ]

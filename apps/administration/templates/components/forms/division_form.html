@@ -1,13 +1,13 @@
 {# apps/administration/templates/components/forms/divisions_form.html #}
 {# Template réutilisable pour le formulaire #}
 <div class="row">
-  <div class="col-md-6 form-group mb-5">
+  <div class="col-md-12 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
         <input type="text" id="nom" class="form-control" name="nom"
-          placeholder="Entrez le nom de la direction_generale"
+          placeholder="Entrez le nom de la division"
           aria-describedby="nom" />
-        <label for="nom">Nom de la direction_generale</label>
+        <label for="nom">Nom de la division</label>
       </div>
     </div>
   </div>
@@ -16,9 +16,9 @@
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
         <textarea id="description_division" class="form-control" name="description_division"
-          placeholder="Entrez la description de la direction_generale"
+          placeholder="Entrez la description de la division"
           aria-describedby="description_division"></textarea>
-        <label for="description_division">Description de la direction_generale</label>
+        <label for="description_division">Description de la division</label>
       </div>
     </div>
   </div>
@@ -29,7 +29,7 @@
       <div class="form-floating form-floating-outline">
         <select class="form-select" id="ministere" name="ministere" aria-describedby="ministere">
           {% if ministeres|length > 1 %}
-            <option value="">-- Sélectionner une direction_generale --</option>
+            <option value="">-- Sélectionner un Ministère --</option>
           {% endif %}
           {% for ministere in ministeres %}
             <option value="{{ ministere.id }}" {% if ministeres|length == 1 %}selected{% endif %}>
