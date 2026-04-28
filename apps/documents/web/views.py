@@ -228,7 +228,9 @@ class DocumentView(RoleRequiredMixin, BaseCRUDView):
     allowed_roles = [
         RoleUtilisateur.SUPERADMIN,
         RoleUtilisateur.ADMIN,
-        RoleUtilisateur.SUPERVISEUR
+        RoleUtilisateur.SUPERVISEUR,
+        RoleUtilisateur.RESPONSABLE,
+        RoleUtilisateur.GESTIONNAIRE,
     ]
     model = Document
     list_route = 'documents_list'
@@ -258,15 +260,15 @@ class DocumentView(RoleRequiredMixin, BaseCRUDView):
     ]
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        filtered_etat = EtatDocument.choices
+        filtered_niveau_access = NiveauAcces.choices
+        filtered_profil_documents = ProfilDoc.choices
         user = self.request.user
         if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
             filtered_cellules = Cellule.objects.all()
             filtered_types = TypeDocument.objects.all()
             filtered_themes = Theme.objects.all()
             filtered_soustypes = SousTypeDocument.objects.all()
-            filtered_etat = EtatDocument.choices
-            filtered_niveau_access = NiveauAcces.choices
-            filtered_profil_documents = ProfilDoc.choices
         else:
             filtered_cellules = Cellule.objects.filter(id=user.cellule_id) if user.cellule else Cellule.objects.none()
             filtered_types = TypeDocument.objects.filter(cellule_id=user.cellule_id) if user.cellule else TypeDocument.objects.none()

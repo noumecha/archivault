@@ -149,6 +149,7 @@ export const DocumentController = {
     $(document).on('click', '[data-action="edit"]', async e => {
       e.preventDefault();
       const id = $(e.currentTarget).data('id');
+
       try {
         const res = await DocumentService.fetchOne(id);
         DocumentUi.renderForm(res.data?.document);
@@ -326,49 +327,57 @@ export const DocumentController = {
       return;
     }
 
-    // Mise à jour du texte
+    // On met à jour le texte AVANT d'afficher
     const fileName = this.currentConflict.file.name;
-    $('#dup-text').html(
-      `Le fichier <strong>${fileName}</strong> possède un titre déjà utilisé par un autre document.<br>Que souhaitez-vous faire ?`
-    );
+    $('#dup-text').html(`Le fichier <strong>${fileName}</strong> existe déjà.<br>Que souhaitez-vous faire ?`);
 
     this.bindConflictButtons();
 
-    // Récupérer ou créer l'instance Bootstrap
-    let modalInstance = bootstrap.Modal.getInstance(modalEl);
-    if (!modalInstance) {
-      modalInstance = new bootstrap.Modal(modalEl);
-    }
-
+    // On récupère l'instance (créée dans bindConflictButtons si besoin) et on affiche
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
     modalInstance.show();
   },
 
   bindConflictButtons() {
     const self = this;
+    const modalEl = document.getElementById('duplicateDocumentModal');
 
-    // Bouton Version
-    $('#btn-version')
-      .off()
-      .on('click', function () {
-        self.actions.push({
-          file: self.currentConflict.file,
-          action: 'version',
-          documentId: self.currentConflict.existing.document_id
-        });
-        bootstrap.Modal.getInstance(document.getElementById('duplicateDocumentModal')).hide();
-        self.showNextConflict();
+    // SÉCURITÉ : Récupérer l'instance existante OU en créer une nouvelle si elle n'existe pas
+    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (!modalInstance) {
+      modalInstance = new bootstrap.Modal(modalEl);
+    }
+
+    // On nettoie les anciens événements pour éviter les exécutions multiples
+    $('#btn-version, #btn-overwrite, #btn-skip').off('click');
+
+    // Gestionnaire commun pour enregistrer l'action et fermer
+    const handleAction = actionType => {
+      this.actions.push({
+        file: this.currentConflict.file,
+        name: this.currentConflict.file.name,
+        action: actionType,
+        documentId: this.currentConflict.existing.document_id
       });
 
-    // Bouton Écraser
-    $('#btn-overwrite')
-      .off()
-      .on('click', function () {
-        self.actions.push({
-          file: self.currentConflict.file,
-          action: 'overwrite',
-          documentId: self.currentConflict.existing.document_id
-        });
-        bootstrap.Modal.getInstance(document.getElementById('duplicateDocumentModal')).hide();
+      this.uploadQueue.push(this.currentConflict.file);
+
+      // On utilise l'instance qu'on est sûr d'avoir récupérée
+      modalInstance.hide();
+    };
+
+    $('#btn-version').on('click', () => handleAction('version'));
+    $('#btn-overwrite').on('click', () => handleAction('overwrite'));
+
+    $('#btn-skip').on('click', () => {
+      this.actions.push({ name: this.currentConflict.file.name, action: 'skip' });
+      modalInstance.hide();
+    });
+
+    // Événement de fermeture pour enchaîner sur le conflit suivant
+    $(modalEl)
+      .off('hidden.bs.modal')
+      .on('hidden.bs.modal', function () {
         self.showNextConflict();
       });
   },
@@ -377,34 +386,51 @@ export const DocumentController = {
     const $form = $('#documentForm');
     const formData = new FormData($form[0]);
 
-    // On vide le champ 'fichiers' pour le reconstruire proprement
+    // Nettoyage des champs qui pourraient interférer
     formData.delete('fichiers');
+    formData.delete('actions[]');
+    formData.delete('fichier'); // Supprime le champ simple "fichier" s'il existe
 
-    // Ajout des fichiers sans conflit
+    // 1. Ajout des fichiers SANS conflit
     this.uploadQueue.forEach(file => {
-      formData.append('fichiers', file);
+      if (file) formData.append('fichiers', file);
     });
 
-    // Ajout des fichiers avec actions (conflits résolus)
+    // 2. Ajout des fichiers AVEC résolution de conflit
     this.actions.forEach(a => {
-      formData.append('fichiers', a.file);
-      formData.append(
-        'actions[]',
-        JSON.stringify({
-          name: a.file.name,
-          action: a.action,
-          documentId: a.documentId
-        })
-      );
+      // On utilise "a.file" qu'on a bien ajouté dans bindConflictButtons
+      if (a && a.file) {
+        formData.append('fichiers', a.file);
+
+        // Très important : on envoie le JSON de l'action
+        formData.append(
+          'actions[]',
+          JSON.stringify({
+            name: a.name,
+            action: a.action,
+            documentId: a.documentId
+          })
+        );
+      }
     });
+
+    // Debug réel pour vérifier le contenu du FormData avant envoi
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+    }
 
     try {
       startLoader('#form-loader');
-      // On utilise l'API de bulk upload
+      console.log('Données envoyées au service bulkCreate:', Object.fromEntries(formData.entries()));
       const response = await DocumentService.bulkCreate(formData);
 
       DocumentUi.showSuccess(response.message || 'Upload terminé', '#form-success');
-      this.allFiles = new DataTransfer(); // Reset le panier après succès
+
+      // Reset
+      this.allFiles = new DataTransfer();
+      this.uploadQueue = [];
+      this.actions = [];
+
       this.finalizeSubmission($form);
     } catch (err) {
       this.handleError(err);

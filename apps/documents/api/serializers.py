@@ -1,6 +1,8 @@
 # apps/documents/api/serializers.py
 from rest_framework import serializers
 from ..models import *
+from ..services.permissions import DocumentPermissionService
+from config.roles import *
 
 # Serializer principal du Document
 class DocumentSerializer(serializers.ModelSerializer):
@@ -15,6 +17,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     cree_par_display =  serializers.StringRelatedField(source='cree_par', read_only=True)
     modifier_par_display = serializers.StringRelatedField(source='modifier_par', read_only=True)
     sous_type_display = serializers.StringRelatedField(source='sous_type', read_only=True)
+    user_actions = serializers.SerializerMethodField()
 
     # Pour l'upload, on accepte l'ID ou l'objet (géré par le write)
     # Mais pour la liste, on veut les détails
@@ -25,9 +28,21 @@ class DocumentSerializer(serializers.ModelSerializer):
             'sous_type', 'sous_type_display', 'theme', 'theme_display', 'cellule', 'cellulle_display',
             'etat', 'niveau_acces', 'profil_document', 'metadonnees',
             'cree_par', 'cree_par_display', 'modifier_par', 'modifier_par_display',
-            'Date_creation', 'Date_miseajour', 'bailleur', 'avenant'
+            'Date_creation', 'Date_miseajour', 'bailleur', 'avenant', 'user_actions',
         ]
         read_only_fields = ['cree_par', 'modifier_par', 'Date_creation', 'Date_miseajour']
+
+    def get_user_actions(self, obj):
+        user = self.context['request'].user
+        return {
+            'can_edit': DocumentPermissionService.can_edit(user, obj),
+            'can_delete': DocumentPermissionService.can_delete(user, obj),
+            'can_view': DocumentPermissionService.can_view(user, obj),
+            'can_print': obj.profil_document == ProfilDoc.IMPRIMABLE or user.is_superuser,
+            'can_share': DocumentPermissionService.can_share(user, obj),
+            'can_download': DocumentPermissionService.can_download(user, obj),
+            'can_addTask': is_admin(user) or is_superadmin(user) or is_superviseur(user),
+        }
 
 class VersionDocumentSerializer(serializers.ModelSerializer):
     class Meta:

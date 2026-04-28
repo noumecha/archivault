@@ -66,12 +66,12 @@ class DashboardsView(TemplateView):
         if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN, RoleUtilisateur.SUPERVISEUR]:
             context["manage_menu"] = [
                 {"label": "Utilisateurs", "icon": "ri-user-2-line me-1", "section": "users", "link":"utilisateur_list"},
-                {"label": "Documents", "icon": "ri-folders-line me-1", "section": "docs", "link":"list_document"},
+                {"label": "Documents", "icon": "ri-folders-line me-1", "section": "docs", "link":"document_list"},
                 {"label": "Types de Documents", "icon": "ri-folder-settings-line me-1", "section": "docstypes", "link":"typedocument_list"},
             ]
         else:
             context["manage_menu"] = [
-                {"label": "Documents", "icon": "ri-folders-line me-1", "section": "docs", "link":"list_document"},
+                {"label": "Documents", "icon": "ri-folders-line me-1", "section": "docs", "link":"document_list"},
             ]
         # counts stats
         context["dashboard_type"] = dashboard_type

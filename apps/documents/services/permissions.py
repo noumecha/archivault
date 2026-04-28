@@ -106,8 +106,7 @@ class DocumentPermissionService:
 
         if is_superviseur(user) and user.cellule == document.cellule:
             return True
-
-        return document.permissions.filter(
+        return document.document_permissions.filter(
             utilisateur=user,
             can_share=True
         ).exists()

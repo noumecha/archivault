@@ -36,6 +36,8 @@ class DocumentService:
                     name_without_ext, _ = os.path.splitext(filename)
                     titre = name_without_ext.replace("_", " ").replace("-", " ").strip()
 
+                    print(f"DEBUG: Fichiers reçu: '{files}'")
+                    print(f"DEBUG: Actions disponibles: {actions.keys()}")
                     action_info = actions.get(filename)
                     action = action_info['action'] if action_info else "create"
 

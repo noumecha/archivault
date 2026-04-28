@@ -40,6 +40,7 @@ export const DocumentUi = {
     const etatBadge = this.getEtatBadge(doc);
     const fileExt = doc.fichier.split('.').pop().toLowerCase();
     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
+    const p = doc.user_actions;
 
     // Logique de l'aperçu
     const preview = isImage
@@ -66,18 +67,42 @@ export const DocumentUi = {
             <div class="mb-2">${etatBadge}</div>
             <small class="text-muted d-block" style="font-size:0.7rem;">${new Date(doc.Date_creation).toLocaleDateString()}</small>
           </div>
+
           <div class="card-footer bg-transparent p-2">
             <div class="btn-group w-100 mb-1">
-              <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${doc.id}" title="Détails"><i class="ri-eye-line"></i></button>
-              <button class="btn btn-sm btn-outline-primary" data-action="edit" data-id="${doc.id}" title="Modifier"><i class="ri-pencil-line"></i></button>
-              <a href="${doc.fichier}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Télécharger"><i class="ri-download-line"></i></a>
+                <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${doc.id}"><i class="ri-eye-line"></i></button>
+
+                <button class="btn btn-sm btn-outline-primary ${!p.can_edit ? 'disabled' : ''}"
+                        data-action="edit" data-id="${doc.id}">
+                    <i class="ri-pencil-line"></i>
+                </button>
+
+                <a href="${doc.fichier}" target="_blank"
+                   class="btn btn-sm btn-outline-secondary ${!p.can_print ? 'disabled' : ''}">
+                    <i class="ri-download-line"></i>
+                </a>
             </div>
             <div class="btn-group w-100">
-              <button class="btn btn-sm btn-outline-info" data-action="circulation" data-id="${doc.id}" title="Ajouter une circulation"><i class="ri-share-forward-line"></i></button>
-              <button class="btn btn-sm btn-outline-info" data-action="tache" data-id="${doc.id}" title="Ajouter une tache"><i class="ri-task-line"></i></button>
-              <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${doc.id}" title="Supprimer"><i class="ri-delete-bin-6-line"></i></button>
+                <button class="btn btn-sm btn-outline-info ${!p.can_share ? 'disabled' : ''}" data-action="circulation" data-id="${doc.id}">
+                    <i class="ri-share-forward-line"></i>
+                </button>
+                ${
+                  p.can_addTask
+                    ? `<button class="btn btn-sm btn-outline-info" data-action="tache" data-id="${doc.id}"><i class="ri-task-line"></i></button>`
+                    : ''
+                }
+
+                ${
+                  p.can_delete
+                    ? `
+                    <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${doc.id}">
+                        <i class="ri-delete-bin-6-line"></i>
+                    </button>`
+                    : ''
+                }
             </div>
           </div>
+
         </div>
       </div>`;
   },
@@ -120,7 +145,8 @@ export const DocumentUi = {
   // Rendu d'une ligne document
   createDocumentRow(document) {
     const etatBadge = this.getEtatBadge(document);
-
+    const p = document.user_actions;
+    console.log('p : ', p);
     return `
       <tr data-document-id="${document.id}">
         <th style="width: 40px;">
@@ -144,21 +170,46 @@ export const DocumentUi = {
               <a href="#" class="dropdown-item" data-action="view" data-id="${document.id}">
                 <i class="ri-eye-line me-1"></i>Détails
               </a>
-              <a href="#" class="dropdown-item" data-action="edit" data-id="${document.id}">
-                <i class="ri-pencil-line me-1"></i>Modifier
-              </a>
-              <a href="#" class="dropdown-item" data-action="circulation" data-id="${document.id}">
-                <i class="ri-share-forward-line me-1"></i>Ajouter une circulation
-              </a>
-              <a href="#" class="dropdown-item" data-action="tache" data-id="${document.id}">
-                <i class="ri-task-line me-1"></i>Ajouter une tache
-              </a>
-              <a href="${document.fichier}" target="_blank" class="dropdown-item" data-action="download">
+
+              ${
+                p.can_edit
+                  ? `
+                <a href="#" class="dropdown-item" data-action="edit" data-id="${document.id}">
+                  <i class="ri-pencil-line me-1"></i>Modifier
+                </a>`
+                  : ''
+              }
+
+              ${
+                p.can_share
+                  ? `
+                <a href="#" class="dropdown-item" data-action="circulation" data-id="${document.id}">
+                  <i class="ri-share-forward-line me-1"></i>Ajouter une circulation
+                </a>`
+                  : ''
+              }
+
+              ${
+                p.can_addTask
+                  ? `
+                <a href="#" class="dropdown-item" data-action="tache" data-id="${document.id}">
+                  <i class="ri-task-line me-1"></i>Ajouter une tache
+                </a>`
+                  : ''
+              }
+
+              <a href="${document.fichier}" target="_blank" class="dropdown-item ${!p.can_print ? 'disabled' : ''}">
                 <i class="ri-download-line me-1"></i>Télécharger
               </a>
-              <a href="#" class="dropdown-item text-danger" data-action="delete" data-id="${document.id}">
-                <i class="ri-delete-bin-6-line me-1"></i>Supprimer
-              </a>
+
+              ${
+                p.can_delete
+                  ? `
+                <a href="#" class="dropdown-item text-danger" data-action="delete" data-id="${document.id}">
+                  <i class="ri-delete-bin-6-line me-1"></i>Supprimer
+                </a>`
+                  : ''
+              }
             </div>
           </div>
         </td>
