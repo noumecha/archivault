@@ -191,6 +191,29 @@
       </div>
     </div>
   </div>
+
+  {# modal de gestion des conflits #}
+  <div class="modal fade" id="duplicateDocumentModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Conflit de document</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="dup-text"></p>
+        <p class="text-muted small">Choisissez une action pour continuer l'importation.</p>
+      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" id="btn-skip">Ignorer</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-warning" id="btn-version">Nouvelle version</button>
+          <button type="button" class="btn btn-danger" id="btn-overwrite">Remplacer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

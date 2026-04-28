@@ -9,6 +9,7 @@ export const DocumentController = {
   uploadQueue: [],
   currentConflict: null,
   actions: [],
+  allFiles: new DataTransfer(),
 
   async init() {
     // Récupérer le mode stocké ou 'table' par défaut
@@ -265,7 +266,7 @@ export const DocumentController = {
   },
 
   async handleMultipleUpload() {
-    const files = [...$('#file-input')[0].files];
+    const files = [...this.allFiles.files];
     if (files.length === 0) {
       return DocumentUi.showError('Sélectionnez au moins un fichier', '#form-error');
     }
@@ -295,11 +296,17 @@ export const DocumentController = {
   },
 
   async checkFileConflict(file) {
-    // Appel à votre service pour vérifier l'existence par nom de fichier
-    const res = await DocumentService.checkExists(file.name);
-    if (res.exists) {
-      this.conflictQueue.push({ file, existing: res });
-    } else {
+    if (!file || !file.name) return;
+    try {
+      const res = await DocumentService.checkConflict(file.name);
+      if (res.exists) {
+        this.conflictQueue.push({ file: file, existing: res });
+      } else {
+        this.uploadQueue.push(file);
+      }
+    } catch (err) {
+      console.error(`Erreur de check pour ${file.name}:`, err);
+      11;
       this.uploadQueue.push(file);
     }
   },
@@ -311,13 +318,29 @@ export const DocumentController = {
     }
 
     this.currentConflict = this.conflictQueue.shift();
-    $('#dup-text').text(`Le document "${this.currentConflict.existing.titre}" existe déjà. Que souhaitez-vous faire ?`);
+    const modalEl = document.getElementById('duplicateDocumentModal');
 
-    // On s'assure que les boutons de la modale de conflit sont bien branchés
+    // Vérification de sécurité
+    if (!modalEl) {
+      console.error('La modale #duplicateDocumentModal est introuvable dans le HTML');
+      return;
+    }
+
+    // Mise à jour du texte
+    const fileName = this.currentConflict.file.name;
+    $('#dup-text').html(
+      `Le fichier <strong>${fileName}</strong> possède un titre déjà utilisé par un autre document.<br>Que souhaitez-vous faire ?`
+    );
+
     this.bindConflictButtons();
 
-    const modal = new bootstrap.Modal(document.getElementById('duplicateDocumentModal'));
-    modal.show();
+    // Récupérer ou créer l'instance Bootstrap
+    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (!modalInstance) {
+      modalInstance = new bootstrap.Modal(modalEl);
+    }
+
+    modalInstance.show();
   },
 
   bindConflictButtons() {
@@ -381,6 +404,7 @@ export const DocumentController = {
       const response = await DocumentService.bulkCreate(formData);
 
       DocumentUi.showSuccess(response.message || 'Upload terminé', '#form-success');
+      this.allFiles = new DataTransfer(); // Reset le panier après succès
       this.finalizeSubmission($form);
     } catch (err) {
       this.handleError(err);
@@ -393,7 +417,12 @@ export const DocumentController = {
     const dropArea = $('#drop-area');
     const fileInput = $('#file-input');
 
-    dropArea.on('click', () => fileInput.click());
+    dropArea.on('click', e => {
+      if (e.target !== fileInput[0]) fileInput.click();
+    });
+
+    // Empêcher la propagation du clic sur l'input pour éviter la boucle infinie
+    fileInput.on('click', e => e.stopPropagation());
 
     dropArea.on('dragover', e => {
       e.preventDefault();
@@ -404,30 +433,55 @@ export const DocumentController = {
 
     dropArea.on('drop', e => {
       e.preventDefault();
-      const files = e.originalEvent.dataTransfer.files;
-      fileInput[0].files = files;
-      this.renderPreviews(files);
+      const newFiles = e.originalEvent.dataTransfer.files;
+      this.handleFileSelection(newFiles);
     });
 
-    fileInput.on('change', e => this.renderPreviews(e.target.files));
+    fileInput.on('change', e => {
+      this.handleFileSelection(e.target.files);
+      // On vide l'input pour permettre de sélectionner à nouveau le même fichier si besoin
+      fileInput.val('');
+    });
+  },
+
+  // Nouvelle méthode pour centraliser l'ajout
+  handleFileSelection(files) {
+    Array.from(files).forEach(file => {
+      // Optionnel : éviter les doublons exacts dans la liste visuelle
+      const exists = Array.from(this.allFiles.files).some(f => f.name === file.name && f.size === file.size);
+      if (!exists) {
+        this.allFiles.items.add(file);
+      }
+    });
+    this.renderPreviews(this.allFiles.files);
   },
 
   renderPreviews(files) {
     const container = $('#previews');
     container.empty();
+
     Array.from(files).forEach((file, index) => {
       const isImg = file.type.startsWith('image/');
       const reader = new FileReader();
 
       const cardHtml = `
-            <div class="col-3" id="preview-${index}">
-                <div class="card p-1 border shadow-none text-center h-100">
-                    <div style="height: 80px;" class="d-flex align-items-center justify-content-center bg-light rounded">
-                        ${isImg ? `<img id="img-${index}" class="img-fluid" style="max-height: 70px;">` : `<i class="ri-file-line ri-2x"></i>`}
-                    </div>
-                    <div class="small text-truncate mt-1" title="${file.name}">${file.name}</div>
-                </div>
-            </div>`;
+      <div class="col-md-3 col-sm-6 mb-2" id="preview-${index}">
+        <div class="card p-1 border shadow-none text-center h-100 position-relative">
+          <button type="button"
+                  class="btn btn-danger btn-xs position-absolute top-0 end-0 m-1 remove-file-btn"
+                  data-index="${index}"
+                  style="padding: 2px 5px; z-index: 10;">
+            <i class="ri-close-line"></i>
+          </button>
+          <div style="height: 80px;" class="d-flex align-items-center justify-content-center bg-light rounded">
+            ${isImg ? `<img id="img-${index}" class="img-fluid" style="max-height: 70px;">` : `<i class="ri-file-line ri-2x"></i>`}
+          </div>
+          <div class="small text-truncate mt-1 px-1" title="${file.name}" style="font-size: 10px;">
+            ${file.name}
+          </div>
+        </div>
+      </div>`;
+
       container.append(cardHtml);
 
       if (isImg) {
@@ -435,6 +489,27 @@ export const DocumentController = {
         reader.readAsDataURL(file);
       }
     });
+
+    // Binder l'événement de suppression
+    $('.remove-file-btn')
+      .off()
+      .on('click', e => {
+        e.stopPropagation(); // Éviter de déclencher le clic sur la dropzone parent
+        const idx = $(e.currentTarget).data('index');
+        this.removeFile(idx);
+      });
+  },
+
+  removeFile(index) {
+    const newDataTransfer = new DataTransfer();
+    const files = this.allFiles.files;
+
+    for (let i = 0; i < files.length; i++) {
+      if (i !== index) newDataTransfer.items.add(files[i]);
+    }
+
+    this.allFiles = newDataTransfer;
+    this.renderPreviews(this.allFiles.files);
   },
 
   // Nettoyage après succès
@@ -446,6 +521,7 @@ export const DocumentController = {
 
       await this.loadDatas(this.getCurrentParams());
       $form[0].reset();
+      this.allFiles = new DataTransfer(); // Vider le panier
       $('#previews').empty(); // Nettoyer les vignettes
     }, 2500);
   },

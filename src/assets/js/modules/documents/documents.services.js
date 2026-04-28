@@ -7,6 +7,24 @@ export const DocumentService = {
     return ApiClient.request(`/api/documents/?${query}`);
   },
 
+  checkExists(filename) {
+    return ApiClient.request(`/api/documents/check-exists/?filename=${encodeURIComponent(filename)}`);
+  },
+
+  bulkCreate(formData) {
+    return ApiClient.request('/api/documents/upload-multiple/', {
+      method: 'POST',
+      body: formData
+    });
+  },
+
+  create(formData) {
+    return ApiClient.request('/api/documents/create/', {
+      method: 'POST',
+      body: formData
+    });
+  },
+
   fetchOne(id) {
     return ApiClient.request(`/api/documents/${id}/`);
   },
@@ -24,8 +42,8 @@ export const DocumentService = {
     });
   },
 
-  checkConflict(file) {
-    return ApiClient.request(`/api/documents/check-conflict/?filename=${encodeURIComponent(file.name)}`);
+  checkConflict(filename) {
+    return ApiClient.request(`/api/documents/check-conflict/?filename=${encodeURIComponent(filename)}`);
   },
 
   upload(formData, onProgress) {

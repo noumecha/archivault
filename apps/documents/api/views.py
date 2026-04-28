@@ -93,79 +93,51 @@ class DocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     # 1. Upload Multiple (Remplace DocumentCreateMultipleView)
     def upload_multiple_action(self, request, *args, **kwargs):
-        """
-        Gère l'upload de plusieurs fichiers avec logique de conflit.
-        Attend: files[], type_document, theme, etc.
-        """
-        files = request.FILES.getlist('files')
+        files = request.FILES.getlist('fichiers')
         if not files:
             return Response({'success': False, 'message': 'Aucun fichier fourni'}, status=400)
 
-        # Récupération des métadonnées communes
+        # Parsing des actions envoyées par le JS
+        actions_map = {}
+        actions_raw = request.data.getlist('actions[]')
+        for item in actions_raw:
+            try:
+                data_json = json.loads(item)
+                actions_map[data_json['name']] = data_json
+            except: continue
+
+        # Préparation des métadonnées (ID uniquement pour éviter les requêtes inutiles dans la boucle)
         metadata = {
             'type_document_id': request.data.get('type_document'),
             'theme_id': request.data.get('theme'),
             'sous_type_id': request.data.get('sous_type'),
-            'niveau_acces': request.data.get('niveau_acces', 'interne'),
-            'etat': request.data.get('etat', 'en attente'),
-            'profil_document': request.data.get('profil_document', 'consultatif')
+            'niveau_acces': request.data.get('niveau_acces'),
+            'etat': request.data.get('etat'),
+            'profil_document': request.data.get('profil_document'),
+            'cellule': request.data.get('cellule'),
+            'responsable_document_id': request.data.get('responsable_document'),
         }
 
-        # Actions spécifiques par fichier (peut venir de actions[] JSON)
-        # Pour simplifier ici, on suppose que chaque fichier a son propre champ d'action ou on utilise une logique par défaut
-        # Dans ton cas JS, tu envoies probablement un JSON string ou des champs cachés.
-
-        results = {
-            'created': 0,
-            'versioned': 0,
-            'overwritten': 0,
-            'skipped': 0,
-            'errors': []
-        }
-
-        with transaction.atomic():
-            for file in files:
-                try:
-                    # Déterminer l'action (par défaut 'create', ou via paramètre JS)
-                    # Si tu envoies un JSON complexe, il faut le parser ici
-                    action = request.data.get('action', 'create')
-                    # Note: Pour gérer l'action par fichier, le frontend doit envoyer un array d'objets
-                    # ou on utilise une logique simple : si existe -> version, sinon create.
-
-                    # Appel au Service métier
-                    result = DocBusinessService.process_upload(request, file, metadata, action)
-
-                    if result['status'] == 'created':
-                        results['created'] += 1
-                    elif result['status'] == 'versioned':
-                        results['versioned'] += 1
-                    elif result['status'] == 'overwritten':
-                        results['overwritten'] += 1
-                    elif result['status'] == 'skipped':
-                        results['skipped'] += 1
-
-                except Exception as e:
-                    results['errors'].append({'file': file.name, 'error': str(e)})
+        # APPEL UNIQUE AU SERVICE
+        results = DocBusinessService.process_upload(request.user, files, actions_map, metadata)
 
         return Response({
             'success': len(results['errors']) == 0,
-            'message': f"Traitement terminé. Créés: {results['created']}, Versions: {results['versioned']}",
+            'message': f"Traitement terminé. {results['created']} créés, {results['versioned']} versions.",
             'details': results
         })
 
     # 2. Check Conflict (Remplace check_document)
-    def check_conflict_action(self, request, *args, **kwargs):
-        filename = request.GET.get('filename', '')
-        exists = DocBusinessService.check_conflict(filename, request.user)
+    def check_conflict_action(self, request):
+        filename = request.query_params.get('filename', '') or request.GET.get('filename', '')
+        doc, titre = DocBusinessService.check_conflict(filename, request.user)
 
-        if exists:
-            return Response({
-                'exists': True,
-                'id': exists.id,
-                'titre': exists.titre,
-                'suggested_action': 'version' # Conseil UX
-            })
-        return Response({'exists': False})
+        return Response({
+            'exists': doc is not None,
+            'titre': titre,
+            'document_id': doc.id if doc else None,
+            'suggested_action': 'version' if doc else 'create'
+        })
 
     # 3. Détail enrichi (Remplace DocumentDetailView)
     def retrieve_action(self, request, pk=None, *args, **kwargs):
