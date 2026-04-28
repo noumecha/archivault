@@ -17,10 +17,10 @@ export const DocumentService = {
     });
   },
 
-  update(id, data) {
+  update(id, formData) {
     return ApiClient.request(`/api/documents/${id}/update/`, {
       method: 'PATCH',
-      body: JSON.stringify(data)
+      body: formData
     });
   },
 
@@ -50,10 +50,27 @@ export const DocumentService = {
     });
   },
 
-  validate(data) {
+  validate(formData) {
     const errors = {};
-    if (!data.titre) errors.titre = ['Le titre est requis'];
-    if (!data.type_document) errors.type_document = ['Le type de document est requis'];
+
+    // Utilisation obligatoire de .get() pour FormData
+    if (!formData.get('titre')) errors.titre = ['Le titre est requis'];
+    if (!formData.get('type_document')) errors.type_document = ['Le type de document est requis'];
+
+    // Pour le fichier, on vérifie s'il existe et s'il n'est pas vide
+    const fichier = formData.get('fichier');
+    if (!fichier || (fichier instanceof File && fichier.size === 0)) {
+      // Optionnel : Ne valider le fichier que si on est en mode création (pas d'ID)
+      if (!document.getElementById('update-id').value) {
+        errors.fichier = ['Le fichier du document est requis'];
+      }
+    }
+
+    if (!formData.get('sous_type')) errors.sous_type = ['Le sous type du document est requis'];
+    if (!formData.get('theme')) errors.theme = ['Le theme du document est requis'];
+    if (!formData.get('cellule')) errors.cellule = ['La cellule du document est requise'];
+    if (!formData.get('etat')) errors.etat = ["L'état du document est requis"];
+
     if (Object.keys(errors).length > 0) throw { data: { errors } };
     return true;
   }

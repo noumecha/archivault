@@ -69,7 +69,7 @@ SIDEBAR_MENU = [
         "children": [
             {
                 "title": "Listes",
-                "url_name": "list_document",
+                "url_name": "document_list",
                 "url_prefix": "/documents/",
                 "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"]
             },

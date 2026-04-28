@@ -11,7 +11,7 @@ class DocumentPermissionService:
         """
 
         # Admin / Superadmin → tout voir
-        if is_admin(user):
+        if is_admin(user) or is_superadmin(user):
             return Document.objects.all()
 
         qs = Document.objects.all()
@@ -21,8 +21,6 @@ class DocumentPermissionService:
             return qs.filter(cellule=user.cellule)
 
         # Gestionnaire / utilisateur
-        print("user : ", {user})
-        print("user.cellule : ", user.cellule)
         return qs.filter(
             Q(cellule=user.cellule) |
             Q(cree_par=user) |
@@ -31,36 +29,10 @@ class DocumentPermissionService:
         )
     ).distinct()
 
-    #@staticmethod
-    #def get_visible_documents(user):
-    #
-    #    qs = Document.objects.select_related(
-    #        "cellule",
-    #        "cree_par",
-    #        "type_document",
-    #        "theme"
-    #    ).prefetch_related(
-    #        "document_permissions"
-    #    )
-    #
-    #    if is_admin(user):
-    #        return qs
-    #
-    #    if is_superviseur(user):
-    #        return qs.filter(cellule=user.cellule)
-    #
-    #    return qs.filter(
-    #        Q(niveau_acces=NiveauAcces.PUBLIC) |
-    #        Q(cellule=user.cellule) |
-    #        Q(cree_par=user) |
-    #        Q(document_permissions__utilisateur=user,
-    #        document_permissions__can_view=True)
-    #    ).distinct()
-
     """ Permission check methods """
     @staticmethod
     def can_view(user, document):
-        if is_admin(user):
+        if is_admin(user) or is_superadmin(user):
             return True
 
         if is_superviseur(user):
@@ -79,7 +51,7 @@ class DocumentPermissionService:
 
     @staticmethod
     def can_download(user, document):
-        if is_admin(user):
+        if is_admin(user) or is_superadmin(user):
             return True
 
         if document.profil_document in ['imprimable', 'modifiable']:
@@ -95,7 +67,7 @@ class DocumentPermissionService:
 
     @staticmethod
     def can_edit(user, document):
-        if is_admin(user):
+        if is_admin(user) or is_superadmin(user):
             return True
 
         if document.niveau_acces == NiveauAcces.PUBLIC:
@@ -114,7 +86,7 @@ class DocumentPermissionService:
 
     @staticmethod
     def can_delete(user, document):
-        if is_admin(user):
+        if is_admin(user) or is_superadmin(user):
             return True
 
         if document.niveau_acces == NiveauAcces.PUBLIC:
@@ -126,7 +98,7 @@ class DocumentPermissionService:
 
     @staticmethod
     def can_share(user, document):
-        if is_admin(user):
+        if is_admin(user) or is_superadmin(user):
             return True
 
         if document.niveau_acces == NiveauAcces.PUBLIC:

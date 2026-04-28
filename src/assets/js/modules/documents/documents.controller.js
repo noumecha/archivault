@@ -1,140 +1,474 @@
-// documents.controller.js
+// modules/documents/documents.controller.js
 import { DocumentState } from './documents.states.js';
-import { DocumentUI } from './documents.ui.js';
+import { DocumentUi } from './documents.ui.js';
 import { DocumentService } from './documents.services.js';
-import { startLoader, closeLoader, showAlertMessage } from '../../helpers/utils.js';
+import { startLoader, closeLoader, showAlertMessage, toggleBulkButton } from '../../helpers/utils.js';
 
 export const DocumentController = {
+  conflictQueue: [],
+  uploadQueue: [],
+  currentConflict: null,
+  actions: [],
+
   async init() {
-    await this.loadDocuments();
+    // Récupérer le mode stocké ou 'table' par défaut
+    const savedView = localStorage.getItem('document_view_mode') || 'table';
+    this.switchView(savedView);
+    await this.loadDatas();
     this.bindEvents();
+    // Toggle View Management
+    $('#view-table-btn').on('click', () => this.switchView('table'));
+    $('#view-grid-btn').on('click', () => this.switchView('grid'));
   },
 
-  async loadDocuments(params = {}) {
+  switchView(viewType) {
+    DocumentUi.currentView = viewType;
+    localStorage.setItem('document_view_mode', viewType); // Sauvegarde
+
+    // Mise à jour visuelle des boutons
+    $('.view-btn').removeClass('active'); // Ajoutez une classe .view-btn à vos boutons
+    $(`#view-${viewType}-btn`).addClass('active');
+
+    // On recharge les données avec les paramètres actuels pour rafraîchir l'affichage
+    this.loadDatas(this.getCurrentParams());
+  },
+
+  // ─── Chargement des utilisateurs ────────────────────────────────────────
+  async loadDatas(params = {}) {
     try {
       startLoader('#table-loader');
       const res = await DocumentService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
-      DocumentUI.renderTable(res);
+      DocumentUi.render(res);
     } catch (err) {
-      console.error('Erreur chargement documents:', err);
-      showAlertMessage('Erreur lors du chargement des documents', '#message-show');
+      console.error('Erreur:', err);
+      DocumentUi.showError(err.data?.message || 'Erreur serveur');
     } finally {
       closeLoader('#table-loader');
     }
   },
 
+  // ─── Événements ─────────────────────────────────────────────────────────
   bindEvents() {
-    // Recherche et Filtres
+    // 1. Initialiser le Drag & Drop
+    this.initDragAndDrop();
+
+    $('#documentForm').on('submit', async e => {
+      e.preventDefault();
+      const id = $('#update-id').val();
+
+      if (id) {
+        await this.handleUpdate(id);
+      } else {
+        await this.handleMultipleUpload();
+      }
+    });
+
+    // Gestion de la sélection multiple (Tableau)
+    $(document).on('change', '#check-all-documents', function () {
+      const isChecked = $(this).is(':checked');
+      $('.document-checkbox').prop('checked', isChecked);
+      toggleBulkButton('.document-checkbox:checked', '#bulk-actions-container');
+    });
+
+    // Gestion de la sélection multiple (Grille)
+    $(document).on('change', '#check-all-documents-grid', function () {
+      const isChecked = $(this).is(':checked');
+      $('.document-checkbox').prop('checked', isChecked); // Cible les checkboxes des cartes
+      toggleBulkButton('.document-checkbox:checked', '#bulk-actions-container');
+    });
+
+    $(document).on('change', '.document-checkbox', function () {
+      toggleBulkButton('.document-checkbox:checked', '#bulk-actions-container');
+    });
+
+    // Gestion des clics de pagination
+    $(document).on('click', '#documents-pagination .page-link', async function (e) {
+      e.preventDefault();
+      const $this = $(this);
+      const page = $this.data('page');
+
+      if (!page || $this.parent().hasClass('disabled') || $this.parent().hasClass('active')) {
+        return;
+      }
+
+      // On récupère les filtres actuels ET on ajoute la page
+      let params = DocumentController.getCurrentParams();
+      params.page = page;
+
+      await DocumentController.loadDatas(params);
+    });
+
+    // Recherche & filtres
     let searchTimer;
     $('#document-search-form').on('input change', 'input, select', () => {
       clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        const params = Object.fromEntries(new FormData($('#document-search-form')[0]));
-        this.loadDocuments(params);
-      }, 400);
+      searchTimer = setTimeout(() => this.handleSearch(), 300);
     });
 
-    // Pagination
-    $(document).on('click', '#documents-pagination .page-link', e => {
+    // Clear recherche
+    $('#clearSearch').on('click', () => {
+      $('#search').val('');
+      this.loadDatas();
+    });
+
+    // Refresh
+    $('#refresh-button').on('click', () => {
+      this.loadDatas();
+      // reset filter forms
+      $('#document-search-form').trigger('reset');
+      $('#clearSearch').trigger('click');
+    });
+
+    // Ajouter
+    $('#add-button').on('click', () => DocumentUi.renderForm(null));
+
+    // Voir (Détail)
+    $(document).on('click', '[data-action="view"]', function (e) {
       e.preventDefault();
-      const page = $(e.currentTarget).data('page');
-      if (page) {
-        const params = Object.fromEntries(new FormData($('#document-search-form')[0]));
-        params.page = page;
-        this.loadDocuments(params);
+      const id = $(this).data('id');
+      window.location.href = `/document/details/${id}/`;
+    });
+
+    // Ajouter une circulation
+    $(document).on('click', '[data-action="circulation"]', function (e) {
+      e.preventDefault();
+      const id = $(this).data('id');
+      window.location.href = `/circulation/circulations/create/?document_id=${id}`;
+    });
+
+    // Ajouter une tache
+    $(document).on('click', '[data-action="tache"]', function (e) {
+      e.preventDefault();
+      const id = $(this).data('id');
+      window.location.href = `/circulation/taches/create/?document_id=${id}`;
+    });
+
+    // Éditer
+    $(document).on('click', '[data-action="edit"]', async e => {
+      e.preventDefault();
+      const id = $(e.currentTarget).data('id');
+      try {
+        const res = await DocumentService.fetchOne(id);
+        DocumentUi.renderForm(res.data?.document);
+        new bootstrap.Modal(document.getElementById('create-document-modal')).show();
+      } catch (err) {
+        DocumentUi.showError('Erreur chargement document');
       }
     });
 
-    // Upload Multiple & Gestion Conflits
-    $('#upload-form').on('submit', e => this.handleSubmit(e));
-    $('#btn-version').on('click', () => this.handleVersion());
-    $('#btn-overwrite').on('click', () => this.handleOverwrite());
-    $('#btn-skip').on('click', () => this.showNextConflict());
+    // suppression groupée
+    $(document).on('click', '#btn-bulk-delete', function (e) {
+      e.preventDefault();
+      const ids = $('.document-checkbox:checked')
+        .map(function () {
+          return $(this).val();
+        })
+        .get();
 
-    // Suppression
-    $(document).on('click', '[data-action="delete"]', async e => {
-      const id = $(e.currentTarget).data('id');
-      if (confirm('Supprimer ce document ?')) {
-        try {
-          await DocumentService.remove(id);
-          this.loadDocuments();
-        } catch (err) {
-          alert('Erreur lors de la suppression');
-        }
+      if (ids.length === 0) {
+        return;
       }
+
+      const modalElement = document.getElementById('bulk-delete-modal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+
+      modalInstance.show();
+
+      $('#confirm-bulk-delete-btn')
+        .off('click')
+        .on('click', async () => {
+          const $btn = $('#confirm-bulk-delete-btn');
+
+          try {
+            $btn.prop('disabled', true);
+            startLoader('#bulk-delete-loader');
+            const res = await DocumentService.bulkDelete(ids);
+            DocumentUi.showSuccess(res.message);
+            modalInstance.hide();
+            const currentParams = DocumentController.getCurrentParams();
+            await DocumentController.loadDatas(currentParams);
+          } catch (err) {
+            console.error('Erreur suppression:', err);
+            const message = err.data?.message || 'Erreur lors de la suppression groupée';
+            DocumentUi.showError(message, '#bulk-delete-form-error');
+          } finally {
+            $btn.prop('disabled', false);
+            closeLoader('#bulk-delete-loader');
+          }
+        });
+    });
+
+    // Supprimer
+    $(document).on('click', '[data-action="delete"]', e => {
+      e.preventDefault();
+      const id = $(e.currentTarget).data('id');
+      const modalElement = document.getElementById('delete-document-modal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+
+      modalInstance.show();
+
+      $('#confirm-delete-btn')
+        .off('click')
+        .on('click', async () => {
+          const $btn = $('#confirm-delete-btn');
+
+          try {
+            $btn.prop('disabled', true);
+            startLoader('#delete-loader');
+
+            await DocumentService.remove(id);
+
+            modalInstance.hide();
+            DocumentUi.showSuccess('Document supprimé avec succès');
+
+            await this.loadDatas(this.getCurrentParams());
+          } catch (err) {
+            console.error('Erreur suppression:', err);
+            const message = err.data?.message || 'Impossible de supprimer ce document';
+            DocumentUi.showError(message, '#delete-form-error');
+          } finally {
+            $btn.prop('disabled', false);
+            closeLoader('#delete-loader');
+          }
+        });
     });
   },
 
-  handleSubmit(e) {
-    e.preventDefault();
-    const files = [...($('#file-input')[0]?.files || [])];
-    if (!files.length) {
-      showAlertMessage('Veuillez sélectionner au moins un fichier', '#form-error');
-      return;
+  // ─── Utilitaires ────────────────────────────────────────────────────────
+  async handleUpdate(id) {
+    const $form = $('#documentForm');
+    const $saveBtn = $('#save-btn');
+    const formData = new FormData($form[0]);
+
+    try {
+      $saveBtn.prop('disabled', true);
+      startLoader('#form-loader');
+
+      // Nettoyage si aucun nouveau fichier n'est sélectionné
+      const fileField = formData.get('fichier');
+      if (!fileField || fileField.size === 0) {
+        formData.delete('fichier');
+      }
+
+      await DocumentService.validate(formData);
+      const response = await DocumentService.update(id, formData);
+
+      DocumentUi.showSuccess(response.message || 'Document mis à jour', '#form-success');
+      this.finalizeSubmission($form);
+    } catch (err) {
+      this.handleError(err);
+    } finally {
+      $saveBtn.prop('disabled', false);
+      closeLoader('#form-loader');
+    }
+  },
+
+  async handleMultipleUpload() {
+    const files = [...$('#file-input')[0].files];
+    if (files.length === 0) {
+      return DocumentUi.showError('Sélectionnez au moins un fichier', '#form-error');
     }
 
-    DocumentState.reset();
-    const state = DocumentState.get();
+    // Réinitialisation des files d'attente
+    this.conflictQueue = [];
+    this.uploadQueue = [];
+    this.actions = [];
 
-    Promise.all(files.map(f => DocumentService.checkConflict(f))).then(results => {
-      results.forEach((res, i) => {
-        if (res.exists) state.conflictQueue.push({ file: files[i], existing: res });
-        else state.uploadQueue.push(files[i]);
-      });
-      state.conflictQueue.length ? this.showNextConflict() : this.submitUpload();
-    });
+    try {
+      startLoader('#form-loader');
+
+      // Étape 1 : Vérification des doublons sur le serveur
+      await Promise.all(files.map(file => this.checkFileConflict(file)));
+
+      // Étape 2 : Si conflits, on gère la modale, sinon on envoie tout
+      if (this.conflictQueue.length > 0) {
+        this.showNextConflict();
+      } else {
+        await this.submitFinalForm();
+      }
+    } catch (err) {
+      this.handleError(err);
+    } finally {
+      closeLoader('#form-loader');
+    }
+  },
+
+  async checkFileConflict(file) {
+    // Appel à votre service pour vérifier l'existence par nom de fichier
+    const res = await DocumentService.checkExists(file.name);
+    if (res.exists) {
+      this.conflictQueue.push({ file, existing: res });
+    } else {
+      this.uploadQueue.push(file);
+    }
   },
 
   showNextConflict() {
-    const state = DocumentState.get();
-    if (!state.conflictQueue.length) return this.submitUpload();
+    if (this.conflictQueue.length === 0) {
+      this.submitFinalForm();
+      return;
+    }
 
-    state.currentConflict = state.conflictQueue.shift();
-    $('#dup-text').text(`"${state.currentConflict.existing.titre}" existe déjà.`);
+    this.currentConflict = this.conflictQueue.shift();
+    $('#dup-text').text(`Le document "${this.currentConflict.existing.titre}" existe déjà. Que souhaitez-vous faire ?`);
+
+    // On s'assure que les boutons de la modale de conflit sont bien branchés
+    this.bindConflictButtons();
+
     const modal = new bootstrap.Modal(document.getElementById('duplicateDocumentModal'));
     modal.show();
   },
 
-  handleVersion() {
-    const state = DocumentState.get();
-    state.actions.push({
-      file: state.currentConflict.file,
-      action: 'version',
-      id: state.currentConflict.existing.document_id
-    });
-    bootstrap.Modal.getInstance(document.getElementById('duplicateDocumentModal')).hide();
-    this.showNextConflict();
+  bindConflictButtons() {
+    const self = this;
+
+    // Bouton Version
+    $('#btn-version')
+      .off()
+      .on('click', function () {
+        self.actions.push({
+          file: self.currentConflict.file,
+          action: 'version',
+          documentId: self.currentConflict.existing.document_id
+        });
+        bootstrap.Modal.getInstance(document.getElementById('duplicateDocumentModal')).hide();
+        self.showNextConflict();
+      });
+
+    // Bouton Écraser
+    $('#btn-overwrite')
+      .off()
+      .on('click', function () {
+        self.actions.push({
+          file: self.currentConflict.file,
+          action: 'overwrite',
+          documentId: self.currentConflict.existing.document_id
+        });
+        bootstrap.Modal.getInstance(document.getElementById('duplicateDocumentModal')).hide();
+        self.showNextConflict();
+      });
   },
 
-  handleOverwrite() {
-    const state = DocumentState.get();
-    state.actions.push({
-      file: state.currentConflict.file,
-      action: 'overwrite',
-      id: state.currentConflict.existing.document_id
-    });
-    bootstrap.Modal.getInstance(document.getElementById('duplicateDocumentModal')).hide();
-    this.showNextConflict();
-  },
+  async submitFinalForm() {
+    const $form = $('#documentForm');
+    const formData = new FormData($form[0]);
 
-  async submitUpload() {
-    const state = DocumentState.get();
-    const formData = new FormData($('#upload-form')[0]);
+    // On vide le champ 'fichiers' pour le reconstruire proprement
     formData.delete('fichiers');
-    state.uploadQueue.forEach(f => formData.append('fichiers', f));
-    state.actions.forEach(a => {
+
+    // Ajout des fichiers sans conflit
+    this.uploadQueue.forEach(file => {
+      formData.append('fichiers', file);
+    });
+
+    // Ajout des fichiers avec actions (conflits résolus)
+    this.actions.forEach(a => {
       formData.append('fichiers', a.file);
-      formData.append('actions[]', JSON.stringify(a));
+      formData.append(
+        'actions[]',
+        JSON.stringify({
+          name: a.file.name,
+          action: a.action,
+          documentId: a.documentId
+        })
+      );
     });
 
     try {
-      const res = await DocumentService.upload(formData, DocumentUI.updateProgress);
-      showAlertMessage(res.message || 'Upload terminé', '#form-success');
-      DocumentUI.resetForm();
-      this.loadDocuments();
+      startLoader('#form-loader');
+      // On utilise l'API de bulk upload
+      const response = await DocumentService.bulkCreate(formData);
+
+      DocumentUi.showSuccess(response.message || 'Upload terminé', '#form-success');
+      this.finalizeSubmission($form);
     } catch (err) {
-      showAlertMessage('Erreur lors du transfert', '#form-error');
+      this.handleError(err);
+    } finally {
+      closeLoader('#form-loader');
     }
+  },
+
+  initDragAndDrop() {
+    const dropArea = $('#drop-area');
+    const fileInput = $('#file-input');
+
+    dropArea.on('click', () => fileInput.click());
+
+    dropArea.on('dragover', e => {
+      e.preventDefault();
+      dropArea.addClass('bg-light border-primary');
+    });
+
+    dropArea.on('dragleave drop', () => dropArea.removeClass('bg-light border-primary'));
+
+    dropArea.on('drop', e => {
+      e.preventDefault();
+      const files = e.originalEvent.dataTransfer.files;
+      fileInput[0].files = files;
+      this.renderPreviews(files);
+    });
+
+    fileInput.on('change', e => this.renderPreviews(e.target.files));
+  },
+
+  renderPreviews(files) {
+    const container = $('#previews');
+    container.empty();
+    Array.from(files).forEach((file, index) => {
+      const isImg = file.type.startsWith('image/');
+      const reader = new FileReader();
+
+      const cardHtml = `
+            <div class="col-3" id="preview-${index}">
+                <div class="card p-1 border shadow-none text-center h-100">
+                    <div style="height: 80px;" class="d-flex align-items-center justify-content-center bg-light rounded">
+                        ${isImg ? `<img id="img-${index}" class="img-fluid" style="max-height: 70px;">` : `<i class="ri-file-line ri-2x"></i>`}
+                    </div>
+                    <div class="small text-truncate mt-1" title="${file.name}">${file.name}</div>
+                </div>
+            </div>`;
+      container.append(cardHtml);
+
+      if (isImg) {
+        reader.onload = e => $(`#img-${index}`).attr('src', e.target.result);
+        reader.readAsDataURL(file);
+      }
+    });
+  },
+
+  // Nettoyage après succès
+  finalizeSubmission($form) {
+    setTimeout(async () => {
+      const modalElement = document.getElementById('create-document-modal');
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      if (modalInstance) modalInstance.hide();
+
+      await this.loadDatas(this.getCurrentParams());
+      $form[0].reset();
+      $('#previews').empty(); // Nettoyer les vignettes
+    }, 2500);
+  },
+
+  // Centralisation des erreurs
+  handleError(err) {
+    console.error('Erreur:', err);
+    const errorData = err.data?.errors || err.data?.message || err.data?.error || 'Erreur inconnue';
+    DocumentUi.showError(errorData, '#form-error');
+  },
+
+  handleSearch() {
+    const params = this.getCurrentParams();
+    this.loadDatas(params);
+  },
+
+  getCurrentParams(formId = '#document-search-form') {
+    return Object.fromEntries(
+      $(formId)
+        .serializeArray()
+        .filter(({ value }) => value)
+        .map(({ name, value }) => [name, value])
+    );
   }
 };
+DocumentController.init();

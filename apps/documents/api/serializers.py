@@ -1,46 +1,38 @@
 # apps/documents/api/serializers.py
 from rest_framework import serializers
-from ..models import Document, TypeDocument, Theme, SousTypeDocument, Bailleurs, Avenants
+from ..models import *
 
+# Serializer principal du Document
 class DocumentSerializer(serializers.ModelSerializer):
     """
     Serializer pour l'API Documents.
     Fournit les données nécessaires pour le rendu de la table et des formulaires.
     """
-    # Champs en lecture seule pour l'affichage (utilisés par DocumentUI.js)
-    type_document_display = serializers.StringRelatedField(source='type_document', read_only=True)
-    theme_display = serializers.StringRelatedField(source='theme', read_only=True)
-    etat_display = serializers.CharField(source='get_etat_display', read_only=True)
-    cree_par_name = serializers.CharField(source='cree_par.username', read_only=True)
+    # Champs calculés pour l'affichage (read_only)
+    cellulle_display =  serializers.StringRelatedField(source='cellule', read_only=True, allow_null=True)
+    theme_display =  serializers.StringRelatedField(source='theme', read_only=True, allow_null=True)
+    type_doc_display =  serializers.StringRelatedField(source='type_document', read_only=True, allow_null=True)
+    cree_par_display =  serializers.StringRelatedField(source='cree_par', read_only=True)
+    modifier_par_display = serializers.StringRelatedField(source='modifier_par', read_only=True)
+    sous_type_display = serializers.StringRelatedField(source='sous_type', read_only=True)
 
-    # URL du fichier pour un accès direct si nécessaire
-    fichier_url = serializers.SerializerMethodField()
-
+    # Pour l'upload, on accepte l'ID ou l'objet (géré par le write)
+    # Mais pour la liste, on veut les détails
     class Meta:
         model = Document
         fields = [
-            'id',
-            'titre',
-            'type_document',
-            'type_document_display',
-            'theme',
-            'theme_display',
-            'etat',
-            'etat_display',
-            'fichier',
-            'fichier_url',
-            'metadonnees',
-            'cree_par',
-            'cree_par_name',
-            'Date_creation',
+            'id', 'titre', 'fichier', 'type_document', 'type_doc_display',
+            'sous_type', 'sous_type_display', 'theme', 'theme_display', 'cellule', 'cellulle_display',
+            'etat', 'niveau_acces', 'profil_document', 'metadonnees',
+            'cree_par', 'cree_par_display', 'modifier_par', 'modifier_par_display',
+            'Date_creation', 'Date_miseajour', 'bailleur', 'avenant'
         ]
-        read_only_fields = ['id', 'Date_creation', 'cree_par']
+        read_only_fields = ['cree_par', 'modifier_par', 'Date_creation', 'Date_miseajour']
 
-    def get_fichier_url(self, obj):
-        if obj.fichier and hasattr(obj.fichier, 'url'):
-            return obj.fichier.url
-        return None
-
+class VersionDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VersionDocument
+        fields = ['id', 'numero_version', 'fichier', 'Date_creation', 'cree_par_username']
 
 class ThemeSerializer(serializers.ModelSerializer):
     cellule_info = serializers.SerializerMethodField()

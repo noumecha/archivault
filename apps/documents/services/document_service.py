@@ -8,6 +8,11 @@ from config.roles import is_admin, is_superadmin
 class DocumentService:
 
     @staticmethod
+    # check document conflict logic
+    def check_conflict(filename, user):
+        pass
+
+    @staticmethod
     def process_upload(user, files, actions, data):
         created_documents = []
         created_versions = []

@@ -49,8 +49,8 @@ class SousTypeDocument(models.Model):
 class EtatDocument(models.TextChoices):
     EN_ATTENTE = 'en attente',
     EN_TRAITEMENT = 'en traitement',
-    VALIDE = 'valide',
-    ARCHIVE = 'archive',
+    VALIDE = 'validé',
+    ARCHIVE = 'archivé',
 
 class NiveauAccesDocument(models.Model): # to change later as enum textchoices
     niveau = models.CharField(max_length=100, unique=True)  # Ex: 'confidentiel', 'restreint'
@@ -107,7 +107,6 @@ class Document(models.Model):
     theme = models.ForeignKey(Theme, on_delete=models.SET_NULL, null=True)
     cellule = models.ForeignKey(Cellule, on_delete=models.SET_NULL, null=True, blank=True)
     etat = models.CharField(max_length=20, choices=EtatDocument.choices, default=EtatDocument.EN_ATTENTE)
-    #niveau_acces = models.ForeignKey(NiveauAccesDocument, on_delete=models.SET_NULL, null=True)
     niveau_acces = models.CharField( max_length=20, choices=NiveauAcces.choices, default=NiveauAcces.INTERNE )
     profil_document = models.CharField(max_length=20, choices=ProfilDoc.choices, default=ProfilDoc.CONSULTATIF)
     metadonnees = models.JSONField(blank=True, null=True)

@@ -4,104 +4,229 @@ from rest_framework.response import Response
 from apps.documents.services.visibility_service import VisibilityService
 from config.api.base_api_view import BaseAPIView
 from config.mixins.drf_permissions import DRFRoleRequiredMixin
-from ..models import Document, TypeDocument, Theme, SousTypeDocument, Bailleurs, Avenants
+from ..models import *
 from ..services.permissions import DocumentPermissionService
 from ..services.document_service import DocumentService as DocBusinessService
 from ..forms import UploadMultipleForm
-from apps.users.models import RoleUtilisateur
 from rest_framework.permissions import IsAuthenticated
-from .serializers import DocumentSerializer, ThemeSerializer, TypeDocumentSerializer, SousTypeDocumentSerializer, AvenantSerializer, BailleurSerializer
+from .serializers import *
 import os, json
+from rest_framework import status, permissions
+from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.db import transaction
+from django.core.files.storage import default_storage
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from apps.circulation.models import Tache, CirculationDocument
+from apps.administration.models import Cellule
+from apps.users.models import Utilisateur, RoleUtilisateur
 
-class DocumentAPIView(BaseAPIView):
+class DocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
     """
-    API pour la gestion des documents.
+    API Centralisée pour les Documents.
 
     Endpoints :
 
-        GET    /api/documents/              → Liste (paginée, filtrée, recherchée)
-        POST   /api/documents/create              → Créer
-        GET    /api/documents/<id>/         → Détail
-        PUT    /api/documents/<id>/update         → Mise à jour complète
-        PATCH  /api/documents/<id>/update         → Mise à jour partielle
-        DELETE /api/documents/<id>/delete         → Supprimer
+    GET    /api/documents/              → Liste (paginée, filtrée, recherchée)
+    POST   /api/documents/create              → Créer
+    GET    /api/documents/<id>/         → Détail
+    PUT    /api/documents/<id>/update         → Mise à jour complète
+    PATCH  /api/documents/<id>/update         → Mise à jour partielle
+    DELETE /api/documents/<id>/delete         → Supprimer
+    BULK DELETE /api/documents/bulk-delete       → Suppression de masse
+    UPLOAD MULTIPLE /api/documents/upload-multiple/     → Upload Multiple
+    CHECK CONFLICT /api/documents/check-conflict/       → Check de conflit sur les documents
+    ADD TACHE /api/documents/<id>/add-tache/            → Préparer l'ajout d'une tâche
+    ADD CIRCULATION /api/documents/<id>/add-circulation/ → Préparer l'ajout d'une circulation
     """
     model = Document
     serializer_class = DocumentSerializer
-    search_fields = ['titre', 'metadonnees']
-    filter_fields = ['type_document', 'theme', 'etat', 'cellule']
+    parser_classes = [MultiPartParser, FormParser] # Pour gérer les fichiers
+    permission_classes = [permissions.IsAuthenticated]
+
+    search_fields = ['titre']
+    filter_fields = [
+        'type',
+        'sous_type',
+        'theme',
+        'etat',
+        'profil_document',
+        'cellule',
+        'niveau_acces',
+    ]
+
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR,
+        RoleUtilisateur.RESPONSABLE,
+        RoleUtilisateur.GESTIONNAIRE,
+    ]
 
     def get_queryset(self):
-        """Applique les contraintes de visibilité basées sur le service de permissions."""
         user = self.request.user
         qs = DocumentPermissionService.get_visible_documents(user)
+        params = self._get_query_params()
+        date_debut = params.get('date_debut')
+        date_fin = params.get('date_fin')
+        extension = params.get('ext')
+        if date_debut:
+            qs = qs.filter(Date_creation__date__gte=date_debut)
+        if date_fin:
+            qs = qs.filter(Date_creation__date__lte=date_fin)
+        if extension:
+            qs = qs.filter(fichier__iendswith='.' + extension.lstrip('.'))
         return super().get_queryset(queryset=qs)
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # ACTIONS CUSTOM SPÉCIFIQUES
+    # ─────────────────────────────────────────────────────────────────────────
     custom_actions = {
-        'check_conflict': 'action_check_conflict',
-        'upload_multiple': 'action_upload_multiple'
+        'upload_multiple': 'upload_multiple_action',
+        'check_conflict': 'check_conflict_action',
+        'retrieve': 'retrieve_action', # Override pour ajouter le log/versions
+        'add_tache': 'add_tache_action',
+        'add_circulation': 'add_circulation_action',
+        'bulk_delete': 'bulk_delete_action'
     }
 
-    def action_check_conflict(self, request):
-        filename = request.GET.get("filename", "")
-        name = os.path.splitext(filename)[0]
-        titre = name.replace('_', ' ').replace('-', ' ').strip()
+    # 1. Upload Multiple (Remplace DocumentCreateMultipleView)
+    def upload_multiple_action(self, request, *args, **kwargs):
+        """
+        Gère l'upload de plusieurs fichiers avec logique de conflit.
+        Attend: files[], type_document, theme, etc.
+        """
+        files = request.FILES.getlist('files')
+        if not files:
+            return Response({'success': False, 'message': 'Aucun fichier fourni'}, status=400)
 
-        exists = Document.objects.filter(titre__iexact=titre).first()
-        if exists:
-            return Response({
-                "exists": True,
-                "document_id": exists.id,
-                "titre": exists.titre,
-            })
-        return Response({"exists": False})
+        # Récupération des métadonnées communes
+        metadata = {
+            'type_document_id': request.data.get('type_document'),
+            'theme_id': request.data.get('theme'),
+            'sous_type_id': request.data.get('sous_type'),
+            'niveau_acces': request.data.get('niveau_acces', 'interne'),
+            'etat': request.data.get('etat', 'en attente'),
+            'profil_document': request.data.get('profil_document', 'consultatif')
+        }
 
-    def action_upload_multiple(self, request):
-        # Utilisation du formulaire pour valider les métadonnées communes
-        form = UploadMultipleForm(request.POST, request.FILES, user=request.user)
+        # Actions spécifiques par fichier (peut venir de actions[] JSON)
+        # Pour simplifier ici, on suppose que chaque fichier a son propre champ d'action ou on utilise une logique par défaut
+        # Dans ton cas JS, tu envoies probablement un JSON string ou des champs cachés.
 
-        if not form.is_valid():
-            return Response({
-                "success": False,
-                "message": "Données de formulaire invalides",
-                "errors": form.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        results = {
+            'created': 0,
+            'versioned': 0,
+            'overwritten': 0,
+            'skipped': 0,
+            'errors': []
+        }
 
-        files = request.FILES.getlist('fichiers')
-        actions_raw = request.POST.getlist("actions[]")
+        with transaction.atomic():
+            for file in files:
+                try:
+                    # Déterminer l'action (par défaut 'create', ou via paramètre JS)
+                    # Si tu envoies un JSON complexe, il faut le parser ici
+                    action = request.data.get('action', 'create')
+                    # Note: Pour gérer l'action par fichier, le frontend doit envoyer un array d'objets
+                    # ou on utilise une logique simple : si existe -> version, sinon create.
 
-        # Reconstruction du dictionnaire d'actions indexé par nom de fichier
-        actions_map = {}
-        for act_str in actions_raw:
-            try:
-                act_data = json.loads(act_str)
-                # Le frontend envoie l'objet file complet, on récupère le nom
-                filename = act_data.get('file', {}).get('name') or act_data.get('name')
-                if filename:
-                    actions_map[filename] = act_data
-            except json.JSONDecodeError:
-                continue
+                    # Appel au Service métier
+                    result = DocBusinessService.process_upload(request, file, metadata, action)
 
-        # Appel du service métier pour le traitement transactionnel
-        result = DocBusinessService.process_upload(
-            user=request.user,
-            files=files,
-            actions=actions_map,
-            data=form.cleaned_data
-        )
+                    if result['status'] == 'created':
+                        results['created'] += 1
+                    elif result['status'] == 'versioned':
+                        results['versioned'] += 1
+                    elif result['status'] == 'overwritten':
+                        results['overwritten'] += 1
+                    elif result['status'] == 'skipped':
+                        results['skipped'] += 1
 
-        msg = f"{len(result['documents'])} documents traités, {len(result['versions'])} nouvelles versions."
-        if result['skipped']:
-            msg += f" ({len(result['skipped'])} ignorés)"
+                except Exception as e:
+                    results['errors'].append({'file': file.name, 'error': str(e)})
 
         return Response({
-            "success": True,
-            "message": msg,
-            "data": {
-                "count_docs": len(result['documents']),
-                "count_versions": len(result['versions'])
-            }
+            'success': len(results['errors']) == 0,
+            'message': f"Traitement terminé. Créés: {results['created']}, Versions: {results['versioned']}",
+            'details': results
         })
+
+    # 2. Check Conflict (Remplace check_document)
+    def check_conflict_action(self, request, *args, **kwargs):
+        filename = request.GET.get('filename', '')
+        exists = DocBusinessService.check_conflict(filename, request.user)
+
+        if exists:
+            return Response({
+                'exists': True,
+                'id': exists.id,
+                'titre': exists.titre,
+                'suggested_action': 'version' # Conseil UX
+            })
+        return Response({'exists': False})
+
+    # 3. Détail enrichi (Remplace DocumentDetailView)
+    def retrieve_action(self, request, pk=None, *args, **kwargs):
+        instance = get_object_or_404(Document, pk=pk)
+
+        # Vérification permissions
+        if not DocumentPermissionService.can_view(request.user, instance):
+            return Response({'error': 'Accès refusé'}, status=403)
+
+        # Log d'audit
+        # AuditService.log(request, ActionAudit.CONSULTATION, instance)
+
+        # Récupération contextuelle pour le détail
+        context_data = {
+            'document': self.get_serializer(instance).data,
+            'versions': VersionDocumentSerializer(instance.versions.all(), many=True).data,
+            'taches': [], # À implémenter si besoin
+            'circulations': [] # À implémenter si besoin
+        }
+
+        # Si besoin d'ajouter des données non sérialisées
+        # context_data['can_edit'] = DocumentPermissionService.can_edit(request.user, instance)
+
+        return Response({
+            'success': True,
+            'data': context_data
+        })
+
+    # 4. Ajouter une tâche (Action rapide)
+    def add_tache_action(self, request, pk=None, *args, **kwargs):
+        instance = self.get_object()
+        # Logique simplifiée pour l'API, les données réelles sont gérées par le service Tache
+        # Ici on peut renvoyer les infos nécessaires pour le formulaire ou traiter une création rapide
+        return Response({
+            'success': True,
+            'message': 'Prêt à ajouter une tâche',
+            'document_id': instance.id,
+            'titre': instance.titre
+        })
+
+    # 5. Ajouter une circulation (Action rapide)
+    def add_circulation_action(self, request, pk=None, *args, **kwargs):
+        instance = self.get_object()
+        # Logique simplifiée pour l'API
+        return Response({
+            'success': True,
+            'message': 'Prêt à ajouter une circulation',
+            'document_id': instance.id,
+            'titre': instance.titre
+        })
+
+    # 6. Suppression groupée
+    def bulk_delete_action(self, request, *args, **kwargs):
+        ids = request.data.get('ids', [])
+        deleted_count, _ = Document.objects.filter(id__in=ids).delete()
+        return Response({'success': True, 'message': f'{deleted_count} document(s) supprimé(s)'})
+
+    # Override de list_action pour gérer les filtres spécifiques si besoin
+    def list_action(self, request, *args, **kwargs):
+        # La base gère déjà la pagination et les filtres, on peut ajouter des logs ici
+        return super().list_action(request, *args, **kwargs)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -111,13 +236,13 @@ class DocumentAPIView(BaseAPIView):
     def update_action(self, request, pk=None, *args, **kwargs):
         instance = self.get_object()
         if not DocumentPermissionService.can_edit(request.user, instance):
-            return Response({"message": "Permission refusée"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({ "success" : False, "message": "Permission refusée"}, status=status.HTTP_403_FORBIDDEN)
         return super().update_action(request, pk, *args, **kwargs)
 
     def delete_action(self, request, pk=None, *args, **kwargs):
         instance = self.get_object()
         if not DocumentPermissionService.can_delete(request.user, instance):
-            return Response({"message": "Permission refusée"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({ "success" : False, "message": "Permission refusée"}, status=status.HTTP_403_FORBIDDEN)
         return super().delete_action(request, pk, *args, **kwargs)
 
 class ThemeAPIView(DRFRoleRequiredMixin, BaseAPIView):

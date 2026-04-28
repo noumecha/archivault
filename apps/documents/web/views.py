@@ -224,11 +224,15 @@ class TypeDocumentView(RoleRequiredMixin, BaseCRUDView):
     headers = ["Libelle", "Description"]
     fields = ["libelle","description_typedocument"]
 
-class DocumentView(BaseCRUDView):
+class DocumentView(RoleRequiredMixin, BaseCRUDView):
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR
+    ]
     model = Document
-    form_class = DocumentsForm
     list_route = 'documents_list'
-    list_template = 'pages/document_classic_list.html'
+    list_template = 'pages/document_list.html'
     context_object_name = 'documents'
     search_fields = [
         "titre",
@@ -247,13 +251,47 @@ class DocumentView(BaseCRUDView):
         ('type_document', TypeDocument),
         ('sous_type', SousTypeDocument),
         ('etat', EtatDocument),
-        ('profil', ProfilDoc),
-        ('theme', Theme)
+        ('profil_document', ProfilDoc, 'Profil document'),
+        ('theme', Theme),
+        ('cellule', Cellule, 'Unité de traitement'),
+        ('niveau_acces', NiveauAcces, 'Niveau d\'accès')
     ]
-    headers = ["Titre","Theme","Type","Etat"]
-    fields = ["titre","theme","type_document","etat"]
-    delete_url = "documents_delete"
-    object_name = 'document'
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        user = self.request.user
+        if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
+            filtered_cellules = Cellule.objects.all()
+            filtered_types = TypeDocument.objects.all()
+            filtered_themes = Theme.objects.all()
+            filtered_soustypes = SousTypeDocument.objects.all()
+            filtered_etat = EtatDocument.choices
+            filtered_niveau_access = NiveauAcces.choices
+            filtered_profil_documents = ProfilDoc.choices
+        else:
+            filtered_cellules = Cellule.objects.filter(id=user.cellule_id) if user.cellule else Cellule.objects.none()
+            filtered_types = TypeDocument.objects.filter(cellule_id=user.cellule_id) if user.cellule else TypeDocument.objects.none()
+            filtered_themes = Theme.objects.filter(cellule_id=user.cellule_id) if user.cellule else Theme.objects.none()
+            filtered_soustypes = SousTypeDocument.objects.filter(type_document__cellule_id=user.cellule_id) if user.cellule else SousTypeDocument.objects.none()
+
+        context['cellules'] = filtered_cellules
+        context['types_documents'] = filtered_types
+        context['themes'] = filtered_themes
+        context['sous_types'] = filtered_soustypes
+        context['etats'] = filtered_etat
+        context['niveau_access'] = filtered_niveau_access
+        context['profil_documents'] = filtered_profil_documents
+
+        # Mapping des filtres vers les querysets filtrés par rôle
+        filter_mapping = {
+            'cellule': filtered_cellules,
+            'type_document': filtered_types,
+            'theme': filtered_themes,
+            'sous_type': filtered_soustypes,
+        }
+        for f in context.get('filters', []):
+            if f['name'] in filter_mapping:
+                f['items'] = filter_mapping[f['name']]
+        return context
 
 # managing doucments
 class DocumentCreateMultipleView(ListView):
