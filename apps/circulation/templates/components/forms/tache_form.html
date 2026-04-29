@@ -1,0 +1,95 @@
+{# apps/circulation/templates/components/tache_form.html #}
+{# Template réutilisable pour le formulaire #}
+<div class="row">
+  <!-- Document -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="document" name="document" required>
+          <option value="">-- Sélectionner un document --</option>
+          {% for doc in documents %}
+            <option value="{{ doc.id }}">{{ doc.titre }}</option>
+          {% endfor %}
+        </select>
+        <label for="document">Document</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Titre -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="text" id="titre" class="form-control" name="titre" placeholder="Titre de la tâche" required />
+        <label for="titre">Titre</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Description de la tâche"></textarea>
+        <label for="description">Description</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Assignée à -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="assignee_a" name="assignee_a" required>
+          <option value="">-- Sélectionner --</option>
+          {% for user in utilisateurs %}
+            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+          {% endfor %}
+        </select>
+        <label for="assignee_a">Assignée à</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Priorité -->
+  <div class="col-md-6 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="priorite" name="priorite">
+          {% for value, label in priorites %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label for="priorite">Priorité</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statut -->
+  <div class="col-md-6 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="statut" name="statut">
+          {% for value, label in statuts %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label for="statut">Statut</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Date échéance -->
+  <div class="col-md-12 form-group mb-5">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <input type="date" id="date_echeance" class="form-control" name="date_echeance" />
+        <label for="date_echeance">Date d'échéance</label>
+      </div>
+    </div>
+  </div>
+</div>

@@ -25,6 +25,7 @@ from ..services.permissions import DocumentPermissionService
 from config.roles import *
 from config.mixins.permissions import *
 from ..services.metadata_service import DocumentMetadataService
+from apps.circulation.models import *
 
 #occupant view
 class NiveauAccesDocumentView(RoleRequiredMixin, BaseCRUDView):
@@ -263,13 +264,19 @@ class DocumentView(RoleRequiredMixin, BaseCRUDView):
         filtered_etat = EtatDocument.choices
         filtered_niveau_access = NiveauAcces.choices
         filtered_profil_documents = ProfilDoc.choices
+        priorites = PrioriteTache.choices
+        statuts = StatutTache.choices
         user = self.request.user
         if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
             filtered_cellules = Cellule.objects.all()
             filtered_types = TypeDocument.objects.all()
             filtered_themes = Theme.objects.all()
             filtered_soustypes = SousTypeDocument.objects.all()
+            filtered_utilisateurs = Utilisateur.objects.all()
+            filtered_documents = Document.objects.all()
         else:
+            filtered_documents = Document.objects.filter(cellule_id=user.cellule_id) if user.cellule else Document.objects.none()
+            filtered_utilisateurs = Utilisateur.objects.filter(cellule_id=user.cellule_id) if user.cellule else Utilisateur.objects.none()
             filtered_cellules = Cellule.objects.filter(id=user.cellule_id) if user.cellule else Cellule.objects.none()
             filtered_types = TypeDocument.objects.filter(cellule_id=user.cellule_id) if user.cellule else TypeDocument.objects.none()
             filtered_themes = Theme.objects.filter(cellule_id=user.cellule_id) if user.cellule else Theme.objects.none()
@@ -282,6 +289,10 @@ class DocumentView(RoleRequiredMixin, BaseCRUDView):
         context['etats'] = filtered_etat
         context['niveau_access'] = filtered_niveau_access
         context['profil_documents'] = filtered_profil_documents
+        context['priorites'] = priorites
+        context['statuts'] = statuts
+        context['utilisateurs'] = filtered_utilisateurs
+        context['documents'] = filtered_documents
 
         # Mapping des filtres vers les querysets filtrés par rôle
         filter_mapping = {

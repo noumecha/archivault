@@ -437,6 +437,17 @@ function showToast(message, type = 'info', toastId = '#toast-container', delay =
   toast.show();
 }
 
+/**
+ *
+ * @param {*} modalId
+ * function for closing modals properly
+ */
+function closeBootstrapModal(modalId) {
+  const modalElement = document.getElementById(modalId);
+  const modalInstance = bootstrap.Modal.getInstance(modalElement);
+  if (modalInstance) modalInstance.hide();
+}
+
 // export
 export {
   showMessage,
@@ -460,5 +471,6 @@ export {
   toggleBulkButton,
   resetForm,
   showToast,
-  renderPagination
+  renderPagination,
+  closeBootstrapModal
 };

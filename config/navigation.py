@@ -24,22 +24,10 @@ SIDEBAR_MENU = [
                 "roles": ["superadmin", "administrateur", "superviseur"],
             },
             {
-                "title": "Mes tâches",
-                "url_prefix": "/circulation/taches/",
-                "url_name": "tache_list",
-                "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
-            },
-            {
-                "title": "Gestion des tâches",
+                "title": "Tâches",
                 "url_prefix": "/circulation/taches-management/",
                 "url_name": "tache_management",
-                "roles": ["superadmin", "administrateur", "superviseur"],
-            },
-            {
-                "title": "Créer une tâche",
-                "url_prefix": "/circulation/taches/create/",
-                "url_name": "tache_create",
-                "roles": ["superadmin", "administrateur", "superviseur"],
+                "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
             },
             {
                 "title": "Audit",

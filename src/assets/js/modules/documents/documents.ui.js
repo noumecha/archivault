@@ -70,32 +70,31 @@ export const DocumentUi = {
 
           <div class="card-footer bg-transparent p-2">
             <div class="btn-group w-100 mb-1">
-                <button class="btn btn-sm btn-outline-primary" data-action="view" data-id="${doc.id}"><i class="ri-eye-line"></i></button>
+                <button title="Voir(détails)" class="btn btn-sm btn-outline-primary" data-action="view" data-id="${doc.id}"><i class="ri-eye-line"></i></button>
 
-                <button class="btn btn-sm btn-outline-primary ${!p.can_edit ? 'disabled' : ''}"
+                <button title="Modifier" class="btn btn-sm btn-outline-primary ${!p.can_edit ? 'disabled' : ''}"
                         data-action="edit" data-id="${doc.id}">
                     <i class="ri-pencil-line"></i>
                 </button>
 
-                <a href="${doc.fichier}" target="_blank"
+                <a href="${doc.fichier}" title="Télécharger" target="_blank"
                    class="btn btn-sm btn-outline-secondary ${!p.can_print ? 'disabled' : ''}">
                     <i class="ri-download-line"></i>
                 </a>
             </div>
             <div class="btn-group w-100">
-                <button class="btn btn-sm btn-outline-info ${!p.can_share ? 'disabled' : ''}" data-action="circulation" data-id="${doc.id}">
+                <button title="Ajouter une circulation" class="btn btn-sm btn-outline-info ${!p.can_share ? 'disabled' : ''}" data-action="circulation" data-id="${doc.id}">
                     <i class="ri-share-forward-line"></i>
                 </button>
                 ${
                   p.can_addTask
-                    ? `<button class="btn btn-sm btn-outline-info" data-action="tache" data-id="${doc.id}"><i class="ri-task-line"></i></button>`
+                    ? `<button title="Ajouter une tache" class="btn btn-sm btn-outline-info" id="add-documentTask-button" data-action="add-tache" data-id="${doc.id}"><i class="ri-task-line"></i></button>`
                     : ''
                 }
-
                 ${
                   p.can_delete
                     ? `
-                    <button class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${doc.id}">
+                    <button title="Supprimer" class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${doc.id}">
                         <i class="ri-delete-bin-6-line"></i>
                     </button>`
                     : ''
@@ -192,7 +191,7 @@ export const DocumentUi = {
               ${
                 p.can_addTask
                   ? `
-                <a href="#" class="dropdown-item" data-action="tache" data-id="${document.id}">
+                <a href="#" class="dropdown-item" data-action="add-tache" data-id="${document.id}">
                   <i class="ri-task-line me-1"></i>Ajouter une tache
                 </a>`
                   : ''
@@ -276,5 +275,35 @@ export const DocumentUi = {
 
   showSuccess(message, id = '#message-show-success', loader = $('#form-loader')) {
     showAlertMessage(message, id, loader);
+  },
+
+  /**
+   * Prépare le modal de création de tâche avec un document pré-sélectionné
+   * @param {string|number} documentId - L'ID du document
+   */
+  renderTacheFormForDocument(documentId) {
+    const $form = $('#documentTacheForm');
+    $form[0].reset();
+
+    // On vide l'ID d'update pour être sûr d'être en mode création
+    $('#update-id').val('');
+    const $documentSelect = $('#document');
+    if ($documentSelect.length) {
+      $documentSelect.val(documentId).trigger('change');
+      // On utilise 'pointer-events: none' et un fond grisé pour simuler le disabled
+      // sans casser l'envoi des données HTML
+      $documentSelect
+        .css({
+          'pointer-events': 'none',
+          'background-color': '#e9ecef'
+        })
+        .attr('tabindex', '-1');
+    }
+
+    $('#modal-title').text('Nouvelle tâche pour ce document');
+    $('#save-btn-text').text('Créer la tâche');
+
+    // Nettoyage des alertes précédentes
+    $('#form-error, #form-success').hide();
   }
 };

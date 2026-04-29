@@ -1,34 +1,36 @@
-{# apps/users/templates/pages/users_list.html #}
+{# apps/circulation/templates/pages/tache_management.html #}
 {% extends layout_path %}
 
 {% load static %}
 
-{% block title %}Utilisateurs{% endblock %}
+{% block title %}Taches{% endblock %}
 
 {% block content %}
 <div class="card p-3">
   <div class="card-header">
     <div class="row d-flex justify-content-between align-items-center">
       <div class="col-md-8">
-        <h3>Listes des Utilisateurs</h3>
-        <p class="text-sm">Gérer les Utilisateurs</p>
+        <h3>Listes des Taches</h3>
+        <p class="text-sm">Gérer les Taches</p>
       </div>
       <div class="col-md-4 text-end">
         <button type="button" class="btn" id="refresh-button">
           <i class="menu-icon ri-restart-line"></i> Rafraîchir
         </button>
-        <button type="button" class="btn btn-lg btn-dark btn-primary text-white"
-                id="add-button" data-bs-toggle="modal" data-bs-target="#create-utilisateur-modal">
-          <i class="menu-icon ri-add-line"></i> Ajouter
-        </button>
+        {% if request.user.role in 'admin,superadmin,superviseur' %}
+          <button type="button" class="btn btn-lg btn-dark btn-primary text-white"
+              id="add-button" data-bs-toggle="modal" data-bs-target="#create-tache-modal">
+            <i class="menu-icon ri-add-line"></i> Ajouter
+          </button>
+        {% endif %}
       </div>
     </div>
 
     {# Formulaire de recherche et filtres #}
-    <form class="row d-flex mt-3" id="utilisateur-search-form">
+    <form class="row d-flex mt-3" id="tache-search-form">
       <div class="col-md-12">
         <div class="input-group">
-          <input type="text" class="form-control" placeholder="Rechercher un utilisateur" name="search" id="search">
+          <input type="text" class="form-control" placeholder="Rechercher un tache" name="search" id="search">
           <button class="btn btn-outline-primary" type="button" id="clearSearch">
             <i class="menu-icon ri-close-line"></i>
           </button>
@@ -55,35 +57,30 @@
       <button id="btn-bulk-delete" class="btn btn-danger btn-sm">
         <i class="ri-delete-bin-line"></i> Supprimer la sélection (<span id="selected-count">0</span>)
       </button>
-
-      <button id="btn-bulk-toggle-status" class="btn btn-secondary btn-sm">
-        <i class="ri-toggle-line"></i> Activer/Désactiver la sélection (<span id="selected-count">0</span>)
-      </button>
     </div>
-
     <div class="alert alert-success col-12 text-center mt-2" style="display:none;" id="message-show-success"></div>
     <div class="alert alert-danger col-12 text-center mt-2" style="display:none;" id="message-show-error"></div>
   </div>
 
   {# Conteneur pour la table (injecté par JS) #}
-  <div id="utilisateur-table-container">
-    {% include 'components/user_table.html' %}
+  <div id="tache-table-container">
+    {% include 'components/tables/tache_table.html' %}
   </div>
 </div>
 
 {# Modal Création/Édition #}
-<div class="modal fade" id="create-utilisateur-modal" tabindex="-1">
+<div class="modal fade" id="create-tache-modal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content p-0">
-      <form id="utilisateurForm">
+      <form id="tacheForm">
         <div class="modal-header">
-          <h5 class="modal-title" id="modal-title">Enregistrement utilisateur</h5>
+          <h5 class="modal-title" id="modal-title">Enregistrement d'une tache</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <hr>
         <div class="modal-body pb-0">
-          <div id="utilisateur-form-content">
-            {% include 'components/user_form.html' %}
+          <div id="tache-form-content">
+            {% include 'components/forms/tache_form.html' %}
           </div>
           <div class="alert alert-success" style="display: none;" id="form-success"></div>
           <div class="alert alert-danger" style="display: none;" id="form-error"></div>
@@ -105,16 +102,16 @@
 </div>
 
 {# Modal Suppression #}
-<div class="modal fade" id="delete-utilisateur-modal" tabindex="-1">
+<div class="modal fade" id="delete-tache-modal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Supprimer l'utilisateur</h5>
+        <h5 class="modal-title">Supprimer la tache</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <hr>
       <div class="modal-body pb-0">
-        <p>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</p>
+        <p>Êtes-vous sûr de vouloir supprimer cette tache ?</p>
         <div class="alert alert-danger" style="display: none;" id="delete-form-error"></div>
       </div>
       <hr>
@@ -136,12 +133,12 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Supprimer les utilisateurs sélectionnés</h5>
+        <h5 class="modal-title">Supprimer les taches sélectionnés</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <hr>
       <div class="modal-body pb-0">
-        <p>Êtes-vous sûr de vouloir supprimer les utilisateurs sélectionnés ?</p>
+        <p>Êtes-vous sûr de vouloir supprimer les taches sélectionnés ?</p>
         <div class="alert alert-danger" style="display: none;" id="bulk-delete-form-error"></div>
       </div>
       <hr>
@@ -158,35 +155,8 @@
   </div>
 </div>
 
-{# Modal activation/desactivation de masse #}
-<div class="modal fade" id="bulk-toggle-status-modal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Activer/Désactiver les utilisateurs sélectionnés</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <hr>
-      <div class="modal-body pb-0">
-        <p>Êtes-vous sûr de vouloir activer/désactiver les utilisateurs sélectionnés ?</p>
-        <div class="alert alert-danger" style="display: none;" id="bulk-toggle-status-form-error"></div>
-      </div>
-      <hr>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button id="confirm-bulk-toggle-status-btn" class="d-flex justify-content-center align-items-center btn btn-secondary" type="button">
-          <span class="" id="bulk-toggle-status-btn-text">Confirmer</span>
-          <div id="bulk-toggle-status-loader" class="d-none text-center">
-            <i class="ri-loader-2-fill ri-2x spin text-white"></i>
-          </div>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
-  <script type="module" src="{% static 'js/modules/users/index.js' %}"></script>
+  <script type="module" src="{% static 'js/modules/circulations/controllers/taches.controller.js' %}"></script>
 {% endblock %}

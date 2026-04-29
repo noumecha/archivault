@@ -2,6 +2,7 @@
 import { DocumentState } from './documents.states.js';
 import { DocumentUi } from './documents.ui.js';
 import { DocumentService } from './documents.services.js';
+import { TacheService } from '../circulations/services/taches.services.js';
 import { startLoader, closeLoader, showAlertMessage, toggleBulkButton } from '../../helpers/utils.js';
 
 export const DocumentController = {
@@ -17,6 +18,7 @@ export const DocumentController = {
     this.switchView(savedView);
     await this.loadDatas();
     this.bindEvents();
+    this.bindTacheEvents();
     // Toggle View Management
     $('#view-table-btn').on('click', () => this.switchView('table'));
     $('#view-grid-btn').on('click', () => this.switchView('grid'));
@@ -138,13 +140,6 @@ export const DocumentController = {
       window.location.href = `/circulation/circulations/create/?document_id=${id}`;
     });
 
-    // Ajouter une tache
-    $(document).on('click', '[data-action="tache"]', function (e) {
-      e.preventDefault();
-      const id = $(this).data('id');
-      window.location.href = `/circulation/taches/create/?document_id=${id}`;
-    });
-
     // Éditer
     $(document).on('click', '[data-action="edit"]', async e => {
       e.preventDefault();
@@ -234,6 +229,54 @@ export const DocumentController = {
             closeLoader('#delete-loader');
           }
         });
+    });
+  },
+
+  bindTacheEvents() {
+    // 1. Ouverture du modal depuis la liste des documents
+    // On suppose que ton bouton a l'attribut data-action="add-tache" et data-id="${doc.id}"
+    $(document).on('click', '[data-action="add-tache"]', function (e) {
+      e.preventDefault();
+      const documentId = $(this).data('id');
+
+      DocumentUi.renderTacheFormForDocument(documentId);
+
+      const modal = new bootstrap.Modal(document.getElementById('create-documentTache-modal'));
+      modal.show();
+    });
+
+    // 2. Soumission du formulaire de tâche
+    $('#documentTacheForm').on('submit', async e => {
+      e.preventDefault();
+      const $form = $('#documentTacheForm');
+      const $saveBtn = $('#save-btn');
+      // Extraction des données (incluant le document id caché ou sélectionné)
+      const formData = new FormData($form[0]);
+      const rawData = Object.fromEntries(formData.entries());
+      console.log('Données avant envoi:', rawData);
+      try {
+        $saveBtn.prop('disabled', true);
+        TacheService.validate(rawData);
+        // On utilise directement le service des tâches
+        const response = await TacheService.create(rawData);
+
+        DocumentUi.showSuccess(response.message || 'Tâche créée avec succès', '#tache-form-success');
+
+        // Fermeture du modal après succès
+        setTimeout(() => {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-documentTache-modal'));
+          if (modalInstance) modalInstance.hide();
+          $form[0].reset();
+          // On remet le style du select à la normale pour la prochaine ouverture
+          $('#document').css({ 'pointer-events': '', 'background-color': '' });
+        }, 2000);
+      } catch (err) {
+        console.error('Erreur création tâche:', err);
+        const errorData = err.data?.errors || err.data?.message || 'Une erreur est survenue';
+        DocumentUi.showError(errorData, '#tache-form-error');
+      } finally {
+        $saveBtn.prop('disabled', false);
+      }
     });
   },
 

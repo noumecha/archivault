@@ -49,7 +49,29 @@ class PermissionService:
     def peut_valider_tache(user, tache):
         """Vérifier si l'utilisateur peut valider une tâche."""
         # Le créateur ou un superviseur peut valider
+        # ou celui à qui on a assigner la tache
         return (
             user == tache.assignee_par or
+            user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN, RoleUtilisateur.SUPERVISEUR] or
+            user == tache.assignee_a
+        )
+
+    @staticmethod
+    def peut_supprimer_tache(user, tache):
+        """Vérifier si l'utilisateur peut supprimer une tâche."""
+        # Le créateur ou un superviseur peut supprimer
+        return (
+            user == tache.assignee_par or
+            user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]
+        )
+
+    @staticmethod
+    def peut_voir_tache(user, tache):
+        """ Peut voir une taches spécifique."""
+        # Le créateur ou un superviseur peut voir
+        # ou celui à qui on assigner la tache
+        return (
+            user == tache.assignee_par or
+            user == tache.assignee_a or
             user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN, RoleUtilisateur.SUPERVISEUR]
         )
