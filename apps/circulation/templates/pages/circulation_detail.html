@@ -1,118 +1,196 @@
+{# apps/circulation/templates/pages/circulation_detail.html #}
 {% extends layout_path %}
 {% load static %}
 
 {% block content %}
+<input type="hidden" id="update-id-detail" value="{{ circulation.id }}">
+
 <div class="container-xxl flex-grow-1 container-p-y">
-
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h4 class="fw-bold text-white mb-0">
-        <span class="text-white fw-light">Circulations / Détails / </span> {{ circulation.titre }}
-      </h4>
-      <span class="badge bg-info">{{ circulation.get_statut_display }}</span>
-    </div>
-    <a href="{% url 'circulation_list' %}" class="btn btn-outline-light">
-      <i class="ri-arrow-left-line"></i> Retour
-    </a>
-  </div>
-
-  <div class="row">
-
-    <!-- Infos générales -->
-    <div class="col-md-4 mb-4">
-      <div class="card h-100">
-        <div class="card-header"><h5 class="mb-0">Informations</h5></div>
-        <div class="card-body">
-          <ul class="list-unstyled mb-0">
-            <li class="mb-2">
-              <span class="text-muted">Document :</span>
-              <strong>{{ circulation.document.titre }}</strong>
-            </li>
-            <li class="mb-2">
-              <span class="text-muted">Initié par :</span>
-              <strong>{{ circulation.initie_par }}</strong>
-            </li>
-            <li class="mb-2">
-              <span class="text-muted">Date début :</span>
-              <strong>{{ circulation.date_debut|date:"d/m/Y H:i" }}</strong>
-            </li>
-            <li class="mb-2">
-              <span class="text-muted">Date fin :</span>
-              <strong>{{ circulation.date_fin|date:"d/m/Y H:i"|default:"—" }}</strong>
-            </li>
-            <li class="mb-2">
-              <span class="text-muted">Description :</span>
-              <p class="mb-0">{{ circulation.description|default:"—" }}</p>
-            </li>
-          </ul>
+    {# HEADER #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="d-flex flex-column">
+            <h4 class="fw-bold text-white mb-1">Circuit #{{ circulation.id }} : {{ circulation.titre }}</h4>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb breadcrumb-style1 mb-0">
+                    <li class="breadcrumb-item"><a href="javascript:void(0);" class="text-white">Workflow</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'circulation_list' %}" class="text-white">Circulations</a></li>
+                    <li class="breadcrumb-item active text-white">{{ circulation.titre|truncatechars:30 }}</li>
+                </ol>
+            </nav>
         </div>
-      </div>
+        <div class="d-flex align-content-center flex-wrap gap-2 mt-2 mt-md-0">
+            <button class="btn btn-label-secondary text-white" onclick="history.back()">
+              <i class="ri-arrow-left-line"></i> Retour
+            </button>
+            {% if peut_traiter %}
+                <button class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#modal-traiter-etape">
+                    <i class="ri-check-double-line me-1"></i> Traiter le document
+                </button>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Timeline des étapes -->
-    <div class="col-md-8 mb-4">
-      <div class="card h-100">
-        <div class="card-header"><h5 class="mb-0">Étapes de circulation</h5></div>
-        <div class="card-body">
-          <ul class="timeline">
-            {% for etape in etapes %}
-            <li class="timeline-item {% if etape.statut == 'valide' %}timeline-item-success{% elif etape.statut == 'rejete' %}timeline-item-danger{% elif etape.statut == 'en_cours' %}timeline-item-primary{% else %}timeline-item-secondary{% endif %} pb-4">
-              <span class="timeline-indicator">
-                {% if etape.statut == 'valide' %}
-                  <i class="bx bx-check-circle"></i>
-                {% elif etape.statut == 'rejete' %}
-                  <i class="bx bx-x-circle"></i>
-                {% elif etape.statut == 'en_cours' %}
-                  <i class="bx bx-loader-circle"></i>
-                {% else %}
-                  <i class="bx bx-time-five"></i>
-                {% endif %}
-              </span>
-              <div class="timeline-event">
-                <div class="d-flex justify-content-between align-items-start mb-1">
-                  <h6 class="mb-0">Étape {{ etape.ordre }} — {{ etape.destinataire }}</h6>
-                  <span class="badge bg-label-{{ etape.statut }} ms-2">{{ etape.get_statut_display }}</span>
+    <div class="row">
+        {# COLONNE GAUCHE : INFOS & TIMELINE #}
+        <div class="col-xl-8 col-lg-7 col-md-12">
+            {# Carte Description #}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Note d'envoi / Description</h5>
+                        <span class="badge bg-label-primary">Initié le {{ circulation.date_creation|date:"d M Y" }}</span>
+                    </div>
+                    <p class="card-text text-muted">{{ circulation.description|linebreaks|default:"*Aucune instruction particulière.*" }}</p>
+
+                    <hr class="my-4">
+
+                    <h5 class="card-title mb-3">Document en circulation</h5>
+                    <div class="d-flex align-items-center bg-lighter p-3 rounded border border-dashed">
+                        <div class="avatar flex-shrink-0 me-3">
+                            <span class="avatar-initial rounded bg-label-warning"><i class="ri-file-pdf-line ri-24px"></i></span>
+                        </div>
+                        <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
+                            <div class="me-2">
+                                <h6 class="mb-0">{{ circulation.document.titre }}</h6>
+                                <small class="text-muted">Réf: {{ circulation.document.code|default:"N/A" }}</small>
+                            </div>
+                            <a href="{% url 'document_detail' circulation.document.pk %}" class="btn btn-sm btn-primary">
+                                <i class="ri-eye-line me-1"></i> Consulter
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                {% if etape.commentaire %}
-                  <p class="text-muted mb-1"><i class="bx bx-comment-detail me-1"></i>{{ etape.commentaire }}</p>
-                {% endif %}
-                {% if etape.date_traitement %}
-                  <small class="text-muted">Traité le {{ etape.date_traitement|date:"d/m/Y H:i" }} par {{ etape.traite_par }}</small>
-                {% endif %}
+            </div>
 
-                <!-- Formulaire de traitement si c'est l'utilisateur connecté -->
-                {% if etape.destinataire == request.user and etape.statut == 'en_attente' %}
-                <form method="post" action="{% url 'etape_traiter' etape.pk %}" class="mt-2">
-                  {% csrf_token %}
-                  <div class="row g-2">
-                    <div class="col-md-4">
-                      <select name="statut" class="form-select form-select-sm" required>
-                        <option value="">-- Action --</option>
-                        <option value="valide">Valider</option>
-                        <option value="rejete">Rejeter</option>
-                        <option value="retourne">Retourner</option>
-                      </select>
-                    </div>
-                    <div class="col-md-6">
-                      <input type="text" name="commentaire" class="form-control form-control-sm" placeholder="Commentaire...">
-                    </div>
-                    <div class="col-md-2">
-                      <button type="submit" class="btn btn-sm btn-primary w-100">OK</button>
-                    </div>
-                  </div>
-                </form>
-                {% endif %}
-              </div>
-            </li>
-            {% empty %}
-            <li class="text-muted">Aucune étape définie.</li>
-            {% endfor %}
-          </ul>
+            {# Timeline du Workflow #}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="ri-git-commit-line me-2"></i>Parcours du document</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="timeline pb-0">
+                        {% for etape in etapes %}
+                        <li class="timeline-item timeline-item-transparent {% if forloop.last %}border-transparent{% endif %}">
+                            <span class="timeline-point {% if etape.statut == 'valide' %}timeline-point-success{% elif etape.statut == 'rejete' %}timeline-point-danger{% elif etape.est_actuelle %}timeline-point-warning{% else %}timeline-point-secondary{% endif %}"></span>
+                            <div class="timeline-event">
+                                <div class="timeline-header mb-1">
+                                    <h6 class="mb-0">Étape {{ etape.ordre }} : {{ etape.destinataire.get_full_name }}</h6>
+                                    <small class="text-muted">
+                                        {% if etape.date_traitement %}
+                                            {{ etape.date_traitement|date:"d/m/Y H:i" }}
+                                        {% elif etape.est_actuelle %}
+                                            <span class="badge badge-dot bg-warning"></span> En attente
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <p class="mb-2">
+                                    {% if etape.statut == 'valide' %}
+                                        <span class="text-success small fw-bold"><i class="ri-checkbox-circle-line"></i> Approuvé</span>
+                                    {% elif etape.statut == 'rejete' %}
+                                        <span class="text-danger small fw-bold"><i class="ri-close-circle-line"></i> Rejeté</span>
+                                    {% else %}
+                                        <span class="text-muted small">En attente de traitement</span>
+                                    {% endif %}
+                                </p>
+                                {% if etape.commentaire %}
+                                <div class="bg-light p-2 rounded border-start border-3 {% if etape.statut == 'rejete' %}border-danger{% else %}border-success{% endif %} small">
+                                    "{{ etape.commentaire }}"
+                                </div>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
+        {# COLONNE DROITE : RÉSUMÉ & STATISTIQUES #}
+        <div class="col-xl-4 col-lg-5 mt-3 mt-lg-0">
+            <div class="card mb-4">
+                <div class="card-header border-bottom"><h5 class="mb-0">État du circuit</h5></div>
+                <div class="card-body pt-4">
+                    <div class="text-center mb-4">
+                        <div class="badge bg-label-{% if circulation.statut == 'termine' %}success{% elif circulation.statut == 'rejete' %}danger{% else %}warning{% endif %} p-3 rounded mb-2">
+                            <i class="ri-shield-check-line ri-24px"></i>
+                        </div>
+                        <h4 class="mb-0">{{ circulation.get_statut_display }}</h4>
+                    </div>
+
+                    <ul class="list-unstyled">
+                        <li class="mb-3 d-flex justify-content-between">
+                            <span class="fw-bold text-heading">Initié par:</span>
+                            <span>{{ circulation.initie_par.get_full_name }}</span>
+                        </li>
+                        <li class="mb-3 d-flex justify-content-between">
+                            <span class="fw-bold text-heading">Étape actuelle:</span>
+                            <span class="badge bg-label-info">{{ etape_actuelle.ordre|default:"Terminé" }} / {{ etapes.count }}</span>
+                        </li>
+                        <li class="mb-3 d-flex justify-content-between">
+                            <span class="fw-bold text-heading">Document:</span>
+                            <span class="text-truncate" style="max-width: 150px;">{{ circulation.document.titre }}</span>
+                        </li>
+                    </ul>
+
+                    {% if circulation.statut == 'en_cours' %}
+                    <div class="alert alert-outline-warning d-flex align-items-center" role="alert">
+                        <i class="ri-information-line me-2"></i>
+                        Document actuellement chez : <strong>{{ etape_actuelle.destinataire.username }}</strong>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# MODAL DE TRAITEMENT (DÉCISION) #}
+<div class="modal fade" id="modal-traiter-etape" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="traitementForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Rendre une décision</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info small">
+            Vous traitez l'étape n°{{ etape_actuelle.ordre }} pour ce document.
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label d-block">Votre décision <span class="text-danger">*</span></label>
+            <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="decision" id="btn-valide" value="valide" checked autocomplete="off">
+                <label class="btn btn-outline-success" for="btn-valide"><i class="ri-check-line"></i> Valider</label>
+
+                <input type="radio" class="btn-check" name="decision" id="btn-rejete" value="rejete" autocomplete="off">
+                <label class="btn btn-outline-danger" for="btn-rejete"><i class="ri-close-line"></i> Rejeter</label>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Commentaire / Observations</label>
+            <textarea name="commentaire" id="decision-commentaire" class="form-control" rows="4" placeholder="Indiquez la raison de votre choix..."></textarea>
+          </div>
+
+          <div id="process-error" class="alert alert-danger" style="display:none;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary d-flex align-items-center">
+            <span id="save-btn-text">Confirmer la décision</span>
+            <div id="process-loader" class="d-none ms-2">
+                <i class="ri-loader-2-fill spin text-white"></i>
+            </div>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script type="module" src="{% static 'js/modules/circulations/circulations.controller.js' %}"></script>
 {% endblock %}

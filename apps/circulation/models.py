@@ -62,6 +62,8 @@ class EtapeCirculation(models.Model):
     commentaire   = models.TextField(blank=True)
     date_traitement = models.DateTimeField(null=True, blank=True)
     traite_par    = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, blank=True, related_name='etapes_traitees')
+    est_actuelle = models.BooleanField(default=False) # Très utile pour les requêtes SQL rapides
+    date_reception = models.DateTimeField(null=True, blank=True) # Traçabilité : "Vu à telle heure"
     # timestamp
     Date_creation    = models.DateTimeField(auto_now_add=True)
     Date_miseajour   = models.DateTimeField(auto_now=True)

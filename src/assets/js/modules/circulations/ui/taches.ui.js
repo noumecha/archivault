@@ -117,7 +117,7 @@ export const TacheUi = {
       $('#titre').val(tache.titre);
       $('#description').val(tache.description);
       $('#document').val(tache.document).trigger('change');
-      $('#assigne_a').val(tache.assigne_a).trigger('change');
+      $('#assignee_a').val(tache.assignee_a).trigger('change');
       $('#priorite').val(tache.priorite);
       $('#statut').val(tache.statut);
       $('#date_echeance').val(tache.date_echeance ? tache.date_echeance.split('T')[0] : '');
