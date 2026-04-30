@@ -181,7 +181,6 @@ export const CirculationController = {
       console.log('cellules map : ', this.docCelluleMap);
       const docId = e.target.value;
       const celluleId = this.docCelluleMap[docId];
-      console.log('doc id : ', docId);
       // Filtrer les selects déjà affichés
       CirculationUi.filterUserSelects(celluleId);
     });

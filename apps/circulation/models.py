@@ -50,6 +50,26 @@ class CirculationDocument(models.Model):
     def __str__(self):
         return f"Circulation [{self.document.titre}] — {self.statut}"
 
+    @property
+    def etapes_validees_count(self):
+        """Compte le nombre d'étapes qui ont été marquées comme validées."""
+        return self.etapes.filter(statut=StatutCirculation.VALIDE).count()
+
+    @property
+    def progression_pourcentage(self):
+        """Calcule le pourcentage de progression basé sur les étapes validées."""
+        total = self.etapes.count()
+        if total == 0:
+            return 0
+
+        # On calcule le ratio. On peut aussi inclure 'clos' si nécessaire.
+        pourcentage = (self.etapes_validees_count / total) * 100
+        return int(pourcentage)
+
+    @property
+    def etape_actuelle(self):
+        """Récupère l'étape marquée comme actuelle (utile pour l'affichage)."""
+        return self.etapes.filter(est_actuelle=True).first()
 
 class EtapeCirculation(models.Model):
     """

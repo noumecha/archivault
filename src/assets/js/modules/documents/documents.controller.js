@@ -3,6 +3,9 @@ import { DocumentState } from './documents.states.js';
 import { DocumentUi } from './documents.ui.js';
 import { DocumentService } from './documents.services.js';
 import { TacheService } from '../circulations/services/taches.services.js';
+import { CirculationService } from '../circulations/circulations.service.js';
+import { CirculationUi } from '../circulations/circulations.ui.js';
+import { CirculationController } from '../circulations/circulations.controller.js';
 import { startLoader, closeLoader, showAlertMessage, toggleBulkButton } from '../../helpers/utils.js';
 
 export const DocumentController = {
@@ -11,14 +14,23 @@ export const DocumentController = {
   currentConflict: null,
   actions: [],
   allFiles: new DataTransfer(),
+  // circulations datas
+  etapeIndex: 0,
+  docCelluleMap: {},
 
   async init() {
+    // Récupérer le mapping depuis le script JSON du template
+    const mapData = document.getElementById('doc-cellule-data');
+    if (mapData) {
+      this.docCelluleMap = JSON.parse(mapData.textContent);
+    }
     // Récupérer le mode stocké ou 'table' par défaut
     const savedView = localStorage.getItem('document_view_mode') || 'table';
     this.switchView(savedView);
     await this.loadDatas();
     this.bindEvents();
     this.bindTacheEvents();
+    this.bindCirculationEvents();
     // Toggle View Management
     $('#view-table-btn').on('click', () => this.switchView('table'));
     $('#view-grid-btn').on('click', () => this.switchView('grid'));
@@ -133,13 +145,6 @@ export const DocumentController = {
       window.location.href = `/document/details/${id}/`;
     });
 
-    // Ajouter une circulation
-    $(document).on('click', '[data-action="circulation"]', function (e) {
-      e.preventDefault();
-      const id = $(this).data('id');
-      window.location.href = `/circulation/circulations/create/?document_id=${id}`;
-    });
-
     // Éditer
     $(document).on('click', '[data-action="edit"]', async e => {
       e.preventDefault();
@@ -230,10 +235,145 @@ export const DocumentController = {
           }
         });
     });
+
+    // prévisualisation de document :
+    $(document).on('click', '[data-action="preview-doc"]', function () {
+      const url = $(this).data('url');
+      const type = $(this).data('type');
+      const title = $(this).data('title');
+      const $body = $('#previewBody');
+
+      $('#previewTitle').text(title);
+      $body.html('<div class="spinner-border text-primary" role="status"></div>'); // Loader
+
+      let html = '';
+
+      // 1. IMAGES
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(type)) {
+        html = `<img src="${url}" class="img-fluid" style="max-height: 90vh;">`;
+      }
+      // 2. PDF
+      else if (type === 'pdf') {
+        html = `<iframe src="${url}" width="100%" height="100%" style="border:none;"></iframe>`;
+      }
+      // 3. VIDÉO
+      else if (['mp4', 'webm'].includes(type)) {
+        html = `<video controls autoplay class="w-75"><source src="${url}" type="video/${type}">Votre navigateur ne supporte pas la vidéo.</video>`;
+      }
+      // 4. AUDIO
+      else if (['mp3', 'wav', 'ogg'].includes(type)) {
+        html = `<audio controls autoplay><source src="${url}" type="audio/${type}"></audio>`;
+      }
+      // 5. OFFICE (Word, Excel, PPT) - Utilisation du visualiseur Microsoft Online
+      else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(type)) {
+        // Note: L'URL doit être accessible publiquement pour que cela fonctionne
+        const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(window.location.origin + url)}`;
+        html = `<iframe src="${officeUrl}" width="100%" height="100%" frameborder="0"></iframe>`;
+      }
+      // 6. TEXTE / CODE
+      else if (['txt', 'sql', 'json'].includes(type)) {
+        html = `<iframe src="${url}" width="100%" height="100%" style="background: white;"></iframe>`;
+      } else {
+        html = `<div class="text-white text-center">
+                    <i class="ri-error-warning-line ri-4x"></i>
+                    <p>Aperçu non disponible pour ce type de fichier (.${type})</p>
+                    <a href="${url}" class="btn btn-primary" download>Télécharger pour consulter</a>
+                </div>`;
+      }
+
+      $body.html(html);
+      new bootstrap.Modal(document.getElementById('previewDocModal')).show();
+    });
+  },
+
+  resetEtapeIndex() {
+    this.etapeIndex = 0;
+    $('#etapes-container').empty();
+  },
+
+  bindCirculationEvents() {
+    // Écouter le changement de document pour filtrer
+    $('#doc-select').on('change', e => {
+      const docId = e.target.value;
+      const celluleId = this.docCelluleMap[docId];
+      console.log('doc id : ', docId);
+      // Filtrer les selects déjà affichés
+      CirculationUi.filterUserSelects(celluleId);
+    });
+
+    // Ajout d'étape : passer la cellule actuelle
+    $('#btn-add-etape')
+      .off('click')
+      .on('click', () => {
+        const currentDocId = $('#doc-select').val();
+        const activeCelluleId = this.docCelluleMap[currentDocId] || null;
+
+        const html = CirculationUi.renderEtapeRow(this.etapeIndex, activeCelluleId);
+        $('#etapes-container').append(html);
+
+        this.etapeIndex++;
+      });
+
+    $(document).on('click', '.remove-etape', function () {
+      CirculationController.reindexEtapes();
+      $(this).closest('.etape-item').remove();
+    });
+
+    // On suppose que ton bouton a l'attribut data-action="add-circulation" et data-id="${doc.id}"
+    $(document).on('click', '[data-action="add-circulation"]', e => {
+      e.preventDefault();
+      this.resetEtapeIndex();
+      const documentId = $(e.currentTarget).data('id');
+
+      DocumentUi.renderCirculatFormForDocument(documentId);
+
+      const modal = new bootstrap.Modal(document.getElementById('create-documentCirculation-modal'));
+      modal.show();
+    });
+
+    // 2. Soumission du formulaire de tâche
+    $('#documentCirculationForm').on('submit', async e => {
+      e.preventDefault();
+      const $form = $('#documentCirculationForm');
+      const $saveBtn = $('#save-btn');
+      const data = {
+        document: $('#doc-select').val(),
+        titre: $('#circuit-titre').val(),
+        description: $('#circuit-desc').val(),
+        etapes: []
+      };
+
+      $('.etape-item').each(function (i) {
+        data.etapes.push({
+          destinataire: $(this).find('select').val(),
+          ordre: i + 1
+        });
+      });
+      console.log('Données avant envoi:', data);
+      try {
+        $saveBtn.prop('disabled', true);
+        CirculationService.validate(data);
+        const response = await CirculationService.create(data);
+        DocumentUi.showSuccess(response.message || 'Circulation initiée avec succès', '#circulation-form-success');
+        setTimeout(() => {
+          const modalInstance = bootstrap.Modal.getInstance(
+            document.getElementById('create-documentCirculation-modal')
+          );
+          if (modalInstance) modalInstance.hide();
+          $form[0].reset();
+          $('#document').css({ 'pointer-events': '', 'background-color': '' });
+        }, 2000);
+      } catch (err) {
+        console.error('Erreur création tâche:', err);
+        const errorData = err.data?.errors || err.data?.message || 'Une erreur est survenue';
+        DocumentUi.showError(errorData, '#circulation-form-error');
+      } finally {
+        $saveBtn.prop('disabled', false);
+      }
+    });
   },
 
   bindTacheEvents() {
-    // 1. Ouverture du modal depuis la liste des documents
     // On suppose que ton bouton a l'attribut data-action="add-tache" et data-id="${doc.id}"
     $(document).on('click', '[data-action="add-tache"]', function (e) {
       e.preventDefault();

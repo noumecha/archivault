@@ -1,4 +1,5 @@
 # apps/documents/models.py
+import os
 from django.db import models
 from apps.administration.models import Cellule
 from apps.users.models import Utilisateur, RoleUtilisateur
@@ -144,6 +145,22 @@ class Document(models.Model):
         name = f"({self.type_document.libelle}) : {self.titre}" if self.type_document else f"(Aucun type de document) : {self.titre}"
         return name
 
+    @property
+    def extension(self):
+        """Retourne l'extension du fichier en minuscules (ex: 'pdf', 'docx')"""
+        if self.fichier:
+            name, extension = os.path.splitext(self.fichier.name)
+            return extension.replace('.', '').lower()
+        return ""
+
+    @property
+    def is_image(self):
+        return self.extension in ['jpg', 'jpeg', 'png', 'gif', 'webp']
+
+    @property
+    def is_pdf(self):
+        return self.extension == 'pdf'
+
 class VersionDocument(models.Model):
     # generic
     titre = models.CharField(max_length=255, unique=True)
@@ -167,6 +184,12 @@ class VersionDocument(models.Model):
 
     def __str__(self):
         return self.titre
+
+    @property
+    def extension(self):
+        if self.fichier:
+            return os.path.splitext(self.fichier.name)[1].replace('.', '').lower()
+        return ""
 
 class DocumentPermission(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='document_permissions')
