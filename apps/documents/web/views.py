@@ -513,6 +513,7 @@ class DocumentListView(ListView):
 class DocumentDetailView(LoginRequiredMixin, TemplateView):
     template_name = "pages/document_detail.html"
 
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = TemplateLayout.init(self, context)
@@ -524,7 +525,6 @@ class DocumentDetailView(LoginRequiredMixin, TemplateView):
 
         # utilisateurs
         utilisateurs = Utilisateur.objects.all()
-        print("utilisateurs : ", utilisateurs)
         context['utilisateurs'] = utilisateurs
 
         # Récupérer les circulations associées
