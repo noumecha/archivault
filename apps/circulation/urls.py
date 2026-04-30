@@ -4,11 +4,8 @@ from .web import views
 
 urlpatterns = [
     # Circulation
-    path('', views.CirculationView.as_view(), name='circulation'),
-    path('circulations/', views.CirculationView.as_view(), name='circulation_list'),
-    path('circulations/<int:pk>/', views.CirculationDetailView.as_view(), name='circulation_detail'),
-    path('circulations/create/<int:document_pk>/', views.CirculationCreateView.as_view(), name='circulation_create'),
-    path('etapes/<int:etape_pk>/traiter/', views.etape_traiter, name='etape_traiter'),
+    path('circulations/', views.CirculationManagementView.as_view(), name='circulation_list'),
+    path('circulations/detail/<int:pk>/', views.CirculationDetailView.as_view(), name='circulation_detail'),
 
     # Tâches - Exécution (mes tâches)
     path('taches/detail/<int:pk>/', views.TacheDetailView.as_view(), name='tache_detail'),

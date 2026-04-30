@@ -1,0 +1,295 @@
+import { CirculationService } from './circulations.service.js';
+import { CirculationUi } from './circulations.ui.js';
+import { startLoader, closeLoader, toggleBulkButton } from '../../helpers/utils.js';
+
+export const CirculationController = {
+  etapeIndex: 0,
+  docCelluleMap: {}, // Stockage du mapping
+
+  async init() {
+    // Récupérer le mapping depuis le script JSON du template
+    const mapData = document.getElementById('doc-cellule-data');
+    if (mapData) {
+      this.docCelluleMap = JSON.parse(mapData.textContent);
+    }
+    if ($('#circulations-tbody').length) {
+      await this.loadCirculations();
+    }
+    this.bindEvents();
+    this.bindWorkflowEvents();
+  },
+
+  // ─── Chargement des données ───────────────────────────────────────
+  async loadCirculations(params = {}) {
+    try {
+      startLoader('#table-loader');
+      const res = await CirculationService.fetchAll(params);
+      res.current_page = parseInt(params.page) || 1;
+      CirculationUi.renderTable(res);
+    } catch (err) {
+      console.error('Erreur:', err);
+      CirculationUi.showError('Erreur lors du chargement des circuits');
+    } finally {
+      closeLoader('#table-loader');
+    }
+  },
+
+  // ─── Événements de base (Recherche, Pagination) ───────────────────
+  bindEvents() {
+    // Pagination
+    $(document).on('click', '#circulations-pagination .page-link', async function (e) {
+      e.preventDefault();
+      const page = $(this).data('page');
+      if (page) {
+        let params = CirculationController.getCurrentParams();
+        params.page = page;
+        await CirculationController.loadCirculations(params);
+      }
+    });
+
+    //Gestion de la sélection multiple
+    $(document).on('change', '#check-all-circulations', function () {
+      const isChecked = $(this).is(':checked');
+      $('.circulation-checkbox').prop('checked', isChecked);
+      toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container');
+    });
+    // suppression groupée
+    $(document).on('click', '#btn-bulk-delete', function (e) {
+      e.preventDefault();
+      const ids = $('.circulation-checkbox:checked')
+        .map(function () {
+          return $(this).val();
+        })
+        .get();
+
+      if (ids.length === 0) {
+        return;
+      }
+
+      const modalElement = document.getElementById('bulk-delete-modal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+
+      modalInstance.show();
+
+      $('#confirm-bulk-delete-btn')
+        .off('click')
+        .on('click', async () => {
+          const $btn = $('#confirm-bulk-delete-btn');
+
+          try {
+            $btn.prop('disabled', true);
+            startLoader('#bulk-delete-loader');
+            const res = await CirculationService.bulkDelete(ids);
+            CirculationUi.showSuccess(res.message);
+            modalInstance.hide();
+            const currentParams = CirculationController.getCurrentParams();
+            await CirculationController.loadCirculations(currentParams);
+          } catch (err) {
+            console.error('Erreur suppression:', err);
+            const message = err.data?.message || 'Erreur lors de la suppression groupée';
+            CirculationUi.showError(message, '#bulk-delete-form-error');
+          } finally {
+            $btn.prop('disabled', false);
+            closeLoader('#bulk-delete-loader');
+          }
+        });
+    });
+
+    // Recherche
+    let searchTimer;
+    $('#circ-search-form').on('input change', 'input, select', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        const params = this.getCurrentParams();
+        this.loadCirculations(params);
+      }, 300);
+    });
+
+    // Clear recherche
+    $('#clearSearch').on('click', () => {
+      $('#search').val('');
+      this.loadCirculations();
+    });
+
+    // Refresh
+    $('#refresh-button').on('click', () => {
+      this.loadCirculations();
+      // reset filter forms
+      $('#circ-search-form').trigger('reset');
+      $('#clearSearch').trigger('click');
+    });
+
+    // Supprimer
+    $(document).on('click', '[data-action="delete"]', e => {
+      e.preventDefault();
+      const id = $(e.currentTarget).data('id');
+      const modalElement = document.getElementById('delete-circulation-modal');
+      const modalInstance = new bootstrap.Modal(modalElement);
+
+      modalInstance.show();
+
+      $('#confirm-delete-btn')
+        .off('click')
+        .on('click', async () => {
+          const $btn = $('#confirm-delete-btn');
+
+          try {
+            $btn.prop('disabled', true);
+            startLoader('#delete-loader');
+
+            await CirculationService.remove(id);
+
+            modalInstance.hide();
+            CirculationUi.showSuccess('Circulation supprimée avec succès');
+
+            await this.loadCirculations(this.getCurrentParams());
+          } catch (err) {
+            console.error('Erreur suppression:', err);
+            const message = err.data?.message || 'Impossible de supprimer cette circulation';
+            CirculationUi.showError(message, '#delete-form-error');
+          } finally {
+            $btn.prop('disabled', false);
+            closeLoader('#delete-loader');
+          }
+        });
+    });
+
+    // Voir (Détail)
+    $(document).on('click', '[data-action="view"]', function (e) {
+      e.preventDefault();
+      const id = $(this).data('id');
+      window.location.href = `/circulations/detail/${id}/`;
+    });
+
+    // Détail / Timeline
+    $(document).on('click', '[data-action="view-timeline"]', async e => {
+      const id = $(e.currentTarget).data('id');
+      try {
+        const res = await CirculationService.fetchOne(id);
+        CirculationUi.renderTimeline(res.data);
+        new bootstrap.Modal(document.getElementById('modal-timeline')).show();
+      } catch (err) {
+        CirculationUi.showError('Impossible de charger la timeline');
+      }
+    });
+  },
+
+  // ─── Événements du Workflow (Création & Traitement) ───────────────
+  bindWorkflowEvents() {
+    // Écouter le changement de document pour filtrer
+    $('#doc-select').on('change', e => {
+      console.log('cellules map : ', this.docCelluleMap);
+      const docId = e.target.value;
+      const celluleId = this.docCelluleMap[docId];
+      // Filtrer les selects déjà affichés
+      CirculationUi.filterUserSelects(celluleId);
+    });
+
+    // Ajout d'étape : passer la cellule actuelle
+    $('#btn-add-etape').on('click', () => {
+      const currentDocId = $('#doc-select').val();
+      const activeCelluleId = this.docCelluleMap[currentDocId] || null;
+
+      const html = CirculationUi.renderEtapeRow(this.etapeIndex, activeCelluleId);
+      $('#etapes-container').append(html);
+
+      this.etapeIndex++;
+    });
+
+    $(document).on('click', '.remove-etape', function () {
+      CirculationController.reindexEtapes();
+      $(this).closest('.etape-item').remove();
+    });
+
+    // Soumission Initialisation Circuit
+    $('#initierCircuitForm').on('submit', async e => {
+      e.preventDefault();
+      const $btn = $('#save-circuit-btn');
+      const data = {
+        document: $('#doc-select').val(),
+        titre: $('#circuit-titre').val(),
+        description: $('#circuit-desc').val(),
+        etapes: []
+      };
+
+      $('.etape-item').each(function (i) {
+        data.etapes.push({
+          destinataire: $(this).find('select').val(),
+          ordre: i + 1
+        });
+      });
+
+      try {
+        CirculationService.validate(data);
+        $btn.prop('disabled', true);
+        let response = await CirculationService.initierCircuit(data);
+        CirculationUi.showSuccess(response.message || 'Circuit initié avec succès', '#form-success');
+        setTimeout(async () => {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modal-initier-circuit'));
+          if (modalInstance) modalInstance.hide();
+          await this.loadCirculations(this.getCurrentParams());
+          $('#initierCircuitForm')[0].reset();
+        }, 3000);
+      } catch (err) {
+        const msg = err.data?.errors || err.data?.message || 'Erreur de validation';
+        CirculationUi.showError(msg, '#form-error');
+      } finally {
+        $btn.prop('disabled', false);
+      }
+    });
+
+    // 2. TRAITEMENT D'UNE ÉTAPE (Décision)
+    $(document).on('click', '[data-action="process"]', e => {
+      const id = $(e.currentTarget).data('id');
+      $('#process-circ-id').val(id);
+      new bootstrap.Modal(document.getElementById('modal-traiter-etape')).show();
+    });
+
+    $('#traitementForm').on('submit', async e => {
+      e.preventDefault();
+      const $form = $(e.currentTarget);
+      const $btn = $('#save-traiter-btn');
+
+      const id = $('#process-circ-id').val();
+      const decisionData = {
+        decision: $('input[name="decision"]:checked').val(),
+        commentaire: $('#decision-commentaire').val()
+      };
+
+      try {
+        CirculationService.validateDecision(decisionData);
+        $btn.prop('disabled', true);
+        startLoader('#traiter-form-loader');
+        let res = await CirculationService.traiterEtape(id, decisionData);
+        CirculationUi.showSuccess(res.message || 'Décision enregistrée', '#traiter-form-success');
+        setTimeout(async () => {
+          const modalElement = document.getElementById('modal-traiter-etape');
+          const modalInstance = bootstrap.Modal.getInstance(modalElement);
+          if (modalInstance) modalInstance.hide();
+          await CirculationController.loadCirculations(CirculationController.getCurrentParams());
+          $form[0].reset();
+        }, 2000);
+      } catch (err) {
+        const errorMsg = err.data?.message || err.message || 'Erreur lors du traitement';
+        CirculationUi.showError(errorMsg, '#traiter-form-error');
+      } finally {
+        $btn.prop('disabled', false);
+        closeLoader('#traiter-form-loader');
+      }
+    });
+  },
+
+  getCurrentParams() {
+    return Object.fromEntries(new FormData($('#circ-search-form')[0]));
+  },
+
+  reindexEtapes() {
+    document.querySelectorAll('.etape-item').forEach((row, idx) => {
+      row.dataset.index = idx;
+      row.querySelector('.text-center').innerText = idx + 1;
+      row.querySelector('select').name = `etapes[${idx}][destinataire]`;
+    });
+  }
+};
+
+CirculationController.init();

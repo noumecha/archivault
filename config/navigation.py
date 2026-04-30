@@ -21,7 +21,7 @@ SIDEBAR_MENU = [
                 "title": "Circulations",
                 "url_prefix": "/circulation/circulations/",
                 "url_name": "circulation_list",
-                "roles": ["superadmin", "administrateur", "superviseur"],
+                "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
             },
             {
                 "title": "Tâches",

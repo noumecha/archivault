@@ -177,6 +177,37 @@
     </div>
   </div>
 
+  {# Modal d'une circulation sur le document #}
+  <div class="modal fade" id="create-documentCirculation-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form id="documentCirculationForm">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modal-title">Création d'une Circulation sur le document</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <hr class="my-0">
+          <div class="modal-body">
+            {% include 'components/forms/circulation_form.html' %}
+            <div class="alert alert-success mt-2" style="display: none;" id="circulation-form-success"></div>
+            <div class="alert alert-danger mt-2" style="display: none;" id="circulation-form-error"></div>
+            <input type="hidden" name="id" id="update-id">
+          </div>
+          <hr class="my-0">
+          <div class="modal-footer mt-2 flex-row-reverse">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
+              <span id="save-btn-text">Initier la Circulation</span>
+              <div id="form-loader" class="d-none ms-2">
+                <i class="ri-loader-2-fill spin text-white"></i>
+              </div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   {# Modal Suppression Unique #}
   <div class="modal fade" id="delete-document-modal" tabindex="-1">
     <div class="modal-dialog">
@@ -245,6 +276,25 @@
     </div>
   </div>
 </div>
+
+{# liste des users pour javascript #}
+<select id="user-source-list" class="d-none">
+    <option value="">Sélectionner un utilisateur...</option>
+    {% for user in utilisateurs %}
+        <option value="{{ user.id }}" data-cellule="{{ user.cellule.id }}">
+            {{ user.get_full_name|default:user.username }}
+        </option>
+    {% endfor %}
+</select>
+
+{# On passe le mapping Doc -> Cellule au JS via un script JSON simple #}
+<script id="doc-cellule-data" type="application/json">
+    {
+        {% for doc in documents %}
+            "{{ doc.id }}": "{{ doc.cellule.id }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
 {% endblock %}
 
 {% block extra_js %}

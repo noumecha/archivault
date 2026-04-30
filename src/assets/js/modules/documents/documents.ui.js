@@ -43,14 +43,38 @@ export const DocumentUi = {
     const p = doc.user_actions;
 
     // Logique de l'aperçu
+    const isPdf = fileExt === 'pdf';
+    const isWord = ['doc', 'docx'].includes(fileExt);
+    const isExcel = ['xls', 'xlsx'].includes(fileExt);
+
+    const iconClass = isPdf
+      ? 'ri-file-pdf-line'
+      : isWord
+        ? 'ri-file-word-line'
+        : isExcel
+          ? 'ri-file-excel-line'
+          : 'ri-file-text-line';
+    const bgClass = isPdf
+      ? 'bg-label-danger'
+      : isWord
+        ? 'bg-label-primary'
+        : isExcel
+          ? 'bg-label-success'
+          : 'bg-label-secondary';
+
     const preview = isImage
       ? `<img src="${doc.fichier}" class="card-img-top" style="height:150px; object-fit:cover;">`
-      : `<div class="d-flex align-items-center justify-content-center bg-light" style="height:150px;">
+      : `<div class="d-flex align-items-center justify-content-center bg-light position-relative" style="height:150px;">
            <div class="text-center">
-             <i class="ri-file-text-line" style="font-size:2.5rem;"></i><br>
+             <i class="${iconClass} text-secondary" style="font-size:3rem;"></i><br>
              <strong class="text-uppercase">${fileExt}</strong>
            </div>
-         </div>`;
+           <div class="avatar position-absolute bottom-0 end-0 m-2">
+             <span class="avatar-initial rounded ${bgClass}">
+               <i class="${iconClass} ri-24px"></i>
+             </span>
+           </div>
+        </div>`;
 
     return `
       <div class="col-6 col-sm-4 col-md-3 mb-4">
@@ -83,7 +107,7 @@ export const DocumentUi = {
                 </a>
             </div>
             <div class="btn-group w-100">
-                <button title="Ajouter une circulation" class="btn btn-sm btn-outline-info ${!p.can_share ? 'disabled' : ''}" data-action="circulation" data-id="${doc.id}">
+                <button title="Ajouter une circulation" class="btn btn-sm btn-outline-info ${!p.can_share ? 'disabled' : ''}" data-action="add-circulation" data-id="${doc.id}">
                     <i class="ri-share-forward-line"></i>
                 </button>
                 ${
@@ -145,7 +169,6 @@ export const DocumentUi = {
   createDocumentRow(document) {
     const etatBadge = this.getEtatBadge(document);
     const p = document.user_actions;
-    console.log('p : ', p);
     return `
       <tr data-document-id="${document.id}">
         <th style="width: 40px;">
@@ -182,7 +205,7 @@ export const DocumentUi = {
               ${
                 p.can_share
                   ? `
-                <a href="#" class="dropdown-item" data-action="circulation" data-id="${document.id}">
+                <a href="#" class="dropdown-item" data-action="add-circulation" data-id="${document.id}">
                   <i class="ri-share-forward-line me-1"></i>Ajouter une circulation
                 </a>`
                   : ''
@@ -278,20 +301,45 @@ export const DocumentUi = {
   },
 
   /**
+   * Prépare le modal de création de la circualation avec un document pré-sélectionné
+   * @param {string|number} documentId - L'ID du document
+   */
+  renderCirculatFormForDocument(documentId) {
+    const $form = $('#documentCirculationForm');
+    $form[0].reset();
+    $('#etapes-container').empty();
+
+    // On vide l'ID d'update pour être sûr d'être en mode création
+    // $('#update-id').val('');
+    const $documentSelect = $('#doc-select');
+    console.log('document select : ', $documentSelect);
+    if ($documentSelect.length) {
+      $documentSelect.val(documentId).trigger('change');
+      $documentSelect
+        .css({
+          'pointer-events': 'none',
+          'background-color': '#e9ecef'
+        })
+        .attr('tabindex', '-1');
+      $documentSelect.trigger('change');
+    }
+
+    $('#modal-title').text('Nouvelle Circulation pour un document');
+    $('#save-btn-text').text('Initier la Circulation');
+    $('#form-error, #form-success').hide();
+  },
+
+  /**
    * Prépare le modal de création de tâche avec un document pré-sélectionné
    * @param {string|number} documentId - L'ID du document
    */
   renderTacheFormForDocument(documentId) {
     const $form = $('#documentTacheForm');
     $form[0].reset();
-
-    // On vide l'ID d'update pour être sûr d'être en mode création
     $('#update-id').val('');
     const $documentSelect = $('#document');
     if ($documentSelect.length) {
       $documentSelect.val(documentId).trigger('change');
-      // On utilise 'pointer-events: none' et un fond grisé pour simuler le disabled
-      // sans casser l'envoi des données HTML
       $documentSelect
         .css({
           'pointer-events': 'none',

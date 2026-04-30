@@ -16,7 +16,7 @@ from config.mixins.permissions import RoleRequiredMixin
 from config.roles import RoleUtilisateur, is_admin, is_superadmin, is_superviseur
 from apps.administration.models import Cellule
 from web_project import TemplateLayout
-
+from apps.circulation.models import CirculationDocument, StatutCirculation, EtapeCirculation
 
 # ─────────────────────────────────────────────
 # MIXINS CUSTOM
@@ -51,110 +51,105 @@ class CanCreateCirculationMixin(UserPassesTestMixin):
 # ─────────────────────────────────────────────
 # CIRCULATION
 # ─────────────────────────────────────────────
-class CirculationView(LoginRequiredMixin, TemplateView):
-    template_name = "pages/circulation_list.html"
+class CirculationManagementView(RoleRequiredMixin, BaseCRUDView):
+    """Vue de gestion des circuits de circulation."""
+    model = CirculationDocument
+    list_route = 'circulation_management'
+    template_name = "pages/circulation_management.html"
+    context_object_name = 'circulations'
+
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR,
+        RoleUtilisateur.RESPONSABLE,
+        RoleUtilisateur.GESTIONNAIRE
+    ]
+
+    # Configuration des filtres pour BaseCRUDView
+    filters = [
+        ('statut', StatutCirculation, 'Statut'),
+        ('initie_par', Utilisateur, 'Initié par'),
+        ('document', Document, 'Document'),
+    ]
+
+    search_fields = ['titre', 'description', 'document__titre']
+    headers = ["Document", "Titre", "Initié par", "Date Début", "Progression", "Statut"]
+
+    def get_queryset(self, search_query=None):
+        user = self.request.user
+        queryset = super().get_queryset(search_query).select_related('document', 'initie_par')
+
+        # Optimisation : prefetch l'étape actuelle pour la progression
+        queryset = queryset.prefetch_related('etapes')
+
+        if is_admin(user) or is_superadmin(user):
+            return queryset
+
+        # Un utilisateur voit ce qu'il a initié OU ce qui passe par lui (via les étapes)
+        return queryset.filter(
+            Q(initie_par=user) | Q(etapes__destinataire=user)
+        ).distinct()
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context = TemplateLayout.init(self, context)
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+        user = self.request.user
 
-        circulations = CirculationDocument.objects.select_related('document', 'initie_par').all()
+        # Données pour les modals (création de circuit)
+        context['statuts'] = StatutCirculation.choices
 
-        context['circulations'] = circulations
-        context['can_create_circulation'] = PermissionService.peut_creer_circulation(self.request.user)
+        # Filtrage des listes pour le formulaire d'initialisation
+        if is_admin(user) or is_superadmin(user):
+            context['utilisateurs'] = Utilisateur.objects.exclude(id=user.id)
+            context['documents'] = Document.objects.all()
+        else:
+            # On ne propose que les utilisateurs de la même cellule pour les étapes
+            context['utilisateurs'] = Utilisateur.objects.filter(cellule=user.cellule).exclude(id=user.id)
+            context['documents'] = Document.objects.filter(cellule=user.cellule)
+
+        # Injection des items filtrés dans les filtres de BaseCRUDView
+        for f in context.get('filters', []):
+            if f['name'] == 'initie_par':
+                f['items'] = context['utilisateurs']
+            if f['name'] == 'document':
+                f['items'] = context['documents']
 
         return context
 
-
 class CirculationDetailView(LoginRequiredMixin, TemplateView):
+    """Vue détaillée pour voir la timeline et traiter l'étape actuelle."""
     template_name = "pages/circulation_detail.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = TemplateLayout.init(self, context)
 
-        pk = self.kwargs['pk']
-        circulation = get_object_or_404(CirculationDocument, pk=pk)
-        etapes = circulation.etapes.select_related('destinataire', 'traite_par').all()
+        circulation = get_object_or_404(
+            CirculationDocument.objects.select_related('document', 'initie_par'),
+            pk=self.kwargs['pk']
+        )
+
+        # Récupération ordonnée des étapes
+        etapes = circulation.etapes.select_related('destinataire', 'traite_par').all().order_by('ordre')
+        etape_actuelle = etapes.filter(est_actuelle=True).first()
 
         context['circulation'] = circulation
         context['etapes'] = etapes
+        context['etape_actuelle'] = etape_actuelle
+        context['choices_decisions'] = [
+            StatutCirculation.VALIDE,
+            StatutCirculation.REJETE,
+            StatutCirculation.RETOURNE
+        ]
 
-        return context
-
-
-class CirculationCreateView(LoginRequiredMixin, CanCreateCirculationMixin, TemplateView):
-    template_name = "circulation_form.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context = TemplateLayout.init(self, context)
-
-        document = get_object_or_404(Document, pk=self.kwargs['document_pk'])
-        utilisateurs = Utilisateur.objects.all()
-
-        context['document'] = document
-        context['utilisateurs'] = utilisateurs
-
-        return context
-
-    def post(self, request, *args, **kwargs):
-        document = get_object_or_404(Document, pk=self.kwargs['document_pk'])
-        titre = request.POST.get('titre')
-        description = request.POST.get('description', '')
-        destinataires = request.POST.getlist('destinataires[]')
-
-        circulation = CirculationDocument.objects.create(
-            document=document,
-            titre=titre,
-            description=description,
-            initie_par=request.user,
-            statut=StatutCirculation.EN_COURS,
+        # Vérification si l'utilisateur actuel peut traiter l'étape
+        context['peut_traiter'] = (
+            etape_actuelle and
+            etape_actuelle.destinataire == self.request.user and
+            etape_actuelle.statut == StatutCirculation.EN_COURS
         )
 
-        for ordre, user_id in enumerate(destinataires, start=1):
-            EtapeCirculation.objects.create(
-                circulation=circulation,
-                ordre=ordre,
-                destinataire=Utilisateur.objects.get(pk=user_id),
-            )
-
-        AuditService.log(request, ActionAudit.CIRCULATION, circulation, {
-            'action': 'creation_circuit',
-            'document': document.titre,
-            'etapes': len(destinataires),
-        })
-
-        return redirect('circulation_detail', pk=circulation.pk)
-
-
-@login_required
-@require_POST
-def etape_traiter(request, etape_pk):
-    etape = get_object_or_404(EtapeCirculation, pk=etape_pk, destinataire=request.user)
-    statut = request.POST.get('statut')
-    commentaire = request.POST.get('commentaire', '')
-
-    etape.statut = statut
-    etape.commentaire = commentaire
-    etape.traite_par = request.user
-    etape.date_traitement = timezone.now()
-    etape.save()
-
-    circulation = etape.circulation
-    etapes_restantes = circulation.etapes.filter(statut=StatutCirculation.EN_ATTENTE)
-    if not etapes_restantes.exists():
-        circulation.statut = StatutCirculation.CLOS
-        circulation.date_fin = timezone.now()
-        circulation.save()
-
-    AuditService.log(request, ActionAudit.CIRCULATION, etape, {
-        'statut': statut,
-        'commentaire': commentaire,
-    })
-
-    return JsonResponse({'success': True, 'statut': etape.statut})
-
+        return context
 
 # ─────────────────────────────────────────────
 # TÂCHES - GESTION (Assignation)

@@ -1,9 +1,17 @@
 # apps/circulation/api/serializers.py
 
 from rest_framework import serializers
-from apps.circulation.models import Tache, CirculationDocument, CommentaireTache
+from apps.circulation.models import *
 from config.roles import *
 from ..services.permission_service import *
+
+class EtapeCirculationSerializer(serializers.ModelSerializer):
+    destinataire_name = serializers.ReadOnlyField(source='destinataire.get_full_name')
+    statut_display = serializers.CharField(source='get_statut_display', read_only=True)
+
+    class Meta:
+        model = EtapeCirculation
+        fields = '__all__'
 
 class CirculationDocumentSerializer(serializers.ModelSerializer):
     """
@@ -13,6 +21,8 @@ class CirculationDocumentSerializer(serializers.ModelSerializer):
     initie_par_name = serializers.ReadOnlyField(source='initie_par.username')
     statut_display = serializers.CharField(source='get_statut_display', read_only=True)
     etapes_count = serializers.SerializerMethodField()
+    etapes = EtapeCirculationSerializer(many=True, read_only=True) # INDISPENSABLE pour la timeline
+    etape_actuelle = serializers.SerializerMethodField()
 
     class Meta:
         model = CirculationDocument
@@ -20,12 +30,16 @@ class CirculationDocumentSerializer(serializers.ModelSerializer):
             'id', 'document', 'document_titre', 'titre', 'description',
             'initie_par', 'initie_par_name', 'statut', 'statut_display',
             'date_debut', 'date_fin', 'etapes_count',
-            'Date_creation', 'Date_miseajour'
+            'Date_creation', 'Date_miseajour', 'etapes', 'etape_actuelle'
         ]
         read_only_fields = ['initie_par', 'Date_creation', 'Date_miseajour']
 
     def get_etapes_count(self, obj):
         return obj.etapes.count()
+
+    def get_etape_actuelle(self, obj):
+        etape = obj.etapes.filter(est_actuelle=True).first()
+        return EtapeCirculationSerializer(etape).data if etape else None
 
 class CommentaireTacheSerializer(serializers.ModelSerializer):
     auteur_name = serializers.ReadOnlyField(source='auteur.username')
@@ -61,6 +75,7 @@ class TacheSerializer(serializers.ModelSerializer):
 
     def get_tache_actions(self, obj):
         user = self.context['request'].user
+        print("user : ", user)
         return {
             'can_edit': PermissionService.peut_valider_tache(user, obj),
             'can_delete': PermissionService.peut_supprimer_tache(user, obj),

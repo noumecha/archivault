@@ -1,0 +1,247 @@
+{# apps/circulation/templates/pages/circulation_management.html #}
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Circulation des Documents{% endblock %}
+
+{% block content %}
+<div class="card p-3">
+  <div class="card-header">
+    <div class="row d-flex justify-content-between align-items-center">
+      <div class="col-md-8">
+        <h3>Circulations</h3>
+        <p class="text-sm">Suivre et gérer le circuit des documents</p>
+      </div>
+      <div class="col-md-4 text-end">
+        <button type="button" class="btn" id="refresh-button">
+          <i class="ri-restart-line"></i> Rafraîchir
+        </button>
+        {% if request.user.role in 'admin,superadmin,superviseur,responsable' %}
+          <button type="button" class="btn btn-lg btn-primary no-transform text-white"
+              id="add-button" data-bs-toggle="modal" data-bs-target="#modal-initier-circuit">
+            <i class="ri- git-branch-line"></i> Initier un Circuit
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Formulaire de recherche et filtres #}
+    <form class="row d-flex mt-3" id="circ-search-form">
+      <div class="col-md-12">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Rechercher un circuit ou un document..." name="search" id="search">
+          <button class="btn btn-outline-primary" type="button" id="clearSearch">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+
+      {% for filter in filters %}
+        <div class="col-md-6 col-lg-6 d-flex mt-2 gap-2">
+          <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
+            <option value="">-- {{ filter.label|capfirst }} --</option>
+            {% for item in filter.items %}
+              {% if item.value %}
+                <option value="{{ item.value }}">{{ item.label }}</option>
+              {% else %}
+                <option value="{{ item.id }}">{{ item }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      {% endfor %}
+
+    </form>
+    <div id="bulk-actions-container" class="mt-2 d-none">
+      <button id="btn-bulk-delete" class="btn btn-danger btn-sm">
+        <i class="ri-delete-bin-line"></i> Supprimer la sélection (<span id="selected-count">0</span>)
+      </button>
+    </div>
+    <div class="alert alert-success col-12 text-center mt-2" style="display:none;" id="message-show-success"></div>
+    <div class="alert alert-danger col-12 text-center mt-2" style="display:none;" id="message-show-error"></div>
+  </div>
+
+  {# Conteneur pour la table (chargé par le Controller JS) #}
+  <div id="circulation-table-container">
+    {% include 'components/tables/circulation_table.html' %}
+  </div>
+</div>
+
+{# --- MODALS --- #}
+
+{# 1. Modal Initialisation Circuit #}
+<div class="modal fade" id="modal-initier-circuit" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="initierCircuitForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Initier une nouvelle circulation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <hr class="m-0">
+        <div class="modal-body">
+          <div id="tache-form-content">
+            {% include 'components/forms/circulation_form.html' %}
+          </div>
+          <div class="alert alert-danger mt-3" style="display: none;" id="form-error"></div>
+          <div class="alert alert-success mt-3" style="display: none;" id="form-success"></div>
+        </div>
+        <hr class="m-0">
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button id="save-circuit-btn" class="d-flex justify-content-center align-items-center btn btn-primary no-transform" type="submit">
+            <span class="" id="save-btn-text">Lancer la circulation</span>
+            <div id="form-loader" class="d-none text-center">
+              <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+            </div>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# 2. Modal Timeline (Visualisation) #}
+<div class="modal fade" id="modal-timeline" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-timeline-title">Suivi du circuit</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="timeline-container">
+            {# Injecté par CirculationUi.renderTimeline #}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# 3. Modal Traitement (Décision) #}
+<div class="modal fade" id="modal-traiter-etape" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="traitementForm">
+          <input type="hidden" id="process-circ-id">
+          <div class="modal-header">
+            <h5 class="modal-title">Traiter le document</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <hr class="mt-0">
+          <div class="modal-body">
+            <div class="d-flex justify-content-around mb-4">
+                <div class="form-check custom-option custom-option-basic">
+                    <label class="form-check-label custom-option-content" for="dec-valide">
+                        <input class="form-check-input" type="radio" name="decision" id="dec-valide" value="valide" checked>
+                        <span class="custom-option-header"><span class="h6 mb-0 text-success">Valider</span></span>
+                    </label>
+                </div>
+                <div class="form-check custom-option custom-option-basic">
+                    <label class="form-check-label custom-option-content" for="dec-rejete">
+                        <input class="form-check-input" type="radio" name="decision" id="dec-rejete" value="rejete">
+                        <span class="custom-option-header"><span class="h6 mb-0 text-danger">Rejeter</span></span>
+                    </label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Commentaire / Justification</label>
+                <textarea class="form-control" id="decision-commentaire" rows="3" placeholder="Obligatoire en cas de rejet..."></textarea>
+            </div>
+            <div class="alert alert-danger mt-3" style="display: none;" id="traiter-form-error"></div>
+            <div class="alert alert-success mt-3" style="display: none;" id="traiter-form-success"></div>
+          </div>
+          <hr class="mt-0">
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button id="save-traiter-btn" class="d-flex justify-content-center align-items-center btn btn-primary no-transform" type="submit">
+              <span class="" id="save-btn-text">Enregistrer la décision</span>
+              <div id="traiter-form-loader" class="d-none text-center">
+                <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+              </div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+</div>
+
+{# Modal Suppression #}
+<div class="modal fade" id="delete-circulation-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer la circulation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <hr>
+      <div class="modal-body pb-0">
+        <p>Êtes-vous sûr de vouloir supprimer cette circulation ?</p>
+        <div class="alert alert-danger" style="display: none;" id="delete-form-error"></div>
+      </div>
+      <hr>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button id="confirm-delete-btn" class="d-flex justify-content-center align-items-center btn btn-danger" type="button">
+          <span class="" id="delete-btn-text">Supprimer</span>
+          <div id="delete-loader" class="d-none text-center">
+            <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Modal Suppression en masse #}
+<div class="modal fade" id="bulk-delete-modal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Supprimer les circulations sélectionnés</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <hr>
+      <div class="modal-body pb-0">
+        <p>Êtes-vous sûr de vouloir supprimer les circulations sélectionnés ?</p>
+        <div class="alert alert-danger" style="display: none;" id="bulk-delete-form-error"></div>
+      </div>
+      <hr>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button id="confirm-bulk-delete-btn" class="d-flex justify-content-center align-items-center btn btn-danger" type="button">
+          <span class="" id="bulk-delete-btn-text">Supprimer</span>
+          <div id="bulk-delete-loader" class="d-none text-center">
+            <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# liste des users pour javascript #}
+<select id="user-source-list" class="d-none">
+    <option value="">Sélectionner un utilisateur...</option>
+    {% for user in utilisateurs %}
+        <option value="{{ user.id }}" data-cellule="{{ user.cellule.id }}">
+            {{ user.get_full_name|default:user.username }}
+        </option>
+    {% endfor %}
+</select>
+
+{# On passe le mapping Doc -> Cellule au JS via un script JSON simple #}
+<script id="doc-cellule-data" type="application/json">
+    {
+        {% for doc in documents %}
+            "{{ doc.id }}": "{{ doc.cellule.id }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script type="module" src="{% static 'js/modules/circulations/circulations.controller.js' %}"></script>
+{% endblock %}
