@@ -74,7 +74,7 @@
                             <span class="timeline-point {% if etape.statut == 'valide' %}timeline-point-success{% elif etape.statut == 'rejete' %}timeline-point-danger{% elif etape.est_actuelle %}timeline-point-warning{% else %}timeline-point-secondary{% endif %}"></span>
                             <div class="timeline-event">
                                 <div class="timeline-header mb-1">
-                                    <h6 class="mb-0">Étape {{ etape.ordre }} : {{ etape.destinataire.get_full_name }}</h6>
+                                    <h6 class="mb-0">Étape {{ etape.ordre }} : {{ etape.destinataire.get_full_name|default:etape_actuelle.destinataire.username }}</h6>
                                     <small class="text-muted">
                                         {% if etape.date_traitement %}
                                             {{ etape.date_traitement|date:"d/m/Y H:i" }}
@@ -135,7 +135,7 @@
                     {% if circulation.statut == 'en_cours' %}
                     <div class="alert alert-outline-warning d-flex align-items-center" role="alert">
                         <i class="ri-information-line me-2"></i>
-                        Document actuellement chez : <strong>{{ etape_actuelle.destinataire.username }}</strong>
+                        Document actuellement chez : <strong> {{ etape_actuelle.destinataire.get_full_name|default:etape_actuelle.destinataire.username }} </strong>
                     </div>
                     {% endif %}
                 </div>
