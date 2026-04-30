@@ -531,7 +531,7 @@ class DocumentDetailView(LoginRequiredMixin, TemplateView):
         circulations = CirculationDocument.objects.filter(document=document)
 
         # Log de consultation
-        AuditService.log(self.request, ActionAudit.CONSULTATION, document)
+        # AuditService.log(self.request, ActionAudit.CONSULTATION, document)
 
         context.update({
             'document': document,
