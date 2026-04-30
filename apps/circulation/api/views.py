@@ -33,7 +33,7 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     # ── Recherche & Filtrage ─────────────────────────────────────────────────
     search_fields = ['titre', 'description', 'document__titre']
-    filter_fields = ['statut', 'priorite', 'assignee_a', 'assignee_par']
+    filter_fields = ['statut', 'priorite', 'assignee_a', 'assignee_par', 'document']
 
     # ── Permissions ──────────────────────────────────────────────────────────
     allowed_roles = [
@@ -162,7 +162,7 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     model = CirculationDocument
     serializer_class = CirculationDocumentSerializer
     search_fields = ['titre', 'description', 'document__titre']
-    filter_fields = ['statut', 'initie_par']
+    filter_fields = ['statut', 'initie_par', 'document']
 
     allowed_roles = [
         RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN,
@@ -172,17 +172,18 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     def get_queryset(self):
         user = self.request.user
         # Optimisation avec prefetch_related pour les étapes
-        qs = CirculationDocument.objects.select_related('document', 'initie_par')\
-                                        .prefetch_related('etapes__destinataire')
+        qs = CirculationDocument.objects.select_related('document', 'initie_par').prefetch_related('etapes__destinataire')
 
         if is_admin(user) or is_superadmin(user):
             return super().get_queryset(queryset=qs)
 
         # Un utilisateur voit les circulations qu'il a initiées
         # OU celles où il est destinataire d'une étape
-        return qs.filter(
+        qs = qs.filter(
             Q(initie_par=user) | Q(etapes__destinataire=user)
         ).distinct()
+
+        return super().get_queryset(queryset=qs)
 
     # ─────────────────────────────────────────────────────────────────────────
     # ACTIONS CUSTOM
