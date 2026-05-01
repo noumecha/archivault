@@ -244,17 +244,22 @@ export const TacheController = {
 
       try {
         $btn.prop('disabled', true);
-        startLoader('#form-loader');
 
         const res = await TacheService.addComment(taskId, data);
 
-        TacheUi.showSuccess(res.message || 'Commentaire ajouté');
+        TacheUi.showSuccess(res.message || 'Commentaire ajouté', '#form-success');
+        console.log('res : ', res);
+        setTimeout(async () => {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('commentModal'));
+          if (modalInstance) modalInstance.hide();
+          await this.loadTaches(this.getCurrentParams());
+          $form[0].reset();
+        }, 3000);
         setTimeout(() => window.location.reload(), 1000);
       } catch (err) {
-        TacheUi.showError(err.data?.message || "Erreur lors de l'ajout du commentaire");
+        TacheUi.showError(err.data?.message || "Erreur lors de l'ajout du commentaire", '#form-error');
       } finally {
         $btn.prop('disabled', false);
-        closeLoader('#form-loader');
       }
     });
 

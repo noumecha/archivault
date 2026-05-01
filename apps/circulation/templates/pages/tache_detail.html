@@ -136,20 +136,22 @@
     <div class="modal fade" id="commentModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Ajouter un commentaire</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <hr class="my-0">
-          <div class="modal-body">
-            <form id="commentForm" method="post" action="">
-              {% csrf_token %}
-              <div class="mb-3">
-                <label class="form-label">Votre commentaire <span class="text-danger">*</span></label>
-                <textarea name="contenu" class="form-control" rows="4" required placeholder="Décrivez votre avancement, vos difficultés..."></textarea>
-              </div>
-              <div class="alert alert-success mt-2" style="display: none;" id="form-success"></div>
-              <div class="alert alert-danger mt-2" style="display: none;" id="form-error"></div>
+          <form id="commentForm" method="post" action="">
+            <div class="modal-header">
+              <h5 class="modal-title">Ajouter un commentaire</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <hr class="my-0">
+            <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label">Votre commentaire <span class="text-danger">*</span></label>
+                  <textarea name="contenu" class="form-control" rows="4" required placeholder="Décrivez votre avancement, vos difficultés..."></textarea>
+                </div>
+                <div class="alert alert-success mt-2" style="display: none;" id="form-success"></div>
+                <div class="alert alert-danger mt-2" style="display: none;" id="form-error"></div>
+            </div>
+            <hr>
+            <div class="modal-footer flex-row-reverse">
               <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                 <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
@@ -159,8 +161,8 @@
                   </div>
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>

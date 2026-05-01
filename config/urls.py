@@ -38,6 +38,7 @@ urlpatterns = [
     path("", include("apps.tables.urls")),
     # apps urls
     path('', include('apps.documents.urls')),
+    path('', include('apps.notifications.urls')),
     path('', include('apps.administration.urls')),
     path('', include('apps.circulation.urls')),
     path('historique', include('apps.historique.urls')),
