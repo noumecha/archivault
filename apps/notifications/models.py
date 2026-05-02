@@ -1,17 +1,39 @@
+# apps/notifications/models.py
 from django.db import models
-from documents.models import Document
-from users.models import Utilisateur
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
-# notifications/models.py
 class Notification(models.Model):
-    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
-    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+
+    # Ajout suggéré dans Notification
+    class Priority(models.TextChoices):
+        LOW = 'low', 'Basse'
+        MEDIUM = 'medium', 'Moyenne'
+        HIGH = 'high', 'Haute'
+
+    class Category(models.TextChoices):
+        TACHE = 'tache', 'Tâche'
+        CIRCULATION = 'circulation', 'Circulation'
+        SYSTEME = 'systeme', 'Système'
+
+    destinataire = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    titre = models.CharField(max_length=255)
     message = models.TextField()
-    vue = models.BooleanField(default=False)
-    date_envoi = models.DateTimeField(auto_now_add=True)
-    # timestamp
-    Date_creation = models.DateTimeField(auto_now_add=True)
-    Date_miseajour = models.DateTimeField(auto_now=True)
+    categorie = models.CharField(max_length=20, choices=Category.choices, default=Category.SYSTEME)
+    priorite = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)
+
+    # Pour pointer vers n'importe quel objet (Tache, Document, etc.)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    url_action = models.CharField(max_length=255, blank=True, null=True) # Lien vers l'action
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Notif to {self.utilisateur} | {self.document}"
+        return f"{self.destinataire.username} - {self.titre}"

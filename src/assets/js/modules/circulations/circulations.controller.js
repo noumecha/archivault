@@ -53,6 +53,7 @@ export const CirculationController = {
       $('.circulation-checkbox').prop('checked', isChecked);
       toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container');
     });
+
     // suppression groupée
     $(document).on('click', '#btn-bulk-delete', function (e) {
       e.preventDefault();
@@ -120,7 +121,7 @@ export const CirculationController = {
     });
 
     // Supprimer
-    $(document).on('click', '[data-action="delete"]', e => {
+    $(document).on('click', '[data-action="delete-circulation"]', e => {
       e.preventDefault();
       const id = $(e.currentTarget).data('id');
       const modalElement = document.getElementById('delete-circulation-modal');
@@ -178,21 +179,29 @@ export const CirculationController = {
   bindWorkflowEvents() {
     // Écouter le changement de document pour filtrer
     $('#doc-select').on('change', e => {
-      console.log('cellules map : ', this.docCelluleMap);
       const docId = e.target.value;
-      const celluleId = this.docCelluleMap[docId];
-      // Filtrer les selects déjà affichés
+      const celluleId = this.docCelluleMap[docId] || null;
+
+      // Optionnel : Vider les étapes si on change de document pour éviter les erreurs
+      $('#etapes-container').empty();
+      this.etapeIndex = 0;
+
+      // Appliquer le filtre (UI)
       CirculationUi.filterUserSelects(celluleId);
     });
 
-    // Ajout d'étape : passer la cellule actuelle
-    $('#btn-add-etape').on('click', () => {
+    $('#btn-add-etape').on('click', e => {
       const currentDocId = $('#doc-select').val();
       const activeCelluleId = this.docCelluleMap[currentDocId] || null;
 
+      // Si pas de cellule, on ne fait rien (sécurité bouton)
+      if (!activeCelluleId) {
+        CirculationUi.showSuccess('Veuillez sélectionner un document lié à une cellule.', '#form-error', null);
+        return;
+      }
+
       const html = CirculationUi.renderEtapeRow(this.etapeIndex, activeCelluleId);
       $('#etapes-container').append(html);
-
       this.etapeIndex++;
     });
 
@@ -240,41 +249,58 @@ export const CirculationController = {
 
     // 2. TRAITEMENT D'UNE ÉTAPE (Décision)
     $(document).on('click', '[data-action="process"]', e => {
-      const id = $(e.currentTarget).data('id');
+      const $btn = $(e.currentTarget);
+      const id = $btn.data('id');
+      const ordre = $btn.data('ordre') || 'En cours';
+
       $('#process-circ-id').val(id);
+      $('#display-etape-ordre').text(ordre);
+
       new bootstrap.Modal(document.getElementById('modal-traiter-etape')).show();
     });
 
     $('#traitementForm').on('submit', async e => {
       e.preventDefault();
       const $form = $(e.currentTarget);
-      const $btn = $('#save-traiter-btn');
-
       const id = $('#process-circ-id').val();
+
+      if (!id) {
+        CirculationUi.showError('Erreur : ID de circulation introuvable.');
+        return;
+      }
+
       const decisionData = {
         decision: $('input[name="decision"]:checked').val(),
         commentaire: $('#decision-commentaire').val()
       };
 
+      const $btnSubmit = $('#save-traiter-btn');
+
       try {
         CirculationService.validateDecision(decisionData);
-        $btn.prop('disabled', true);
-        startLoader('#traiter-form-loader');
+        $btnSubmit.prop('disabled', true);
         let res = await CirculationService.traiterEtape(id, decisionData);
-        CirculationUi.showSuccess(res.message || 'Décision enregistrée', '#traiter-form-success');
+        CirculationUi.showSuccess(
+          res.message || 'Décision enregistrée',
+          '#traiter-show-success',
+          '#traiter-form-loader'
+        );
         setTimeout(async () => {
           const modalElement = document.getElementById('modal-traiter-etape');
           const modalInstance = bootstrap.Modal.getInstance(modalElement);
           if (modalInstance) modalInstance.hide();
-          await CirculationController.loadCirculations(CirculationController.getCurrentParams());
-          $form[0].reset();
-        }, 2000);
+          if (typeof CirculationController.loadCirculations === 'function') {
+            await CirculationController.loadCirculations();
+            $form[0].reset();
+          } else {
+            window.location.reload();
+          }
+        }, 1500);
       } catch (err) {
         const errorMsg = err.data?.message || err.message || 'Erreur lors du traitement';
-        CirculationUi.showError(errorMsg, '#traiter-form-error');
+        CirculationUi.showError(errorMsg, '#traiter-show-error', '#traiter-form-loader');
       } finally {
-        $btn.prop('disabled', false);
-        closeLoader('#traiter-form-loader');
+        $btnSubmit.prop('disabled', false);
       }
     });
   },

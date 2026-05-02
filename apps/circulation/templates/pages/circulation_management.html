@@ -79,7 +79,7 @@
           <h5 class="modal-title">Initier une nouvelle circulation</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <hr class="m-0">
+        <hr>
         <div class="modal-body">
           <div id="tache-form-content">
             {% include 'components/forms/circulation_form.html' %}
@@ -87,7 +87,7 @@
           <div class="alert alert-danger mt-3" style="display: none;" id="form-error"></div>
           <div class="alert alert-success mt-3" style="display: none;" id="form-success"></div>
         </div>
-        <hr class="m-0">
+        <hr>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
           <button id="save-circuit-btn" class="d-flex justify-content-center align-items-center btn btn-primary no-transform" type="submit">
@@ -123,46 +123,7 @@
 <div class="modal fade" id="modal-traiter-etape" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form id="traitementForm">
-          <input type="hidden" id="process-circ-id">
-          <div class="modal-header">
-            <h5 class="modal-title">Traiter le document</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <hr class="mt-0">
-          <div class="modal-body">
-            <div class="d-flex justify-content-around mb-4">
-                <div class="form-check custom-option custom-option-basic">
-                    <label class="form-check-label custom-option-content" for="dec-valide">
-                        <input class="form-check-input" type="radio" name="decision" id="dec-valide" value="valide" checked>
-                        <span class="custom-option-header"><span class="h6 mb-0 text-success">Valider</span></span>
-                    </label>
-                </div>
-                <div class="form-check custom-option custom-option-basic">
-                    <label class="form-check-label custom-option-content" for="dec-rejete">
-                        <input class="form-check-input" type="radio" name="decision" id="dec-rejete" value="rejete">
-                        <span class="custom-option-header"><span class="h6 mb-0 text-danger">Rejeter</span></span>
-                    </label>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Commentaire / Justification</label>
-                <textarea class="form-control" id="decision-commentaire" rows="3" placeholder="Obligatoire en cas de rejet..."></textarea>
-            </div>
-            <div class="alert alert-danger mt-3" style="display: none;" id="traiter-form-error"></div>
-            <div class="alert alert-success mt-3" style="display: none;" id="traiter-form-success"></div>
-          </div>
-          <hr class="mt-0">
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button id="save-traiter-btn" class="d-flex justify-content-center align-items-center btn btn-primary no-transform" type="submit">
-              <span class="" id="save-btn-text">Enregistrer la décision</span>
-              <div id="traiter-form-loader" class="d-none text-center">
-                <i class="ri-loader-2-fill ri-2x spin text-white"></i>
-              </div>
-            </button>
-          </div>
-        </form>
+        {% include 'components/forms/circualtion_traiter_form.html' %}
       </div>
     </div>
 </div>
@@ -235,7 +196,7 @@
 <script id="doc-cellule-data" type="application/json">
     {
         {% for doc in documents %}
-            "{{ doc.id }}": "{{ doc.cellule.id }}"{% if not forloop.last %},{% endif %}
+            "{{ doc.id }}": "{{ doc.cellule.id|default:'' }}"{% if not forloop.last %},{% endif %}
         {% endfor %}
     }
 </script>

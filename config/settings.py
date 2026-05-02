@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'apps.thematique',
     'apps.rapports',
     'apps.users',
+    'apps.notifications',
     'apps.administration',
     # autocomplete features
     'dal',
@@ -117,6 +118,7 @@ TEMPLATES = [
                 "config.context_processors.environment",
                 "config.context_processors.layout_context",
                 "config.context_processors.sidebar_context",
+                "apps.notifications.context_processors.notification_count",
             ],
             # templates tags librairies
             "libraries": {
