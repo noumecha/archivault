@@ -47,7 +47,7 @@ services:
       DEBUG: 'False'
     volumes:
     volumes:
-      - media_volume:/app/media  # <--- Ajoute ceci
+      - /home/archivault/media:/app/media
 networks:
   archivault_network:
     driver: bridge
