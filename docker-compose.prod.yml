@@ -45,9 +45,13 @@ services:
     environment:
       DJANGO_ENVIRONMENT: production
       DEBUG: 'False'
+    volumes:
+    volumes:
+      - media_volume:/app/media  # <--- Ajoute ceci
 networks:
   archivault_network:
     driver: bridge
 
 volumes:
   mysql_data_prod:
+  media_volume:
