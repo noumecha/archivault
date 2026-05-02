@@ -46,7 +46,6 @@ services:
       DJANGO_ENVIRONMENT: production
       DEBUG: 'False'
     volumes:
-    volumes:
       - /home/archivault/media:/app/media
 networks:
   archivault_network:
