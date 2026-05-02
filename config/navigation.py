@@ -80,6 +80,13 @@ SIDEBAR_MENU = [
         "roles": ["superadmin", "administrateur", "superviseur"],
     },
     {
+        "title": "Notifications",
+        "icon": "ri-notification-3-line",
+        "url_name": "notification_list",
+        "url_prefix": "/notifications/list",
+        "roles": ["superadmin", "administrateur", "superviseur", "gestionnaire", "responsable"],
+    },
+    {
         "title": "Profil",
         "icon": "ri-profile-line",
         "url_name": "user_profile",

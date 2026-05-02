@@ -4,12 +4,21 @@ import { TacheUi } from '../ui/taches.ui.js';
 import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
 
 export const TacheController = {
+  docCelluleMap: {}, // Stockage du mapping
+
   async init() {
+    // Récupération du mapping
+    const mapData = document.getElementById('doc-cellule-tache-data');
+    if (mapData) {
+      this.docCelluleMap = JSON.parse(mapData.textContent);
+    }
+
     if ($('#taches-tbody').length) {
       await this.loadTaches();
     }
     this.bindEvents();
     this.bindDetailEvents();
+    this.bindDocumentFilter();
   },
 
   // ─── Chargement des tâches ────────────────────────────────────────
@@ -29,6 +38,16 @@ export const TacheController = {
   },
 
   // ─── Événements ─────────────────────────────────────────────────────────
+
+  bindDocumentFilter() {
+    // On utilise la délégation d'événement car le select est dans un modal
+    $(document).on('change', '#document', e => {
+      const docId = e.target.value;
+      const celluleId = this.docCelluleMap[docId] || null;
+      TacheUi.filterAssigneeList(celluleId);
+    });
+  },
+
   bindEvents() {
     //Gestion de la sélection multiple
     $(document).on('change', '#check-all-taches', function () {
@@ -96,6 +115,9 @@ export const TacheController = {
       try {
         const res = await TacheService.fetchOne(id);
         TacheUi.renderForm(res.data);
+        const docId = res.data.document;
+        const celluleId = this.docCelluleMap[docId];
+        TacheUi.filterAssigneeList(celluleId);
         new bootstrap.Modal(document.getElementById('create-tache-modal')).show();
       } catch (err) {
         TacheUi.showError('Erreur chargement tâche');
@@ -244,17 +266,22 @@ export const TacheController = {
 
       try {
         $btn.prop('disabled', true);
-        startLoader('#form-loader');
 
         const res = await TacheService.addComment(taskId, data);
 
-        TacheUi.showSuccess(res.message || 'Commentaire ajouté');
+        TacheUi.showSuccess(res.message || 'Commentaire ajouté', '#form-success');
+        console.log('res : ', res);
+        setTimeout(async () => {
+          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('commentModal'));
+          if (modalInstance) modalInstance.hide();
+          await this.loadTaches(this.getCurrentParams());
+          $form[0].reset();
+        }, 3000);
         setTimeout(() => window.location.reload(), 1000);
       } catch (err) {
-        TacheUi.showError(err.data?.message || "Erreur lors de l'ajout du commentaire");
+        TacheUi.showError(err.data?.message || "Erreur lors de l'ajout du commentaire", '#form-error');
       } finally {
         $btn.prop('disabled', false);
-        closeLoader('#form-loader');
       }
     });
 

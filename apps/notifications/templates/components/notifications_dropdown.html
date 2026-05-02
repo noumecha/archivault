@@ -1,0 +1,32 @@
+<li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
+  <a class="nav-link dropdown-toggle hide-arrow position-relative p-0" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+    <div class="avatar-notifications d-flex align-items-center justify-content-center bg-label-secondary rounded-circle" style="width: 40px; height: 40px;">
+        <i class="ri-notification-3-line ri-22px"></i>
+    </div>
+    <span class="badge rounded-pill badge-notifications bg-danger position-absolute top-0 start-100 translate-middle {% if unread_count == 0 %}d-none{% endif %}"
+          id="notif-badge"
+          style="margin-top: 5px; margin-left: -5px; z-index: 1;">
+        {{ unread_count }}
+    </span>
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end py-0">
+    <li class="dropdown-menu-header border-bottom">
+      <div class="dropdown-header d-flex align-items-center py-3">
+        <h5 class="text-body mb-0 me-auto">Notifications</h5>
+        <a href="javascript:void(0)" class="dropdown-notifications-all text-body" id="mark-all-read-navbar" title="Tout marquer comme lu">
+            <i class="ri-mail-open-line ri-20px"></i>
+        </a>
+      </div>
+    </li>
+    <li class="dropdown-notifications-list scrollable-container">
+      <ul class="list-group list-group-flush" id="notif-list-container">
+        <li class="list-group-item list-group-item-action dropdown-notifications-item text-center py-4">
+            <small class="text-muted">Chargement...</small>
+        </li>
+      </ul>
+    </li>
+    <li class="dropdown-menu-footer border-top p-3">
+      <a href="{% url 'notification_list' %}" class="btn btn-primary w-100">Voir tout</a>
+    </li>
+  </ul>
+</li>

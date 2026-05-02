@@ -3,10 +3,11 @@
  */
 
 'use strict';
-
+import { NotificationController } from './modules/notifications/notifications.controller.js';
 let menu, animate;
 
 (function () {
+  NotificationController.init();
   // Button & Pagination Waves effect
   if (typeof Waves !== 'undefined') {
     Waves.init();

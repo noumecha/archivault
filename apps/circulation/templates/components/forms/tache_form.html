@@ -45,7 +45,9 @@
         <select class="form-select" id="assignee_a" name="assignee_a" required>
           <option value="">-- Sélectionner --</option>
           {% for user in utilisateurs %}
-            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+            <option value="{{ user.id }}" data-cellule="{{ user.cellule.id|default:'' }}">
+                {{ user.get_full_name|default:user.username }}
+            </option>
           {% endfor %}
         </select>
         <label for="assignee_a">Assignée à</label>

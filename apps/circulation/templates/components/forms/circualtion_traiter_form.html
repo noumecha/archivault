@@ -1,0 +1,38 @@
+<form id="traitementForm">
+  <input type="hidden" id="process-circ-id">
+  <div class="modal-header">
+    <h5 class="modal-title">Traiter l'étape</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <hr>
+  <div class="modal-body">
+    <div class="alert alert-info small">
+      Vous traitez l'étape n°<span id="display-etape-ordre">--</span> pour ce document.
+    </div>
+    <div class="mb-4">
+      <label class="form-label d-block">Votre décision <span class="text-danger">*</span></label>
+      <div class="btn-group w-100" role="group">
+          <input type="radio" class="btn-check" name="decision" id="dec-valide" value="valide" checked autocomplete="off">
+          <label class="btn btn-outline-success" for="dec-valide"><i class="ri-check-line"></i> Valider</label>
+          <input type="radio" class="btn-check" name="decision" id="dec-rejete" value="rejete" autocomplete="off">
+          <label class="btn btn-outline-danger" for="dec-rejete"><i class="ri-close-line"></i> Rejeter</label>
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Commentaire / Observations</label>
+      <textarea name="commentaire" id="decision-commentaire" class="form-control" rows="4" placeholder="Obligatoire en cas de rejet..."></textarea>
+    </div>
+    <div class="alert alert-danger mt-3" style="display: none;" id="traiter-show-error"></div>
+    <div class="alert alert-success mt-3" style="display: none;" id="traiter-show-success"></div>
+  </div>
+  <hr>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+    <button type="submit" class="btn btn-primary d-flex align-items-center">
+      <span id="save-btn-text">Confirmer la décision</span>
+      <div id="traiter-form-loader" class="d-none text-center">
+        <i class="ri-loader-2-fill ri-2x spin text-white"></i>
+      </div>
+    </button>
+  </div>
+</form>

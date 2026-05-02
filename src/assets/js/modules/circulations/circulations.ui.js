@@ -75,11 +75,11 @@ export const CirculationUi = {
               <a href="#" class="dropdown-item" data-action="view-timeline" data-id="${circ.id}">
                 <i class="ri-git-commit-line me-1"></i>Voir Timeline
               </a>
-              <a href="#" class="dropdown-item" data-action="process" data-id="${circ.id}">
+              <a href="#" class="dropdown-item" data-ordre="${circ.etape_actuelle?.ordre}" data-action="process" data-id="${circ.id}">
                 <i class="ri-checkbox-circle-line me-1"></i>Traiter l'étape
               </a>
               <div class="dropdown-divider"></div>
-              <a href="#" class="dropdown-item text-danger" data-action="delete" data-id="${circ.id}">
+              <a href="#" class="dropdown-item text-danger" data-action="delete-circulation" data-id="${circ.id}">
                 <i class="ri-delete-bin-6-line me-1"></i>Supprimer
               </a>
             </div>
@@ -131,17 +131,29 @@ export const CirculationUi = {
   // Nouvelle méthode pour filtrer les utilisateurs selon une cellule
   filterUserSelects(celluleId) {
     const userSelects = document.querySelectorAll('.user-select');
+    const btnAdd = $('#btn-add-etape');
 
+    // Problème 3 : Si pas de document ou document sans cellule
+    if (!celluleId) {
+      btnAdd.addClass('disabled'); // Empêcher l'ajout d'étapes
+      userSelects.forEach(select => {
+        $(select).html('<option value="">Veuillez d\'abord choisir un document valide</option>');
+      });
+      return;
+    }
+
+    btnAdd.removeClass('disabled');
+
+    // Filtrer les selects existants
     userSelects.forEach(select => {
       const currentValue = select.value;
       const options = select.querySelectorAll('option');
 
       options.forEach(opt => {
-        if (opt.value === '') return; // Garder le placeholder
-
+        if (opt.value === '') return;
         const userCellule = opt.getAttribute('data-cellule');
-        // Si pas de celluleId (aucun doc sélectionné) ou match
-        if (!celluleId || userCellule === celluleId) {
+
+        if (userCellule === celluleId) {
           opt.style.display = 'block';
           opt.disabled = false;
         } else {
@@ -150,7 +162,7 @@ export const CirculationUi = {
         }
       });
 
-      // Reset la sélection si l'utilisateur choisi n'est plus valide
+      // Reset si la sélection n'est plus valide
       const selectedOption = select.querySelector(`option[value="${currentValue}"]`);
       if (selectedOption && selectedOption.disabled) {
         select.value = '';
@@ -165,21 +177,46 @@ export const CirculationUi = {
     const tempSelect = document.createElement('select');
     tempSelect.innerHTML = sourceHtml;
 
-    if (activeCelluleId) {
+    // Si on a une cellule, on filtre. Si on n'en a pas, on vide tout sauf le placeholder.
+    tempSelect.querySelectorAll('option').forEach(opt => {
+      if (opt.value !== '') {
+        if (!activeCelluleId || opt.getAttribute('data-cellule') !== activeCelluleId) {
+          opt.remove();
+        }
+      }
+    });
+
+    /*if (activeCelluleId) {
       tempSelect.querySelectorAll('option').forEach(opt => {
         if (opt.value !== '' && opt.getAttribute('data-cellule') !== activeCelluleId) {
           opt.remove(); // On ne garde que les users de la bonne cellule pour cette nouvelle ligne
         }
       });
-    }
+    }*/
+    const optionsFinales = tempSelect.innerHTML;
 
     return `
       <div class="row etape-item mb-3 align-items-end" data-index="${index}">
+        <div class="col-md-1 text-center fw-bold pb-2">#${index + 1}</div>
+        <div class="col-md-9">
+          <label class="form-label">Destinataire (Cellule : ${activeCelluleId || 'Aucune'})</label>
+          <select class="form-select user-select" name="etapes[${index}][destinataire]" required>
+            ${optionsFinales}
+          </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-label-danger btn-icon remove-etape">
+                <i class="ri-delete-bin-line"></i>
+            </button>
+        </div>
+      </div>`;
+    /**
+       * <div class="row etape-item mb-3 align-items-end" data-index="${index}">
         <div class="col-md-1 text-center fw-bold pt-2">${index + 1}</div>
         <div class="col-md-7">
           <label class="form-label text-xs">Destinataire</label>
           <select class="form-select user-select" name="etapes[${index}][destinataire]" required>
-            ${tempSelect.innerHTML}
+            ${optionsFinales}
           </select>
         </div>
         <div class="col-md-3">
@@ -187,7 +224,8 @@ export const CirculationUi = {
                 <i class="ri-delete-bin-line"></i>
             </button>
         </div>
-      </div>`;
+      </div>
+       */
   },
 
   // ─── Utilitaires standards ──────────────────────────────────────────────

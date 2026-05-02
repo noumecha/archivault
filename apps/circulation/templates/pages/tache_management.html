@@ -155,6 +155,15 @@
   </div>
 </div>
 
+{# Script JSON pour le mapping Doc -> Cellule #}
+<script id="doc-cellule-tache-data" type="application/json">
+    {
+        {% for doc in documents %}
+            "{{ doc.id }}": "{{ doc.cellule.id|default:'' }}"{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
+
 {% endblock %}
 
 {% block extra_js %}

@@ -139,7 +139,7 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
         return Response({
             'success': True,
             'message': 'Commentaire ajouté avec succès',
-            'data': TacheSerializer(tache).data
+            'data': TacheSerializer(tache, context={'request': request}).data
         })
 
 class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):

@@ -1,7 +1,7 @@
 {# apps/circulation/templates/components/circulation_form.html #}
 {# Template réutilisable du formulaire formulaire de circulation #}
 <div class="row">
-  <div class="col-md-6 mb-3">
+  <div class="col-md-12 mb-3">
     <label class="form-label">Document concerné</label>
     <select class="form-select" id="doc-select" name="document" required>
       <option value="">Choisir un document...</option>
@@ -10,7 +10,7 @@
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-6 mb-3">
+  <div class="col-md-12 mb-3">
       <label class="form-label">Titre du circuit</label>
       <input type="text" class="form-control" id="circuit-titre" name="titre" placeholder="Ex: Approbation Facture Janvier" required>
   </div>

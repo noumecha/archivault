@@ -107,6 +107,49 @@ export const TacheUi = {
       </tr>`;
   },
 
+  /**
+   * filtrer les noms d'utilisateur pour les taches en fonction des documents selectionner
+   * pour la création des taches
+   * @param {*} celluleId
+   * @returns
+   */
+  filterAssigneeList(celluleId) {
+    const $assigneeSelect = $('#assignee_a');
+    const $options = $assigneeSelect.find('option');
+    const currentValue = $assigneeSelect.val();
+
+    // Si pas de celluleId (aucun document choisi ou doc sans cellule)
+    if (!celluleId) {
+      $options.each(function () {
+        if ($(this).val() !== '') {
+          $(this).hide().prop('disabled', true);
+        }
+      });
+      $assigneeSelect.val('');
+      return;
+    }
+
+    // Filtrage des utilisateurs
+    $options.each(function () {
+      const userCellule = $(this).data('cellule');
+
+      if ($(this).val() === '') return; // Garder le placeholder
+
+      if (String(userCellule) === String(celluleId)) {
+        $(this).show().prop('disabled', false);
+      } else {
+        $(this).hide().prop('disabled', true);
+      }
+    });
+
+    // Si l'utilisateur actuellement sélectionné est maintenant caché, on reset
+    const $selectedOpt = $options.filter(`[value="${currentValue}"]`);
+    if ($selectedOpt.prop('disabled')) {
+      $assigneeSelect.val('');
+    }
+  },
+
+  // Rendu de la pagination
   renderPagination(data) {
     renderPagination(data, '#taches-pagination', '#pagination-info');
   },

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from apps.circulation.models import *
 from config.roles import *
 from ..services.permission_service import *
+from django.utils import timezone
 
 class EtapeCirculationSerializer(serializers.ModelSerializer):
     destinataire_name = serializers.ReadOnlyField(source='destinataire.get_full_name')
@@ -75,7 +76,6 @@ class TacheSerializer(serializers.ModelSerializer):
 
     def get_tache_actions(self, obj):
         user = self.context['request'].user
-        print("user : ", user)
         return {
             'can_edit': PermissionService.peut_valider_tache(user, obj),
             'can_delete': PermissionService.peut_supprimer_tache(user, obj),
@@ -83,7 +83,6 @@ class TacheSerializer(serializers.ModelSerializer):
         }
 
     def validate_date_echeance(self, value):
-        from django.utils import timezone
         if value and value < timezone.now().date():
             raise serializers.ValidationError("La date d'échéance ne peut pas être dans le passé.")
         return value
