@@ -296,8 +296,6 @@ export const DocumentController = {
     $('#doc-select').on('change', e => {
       const docId = e.target.value;
       const celluleId = this.docCelluleMap[docId];
-      console.log('doc id : ', docId);
-      // Filtrer les selects déjà affichés
       CirculationUi.filterUserSelects(celluleId);
     });
 
@@ -340,13 +338,16 @@ export const DocumentController = {
         document: $('#doc-select').val(),
         titre: $('#circuit-titre').val(),
         description: $('#circuit-desc').val(),
+        date_fin: $('#date-fin').val(),
         etapes: []
       };
 
       $('.etape-item').each(function (i) {
         data.etapes.push({
           destinataire: $(this).find('select').val(),
-          ordre: i + 1
+          ordre: i + 1,
+          titre_etape: $(this).find('input[name*="[titre_etape]"]').val(),
+          date_echeance: $(this).find('input[name*="[date_echeance]"]').val()
         });
       });
       console.log('Données avant envoi:', data);

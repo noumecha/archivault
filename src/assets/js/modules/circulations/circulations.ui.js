@@ -197,35 +197,27 @@ export const CirculationUi = {
 
     return `
       <div class="row etape-item mb-3 align-items-end" data-index="${index}">
-        <div class="col-md-1 text-center fw-bold pb-2">#${index + 1}</div>
-        <div class="col-md-9">
-          <label class="form-label">Destinataire (Cellule : ${activeCelluleId || 'Aucune'})</label>
+        <div class="col-md-1 text-center fw-bold pb-2 mb-3">#${index + 1}</div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Titre de l'étape</label>
+          <input type="text" class="form-control" name="etapes[${index}][titre_etape]" placeholder="Ex: Validation Chef" required>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Destinataire</label>
           <select class="form-select user-select" name="etapes[${index}][destinataire]" required>
             ${optionsFinales}
           </select>
         </div>
-        <div class="col-md-2">
-            <button type="button" class="btn btn-label-danger btn-icon remove-etape">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Échéance</label>
+          <input type="date" class="form-control" name="etapes[${index}][date_echeance]" required>
+        </div>
+        <div class="col-md-12 text-end">
+            <button type="button" title="supprimer l'étape" class="btn btn-label-danger btn-icon remove-etape">
                 <i class="ri-delete-bin-line"></i>
             </button>
         </div>
       </div>`;
-    /**
-       * <div class="row etape-item mb-3 align-items-end" data-index="${index}">
-        <div class="col-md-1 text-center fw-bold pt-2">${index + 1}</div>
-        <div class="col-md-7">
-          <label class="form-label text-xs">Destinataire</label>
-          <select class="form-select user-select" name="etapes[${index}][destinataire]" required>
-            ${optionsFinales}
-          </select>
-        </div>
-        <div class="col-md-3">
-            <button type="button" class="btn btn-outline-danger btn-sm remove-etape">
-                <i class="ri-delete-bin-line"></i>
-            </button>
-        </div>
-      </div>
-       */
   },
 
   // ─── Utilitaires standards ──────────────────────────────────────────────

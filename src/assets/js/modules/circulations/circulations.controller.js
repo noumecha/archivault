@@ -218,13 +218,16 @@ export const CirculationController = {
         document: $('#doc-select').val(),
         titre: $('#circuit-titre').val(),
         description: $('#circuit-desc').val(),
+        date_fin: $('#date-fin').val(),
         etapes: []
       };
 
       $('.etape-item').each(function (i) {
         data.etapes.push({
           destinataire: $(this).find('select').val(),
-          ordre: i + 1
+          ordre: i + 1,
+          titre_etape: $(this).find('input[name*="[titre_etape]"]').val(),
+          date_echeance: $(this).find('input[name*="[date_echeance]"]').val()
         });
       });
 
@@ -256,6 +259,18 @@ export const CirculationController = {
       $('#process-circ-id').val(id);
       $('#display-etape-ordre').text(ordre);
 
+      // Reset visibility based on default checked radio (valide)
+      $('#version-upload-section').show();
+
+      // Toggle visibility when decision changes
+      $('input[name="decision"]').on('change', function () {
+        if ($(this).val() === 'valide') {
+          $('#version-upload-section').slideDown();
+        } else {
+          $('#version-upload-section').slideUp();
+        }
+      });
+
       new bootstrap.Modal(document.getElementById('modal-traiter-etape')).show();
     });
 
@@ -263,23 +278,27 @@ export const CirculationController = {
       e.preventDefault();
       const $form = $(e.currentTarget);
       const id = $('#process-circ-id').val();
+      const $btnSubmit = $('#save-traiter-btn');
 
       if (!id) {
         CirculationUi.showError('Erreur : ID de circulation introuvable.');
         return;
       }
 
-      const decisionData = {
-        decision: $('input[name="decision"]:checked').val(),
-        commentaire: $('#decision-commentaire').val()
-      };
+      // Utilisation de FormData pour supporter l'upload de fichier
+      const formData = new FormData();
+      formData.append('decision', $('input[name="decision"]:checked').val());
+      formData.append('commentaire', $('#decision-commentaire').val());
 
-      const $btnSubmit = $('#save-traiter-btn');
+      const fileInput = document.getElementById('document-revision');
+      if (fileInput && fileInput.files[0]) {
+        formData.append('fichier', fileInput.files[0]);
+      }
 
       try {
-        CirculationService.validateDecision(decisionData);
+        CirculationService.validateDecision(formData);
         $btnSubmit.prop('disabled', true);
-        let res = await CirculationService.traiterEtape(id, decisionData);
+        let res = await CirculationService.traiterEtape(id, formData);
         CirculationUi.showSuccess(
           res.message || 'Décision enregistrée',
           '#traiter-show-success',
@@ -317,5 +336,3 @@ export const CirculationController = {
     });
   }
 };
-
-CirculationController.init();

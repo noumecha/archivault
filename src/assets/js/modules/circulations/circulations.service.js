@@ -55,12 +55,12 @@ export const CirculationService = {
   /**
    * Traite l'étape actuelle (Valider, Rejeter, Retourner)
    * @param {number} id - ID de la circulation
-   * @param {Object} decisionData - { decision: "valide", commentaire: "..." }
+   * @param {FormData} decisionData - FormData contenant decision, commentaire et optionnellement un fichier
    */
   traiterEtape(id, decisionData) {
     return ApiClient.request(`/api/circulations/${id}/traiter/`, {
       method: 'POST',
-      body: JSON.stringify(decisionData)
+      body: decisionData
     });
   },
 
@@ -73,6 +73,7 @@ export const CirculationService = {
     const errors = {};
 
     if (!data.document) errors.document = ['Le document est requis'];
+    if (!data.date_fin) errors.date_fin = ['La date de fin est requise'];
     if (!data.titre || data.titre.trim().length === 0) {
       errors.titre = ['Le titre du circuit est requis'];
     }
@@ -84,9 +85,19 @@ export const CirculationService = {
       } else {
         // Validation sommaire de chaque étape
         data.etapes.forEach((etape, index) => {
-          if (!etape.destinataire) {
-            if (!errors.etapes) errors.etapes = {};
-            errors.etapes[index] = 'Le destinataire est requis pour cette étape';
+          if (!errors.etapes) errors.etapes = {};
+          let etapeErrors = [];
+
+          if (!etape.titre_etape) etapeErrors.push("Le titre de l'étape est requis");
+          if (!etape.destinataire) etapeErrors.push('Le destinataire est requis');
+          if (!etape.date_echeance) etapeErrors.push("La date d'échéance est requise");
+          if (etape.date_echeance && new Date(etape.date_echeance) < new Date())
+            etapeErrors.push("La date d'échéance doit être dans le futur");
+          if (etape.date_echeance && data.date_fin && new Date(etape.date_echeance) > new Date(data.date_fin))
+            etapeErrors.push("La date d'échéance de l'étape ne peut pas dépasser la date de fin du circuit");
+
+          if (etapeErrors.length > 0) {
+            errors.etapes[index] = etapeErrors.join(', ');
           }
         });
       }
@@ -105,15 +116,15 @@ export const CirculationService = {
     const errors = {};
     const validDecisions = ['valide', 'rejete', 'retourne'];
 
-    if (!data.decision || !validDecisions.includes(data.decision)) {
+    const decision = data instanceof FormData ? data.get('decision') : data.decision;
+    const commentaire = data instanceof FormData ? data.get('commentaire') : data.commentaire;
+
+    if (!decision || !validDecisions.includes(decision)) {
       errors.decision = ['Une décision valide est requise'];
     }
 
     // Obliger un commentaire en cas de rejet ou retour
-    if (
-      (data.decision === 'rejete' || data.decision === 'retourne') &&
-      (!data.commentaire || data.commentaire.trim().length < 5)
-    ) {
+    if ((decision === 'rejete' || decision === 'retourne') && (!commentaire || commentaire.trim().length < 5)) {
       errors.commentaire = ['Un commentaire explicatif est requis (min. 5 caractères)'];
     }
 

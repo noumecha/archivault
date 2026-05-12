@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from .serializers import *
 from django.db.models import Q
 from ..models import *
+from apps.documents.models import VersionDocument
 from django.db import transaction
 
 class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
@@ -249,55 +250,84 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def action_traiter_etape(self, request, pk=None, *args, **kwargs):
-        """
-        Valider ou rejeter l'étape actuelle.
-        Attendu : { "decision": "valide" | "rejete" | "retourne", "commentaire": "..." }
-        """
         circulation = get_object_or_404(CirculationDocument, pk=pk)
         etape_actuelle = circulation.etapes.filter(est_actuelle=True).first()
 
         if not etape_actuelle:
             return Response({'success': False, 'message': 'Aucune étape active sur ce circuit'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier que c'est bien le destinataire qui traite
         if etape_actuelle.destinataire != request.user and not is_admin(request.user):
             return Response({'success': False, 'message': 'Vous n\'êtes pas le destinataire de cette étape'}, status=status.HTTP_403_FORBIDDEN)
 
-        decision = request.data.get('decision')
+        decision = request.data.get('decision') # 'valide', 'rejete', 'retourne'
         commentaire = request.data.get('commentaire', '')
 
         if decision not in [StatutCirculation.VALIDE, StatutCirculation.REJETE, StatutCirculation.RETOURNE]:
             return Response({'success' : False, 'message': 'Décision invalide'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Récupération du fichier si modification (pour le versionnement)
+        nouveau_fichier = request.FILES.get('fichier')
+
         try:
             with transaction.atomic():
-                # 1. Clôturer l'étape actuelle
+                # 1. Mise à jour de l'étape actuelle
                 etape_actuelle.statut = decision
                 etape_actuelle.commentaire = commentaire
                 etape_actuelle.date_traitement = timezone.now()
                 etape_actuelle.traite_par = request.user
                 etape_actuelle.est_actuelle = False
+
+                # --- LOGIQUE DE VERSIONNEMENT ---
+                if decision == StatutCirculation.VALIDE and nouveau_fichier:
+                    # Calcul du prochain numéro de version
+                    last_ver = etape_actuelle.circulation.document.versions.count()
+                    nouvelle_version = VersionDocument.objects.create(
+                        document=etape_actuelle.circulation.document,
+                        titre=f"V{last_ver + 1} - {etape_actuelle.titre_etape}",
+                        fichier=nouveau_fichier,
+                        numero_version=last_ver + 1,
+                        cree_par=request.user
+                    )
+                    etape_actuelle.version_produite = nouvelle_version
+
                 etape_actuelle.save()
 
-                # 2. Logique de flux
+                # --- LOGIQUE DE FLUX (REJET / RETOUR / VALIDE) ---
+
                 if decision == StatutCirculation.VALIDE:
                     etape_suivante = circulation.etapes.filter(ordre__gt=etape_actuelle.ordre).first()
                     if etape_suivante:
-                        etape_suivante.est_actuelle = True
-                        etape_suivante.statut = StatutCirculation.EN_COURS
-                        etape_suivante.date_reception = timezone.now()
-                        etape_suivante.save()
+                        self._activer_etape(etape_suivante)
                     else:
-                        # Plus d'étapes -> Circuit terminé
                         circulation.statut = StatutCirculation.CLOS
                         circulation.date_fin = timezone.now()
                         circulation.save()
 
-                elif decision == StatutCirculation.REJETE:
-                    circulation.statut = StatutCirculation.REJETE
-                    circulation.date_fin = timezone.now()
+                elif decision in [StatutCirculation.REJETE, StatutCirculation.RETOURNE]:
+                    # On cherche l'étape précédente
+                    etape_precedente = circulation.etapes.filter(ordre__lt=etape_actuelle.ordre).last()
+
+                    if etape_precedente:
+                        # On réactive l'étape d'avant
+                        self._activer_etape(etape_precedente)
+                        circulation.statut = StatutCirculation.EN_COURS # On s'assure que le circuit n'est pas marqué rejeté globalement
+                    else:
+                        # Si c'était la première étape, on renvoie à l'initiateur
+                        # Ici, on peut soit marquer la circulation comme REJETÉ (fin du circuit)
+                        # Soit créer une "étape 0" virtuelle.
+                        circulation.statut = StatutCirculation.REJETE
+                        circulation.date_fin = timezone.now()
+
                     circulation.save()
 
-                return Response({'success' : True, 'message': 'Étape traitée avec succès'})
+                return Response({'success': True, 'message': 'Traitement effectué'}, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def _activer_etape(self, etape):
+        """Méthode utilitaire pour activer une étape"""
+        etape.est_actuelle = True
+        etape.statut = StatutCirculation.EN_COURS
+        etape.date_reception = timezone.now()
+        etape.save()

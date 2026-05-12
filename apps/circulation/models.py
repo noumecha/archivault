@@ -1,3 +1,4 @@
+# apps/circulation/models.py
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -84,6 +85,15 @@ class EtapeCirculation(models.Model):
     traite_par    = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, blank=True, related_name='etapes_traitees')
     est_actuelle = models.BooleanField(default=False) # Très utile pour les requêtes SQL rapides
     date_reception = models.DateTimeField(null=True, blank=True) # Traçabilité : "Vu à telle heure"
+    date_echeance = models.DateTimeField(default=timezone.now)
+    titre_etape = models.CharField(max_length=255, null=True, blank=True)
+    version_produite = models.ForeignKey(
+        'documents.VersionDocument',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='etape_origine'
+    )
     # timestamp
     Date_creation    = models.DateTimeField(auto_now_add=True)
     Date_miseajour   = models.DateTimeField(auto_now=True)
