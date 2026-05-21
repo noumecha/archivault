@@ -1,6 +1,6 @@
 import { CirculationService } from './circulations.service.js';
 import { CirculationUi } from './circulations.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, enableElement } from '../../helpers/utils.js';
 
 export const CirculationController = {
   etapeIndex: 0,
@@ -36,6 +36,22 @@ export const CirculationController = {
 
   // ─── Événements de base (Recherche, Pagination) ───────────────────
   bindEvents() {
+    $('#modal-initier-circuit').on('hidden.bs.modal', () => {
+      const $form = $('#initierCircuitForm');
+      $form[0].reset();
+      $('#etapes-container').empty();
+      $('#update-id').val('');
+      CirculationUi.etapeIndex = 0;
+      enableElement('#doc-select');
+    });
+
+    // Écouter le changement de document pour filtrer
+    $('#doc-select').on('change', e => {
+      const docId = e.target.value;
+      const celluleId = this.docCelluleMap[docId];
+      CirculationUi.filterUserSelects(celluleId);
+    });
+
     // Pagination
     $(document).on('click', '#circulations-pagination .page-link', async function (e) {
       e.preventDefault();
@@ -155,6 +171,21 @@ export const CirculationController = {
         });
     });
 
+    // Modifier circulation
+    $(document).on('click', '[data-action="edit-circulation"]', async e => {
+      e.preventDefault();
+      const id = $(e.currentTarget).data('id');
+      try {
+        const res = await CirculationService.fetchOne(id);
+        // Passe res.data ET le mapping du contrôleur
+        CirculationUi.renderForm(res.data, CirculationController.docCelluleMap);
+        new bootstrap.Modal(document.getElementById('modal-initier-circuit')).show();
+      } catch (err) {
+        console.error('Erreur chargement circulation:', err);
+        CirculationUi.showError('Erreur chargement circulation');
+      }
+    });
+
     // Voir (Détail)
     $(document).on('click', '[data-action="view"]', function (e) {
       e.preventDefault();
@@ -190,59 +221,55 @@ export const CirculationController = {
       CirculationUi.filterUserSelects(celluleId);
     });
 
+    // ajouter une étape
     $('#btn-add-etape').on('click', e => {
       const currentDocId = $('#doc-select').val();
       const activeCelluleId = this.docCelluleMap[currentDocId] || null;
 
-      // Si pas de cellule, on ne fait rien (sécurité bouton)
       if (!activeCelluleId) {
         CirculationUi.showSuccess('Veuillez sélectionner un document lié à une cellule.', '#form-error', null);
         return;
       }
 
-      const html = CirculationUi.renderEtapeRow(this.etapeIndex, activeCelluleId);
+      const html = CirculationUi.renderEtapeRow(CirculationUi.etapeIndex, activeCelluleId);
       $('#etapes-container').append(html);
-      this.etapeIndex++;
+
+      CirculationUi.etapeIndex++;
     });
 
+    // supprimer une étape
     $(document).on('click', '.remove-etape', function () {
-      CirculationController.reindexEtapes();
       $(this).closest('.etape-item').remove();
+      CirculationController.reindexEtapes();
     });
 
     // Soumission Initialisation Circuit
     $('#initierCircuitForm').on('submit', async e => {
       e.preventDefault();
       const $btn = $('#save-circuit-btn');
-      const data = {
-        document: $('#doc-select').val(),
-        titre: $('#circuit-titre').val(),
-        description: $('#circuit-desc').val(),
-        date_fin: $('#date-fin').val(),
-        etapes: []
-      };
-
-      $('.etape-item').each(function (i) {
-        data.etapes.push({
-          destinataire: $(this).find('select').val(),
-          ordre: i + 1,
-          titre_etape: $(this).find('input[name*="[titre_etape]"]').val(),
-          date_echeance: $(this).find('input[name*="[date_echeance]"]').val()
-        });
-      });
-
+      const data = CirculationService.getFormData($('#initierCircuitForm'));
+      console.log('Données avant envoi:', data);
       try {
-        CirculationService.validate(data);
+        const id = $('#update-id').val();
         $btn.prop('disabled', true);
-        let response = await CirculationService.initierCircuit(data);
+        CirculationService.validate(data);
+        let response;
+        if (id) {
+          response = await CirculationService.update(id, data);
+        } else {
+          response = await CirculationService.initierCircuit(data);
+        }
         CirculationUi.showSuccess(response.message || 'Circuit initié avec succès', '#form-success');
         setTimeout(async () => {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modal-initier-circuit'));
           if (modalInstance) modalInstance.hide();
           await this.loadCirculations(this.getCurrentParams());
           $('#initierCircuitForm')[0].reset();
+          enableElement('#doc-select');
+          CirculationController.reindexEtapes();
         }, 3000);
       } catch (err) {
+        console.log('error : ', err);
         const msg = err.data?.errors || err.data?.message || 'Erreur de validation';
         CirculationUi.showError(msg, '#form-error');
       } finally {
@@ -258,6 +285,7 @@ export const CirculationController = {
 
       $('#process-circ-id').val(id);
       $('#display-etape-ordre').text(ordre);
+      $('#display-doc-titre').text($btn.data('doc-titre') || 'Document inconnu');
 
       // Reset visibility based on default checked radio (valide)
       $('#version-upload-section').show();
@@ -316,7 +344,8 @@ export const CirculationController = {
           }
         }, 1500);
       } catch (err) {
-        const errorMsg = err.data?.message || err.message || 'Erreur lors du traitement';
+        console.error('Erreur traitement étape:', err);
+        const errorMsg = err.data?.errors || err.data?.message || 'Erreur lors du traitement';
         CirculationUi.showError(errorMsg, '#traiter-show-error', '#traiter-form-loader');
       } finally {
         $btnSubmit.prop('disabled', false);
@@ -329,10 +358,18 @@ export const CirculationController = {
   },
 
   reindexEtapes() {
-    document.querySelectorAll('.etape-item').forEach((row, idx) => {
-      row.dataset.index = idx;
-      row.querySelector('.text-center').innerText = idx + 1;
-      row.querySelector('select').name = `etapes[${idx}][destinataire]`;
+    const $items = $('#etapes-container .etape-item');
+    $items.each((idx, el) => {
+      const $el = $(el);
+      $el.find('.col-md-1').text(`#${idx + 1}`);
+      $el.attr('data-index', idx);
+      $el.find('input, select').each(function () {
+        const name = $(this).attr('name');
+        if (name) {
+          $(this).attr('name', name.replace(/etapes\[\d+\]/, `etapes[${idx}]`));
+        }
+      });
     });
+    CirculationUi.etapeIndex = $items.length;
   }
 };

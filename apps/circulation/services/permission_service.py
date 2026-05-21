@@ -46,6 +46,16 @@ class PermissionService:
         return user.role in PermissionService.ROLES_CREER_CIRCULATION
 
     @staticmethod
+    def can_update_circulation(user, circulation):
+        """Vérifier si l'utilisateur peut mettre à jour une circulation."""
+        # Seul le créateur ou un superviseur peut mettre à jour
+        return (
+            user == circulation.initie_par or
+            user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN] or
+            user.role in [RoleUtilisateur.SUPERVISEUR] and user.cellule == circulation.document.cellule
+        )
+
+    @staticmethod
     def peut_valider_tache(user, tache):
         """Vérifier si l'utilisateur peut valider une tâche."""
         # Le créateur ou un superviseur peut valider

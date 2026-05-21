@@ -151,7 +151,6 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     Endpoints :
 
         GET    /api/circulations/              → Liste (paginée, filtrée, recherchée)
-        POST   /api/circulations/create              → Créer
         GET    /api/circulations/<id>/         → Détail
         PUT    /api/circulations/<id>/update         → Mise à jour complète
         PATCH  /api/circulations/<id>/update         → Mise à jour partielle
@@ -186,6 +185,24 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
         return super().get_queryset(queryset=qs)
 
+    def delete_action(self, request, *args, **kwargs):
+        circulation = self.get_object()
+        if circulation.statut == StatutCirculation.CLOS:
+            return Response({'error': 'Suppression impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
+        self.check_role_permission(request)
+        return super().delete_action(request, *args, **kwargs)
+
+    def update_action(self, request, *args, **kwargs):
+        circulation = self.get_object()
+        if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE, StatutCirculation.REJETE]:
+            return Response({'error': 'Modification impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
+        self.check_role_permission(request)
+        if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE]:
+            return Response({'error': 'Impossible de modifier une circulation terminée'}, status=status.HTTP_403_FORBIDDEN)
+        if PermissionService.can_update_circulation(request.user, circulation):
+            return super().update_action(request, *args, **kwargs)
+        return super().update_action(request, *args, **kwargs)
+
     # ─────────────────────────────────────────────────────────────────────────
     # ACTIONS CUSTOM
     # ─────────────────────────────────────────────────────────────────────────
@@ -204,7 +221,7 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                 'success': False,
                 'message': 'Aucun ID fourni'
             }, status=status.HTTP_400_BAD_REQUEST)
-        deleted_count, _ = CirculationDocument.objects.filter(id__in=ids).delete()
+        deleted_count, _ = CirculationDocument.objects.filter(id__in=ids).exclude(statut=StatutCirculation.CLOS).delete()
         return Response({
             'success': True,
             'message': f'{deleted_count} circulation(s) supprimée(s)',
@@ -238,6 +255,7 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                     is_first = (i == 0)
                     EtapeCirculation.objects.create(
                         circulation=circulation,
+                        titre_etape=etape.get('titre_etape'),
                         destinataire_id=etape.get('destinataire'),
                         ordre=etape.get('ordre', i + 1),
                         statut=StatutCirculation.EN_COURS if is_first else StatutCirculation.EN_ATTENTE,
@@ -252,7 +270,12 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     def action_traiter_etape(self, request, pk=None, *args, **kwargs):
         circulation = get_object_or_404(CirculationDocument, pk=pk)
         etape_actuelle = circulation.etapes.filter(est_actuelle=True).first()
-
+        # AJOUT : Vérification avant traitement
+        if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE]:
+            return Response({
+                'success': False,
+                'message': 'Ce circuit est déjà clôturé et ne peut plus être traité.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         if not etape_actuelle:
             return Response({'success': False, 'message': 'Aucune étape active sur ce circuit'}, status=status.HTTP_400_BAD_REQUEST)
 

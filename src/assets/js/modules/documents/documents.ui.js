@@ -1,5 +1,5 @@
 // modules/documents/documents.ui.js
-import { showAlertMessage, resetForm, renderPagination } from '../../helpers/utils.js';
+import { showAlertMessage, resetForm, renderPagination, disableElement, enableElement } from '../../helpers/utils.js';
 export const DocumentUi = {
   currentView: 'table', // 'table' ou 'grid'
   // pour le rendu de la liste
@@ -65,15 +65,15 @@ export const DocumentUi = {
     const preview = isImage
       ? `<img src="${doc.fichier}" class="card-img-top" style="height:150px; object-fit:cover;">`
       : `<div class="d-flex align-items-center justify-content-center bg-light position-relative" style="height:150px;">
-           <div class="text-center">
-             <i class="${iconClass} text-secondary" style="font-size:3rem;"></i><br>
-             <strong class="text-uppercase">${fileExt}</strong>
-           </div>
-           <div class="avatar position-absolute bottom-0 end-0 m-2">
-             <span class="avatar-initial rounded ${bgClass}">
-               <i class="${iconClass} ri-24px"></i>
-             </span>
-           </div>
+            <div class="text-center">
+              <i class="${iconClass} text-secondary" style="font-size:3rem;"></i><br>
+              <strong class="text-uppercase">${fileExt}</strong>
+            </div>
+            <div class="avatar position-absolute bottom-0 end-0 m-2">
+              <span class="avatar-initial rounded ${bgClass}">
+                <i class="${iconClass} ri-24px"></i>
+              </span>
+            </div>
         </div>`;
 
     return `
@@ -308,22 +308,12 @@ export const DocumentUi = {
     const $form = $('#documentCirculationForm');
     $form[0].reset();
     $('#etapes-container').empty();
-
-    // On vide l'ID d'update pour être sûr d'être en mode création
-    // $('#update-id').val('');
+    $('#update-id').val('');
     const $documentSelect = $('#doc-select');
-    console.log('document select : ', $documentSelect);
     if ($documentSelect.length) {
       $documentSelect.val(documentId).trigger('change');
-      $documentSelect
-        .css({
-          'pointer-events': 'none',
-          'background-color': '#e9ecef'
-        })
-        .attr('tabindex', '-1');
-      $documentSelect.trigger('change');
+      disableElement($documentSelect);
     }
-
     $('#modal-title').text('Nouvelle Circulation pour un document');
     $('#save-btn-text').text('Initier la Circulation');
     $('#form-error, #form-success').hide();

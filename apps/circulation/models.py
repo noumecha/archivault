@@ -76,7 +76,7 @@ class EtapeCirculation(models.Model):
     """
     Chaque étape du circuit : qui doit traiter, dans quel ordre, quel résultat.
     """
-    circulation   = models.ForeignKey(CirculationDocument, on_delete=models.CASCADE, related_name='etapes')
+    circulation   = models.ForeignKey(CirculationDocument, blank=True, on_delete=models.CASCADE, related_name='etapes')
     ordre         = models.PositiveIntegerField()
     destinataire  = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='etapes_recues')
     statut        = models.CharField(max_length=20, choices=StatutCirculation.choices, default=StatutCirculation.EN_ATTENTE)

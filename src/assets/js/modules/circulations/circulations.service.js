@@ -11,13 +11,6 @@ export const CirculationService = {
     return ApiClient.request(`/api/circulations/${id}/`);
   },
 
-  create(data) {
-    return ApiClient.request('/api/circulations/create/', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-  },
-
   update(id, data) {
     return ApiClient.request(`/api/circulations/${id}/update/`, {
       method: 'PATCH',
@@ -64,10 +57,38 @@ export const CirculationService = {
     });
   },
 
-  // ── Validation ───────────────────────────────────────────────────────────
+  /***
+   * Récupère les données du formulaire d'initialisation de circuit
+   * @param {string} formSelector - Le sélecteur du formulaire
+   * @returns {Object} Les données formatées pour l'API
+   */
+  getFormData(formSelector) {
+    const $form = $(formSelector);
+    const data = {
+      document: $form.find('#doc-select').val(),
+      titre: $form.find('#circuit-titre').val(),
+      description: $form.find('#circuit-desc').val(),
+      date_fin: $form.find('#date-fin').val(),
+      etapes: []
+    };
+
+    $form.find('.etape-item').each(function (i) {
+      data.etapes.push({
+        id: $(this).find('.etape-id').val() || null,
+        destinataire: $(this).find('select').val(),
+        ordre: i + 1,
+        titre_etape: $(this).find('input[name*="[titre_etape]"]').val(),
+        date_echeance: $(this).find('input[name*="[date_echeance]"]').val()
+      });
+    });
+
+    return data;
+  },
 
   /**
-   * Valide les données de base d'une circulation ou d'une initialisation
+   * Validez les données du formulaire de circulation
+   * @param {*} data
+   * @returns
    */
   validate(data) {
     const errors = {};
@@ -78,28 +99,47 @@ export const CirculationService = {
       errors.titre = ['Le titre du circuit est requis'];
     }
 
-    // Si on est dans le cadre d'une initialisation de circuit (avec étapes)
-    if (data.etapes) {
-      if (!Array.isArray(data.etapes) || data.etapes.length === 0) {
-        errors.etapes = ['Au moins une étape est requise pour le circuit'];
+    if (data.etapes && Array.isArray(data.etapes)) {
+      if (data.etapes.length === 0) {
+        errors.etapes_global = ['Au moins une étape est requise'];
       } else {
-        // Validation sommaire de chaque étape
+        const etapesErrors = {};
         data.etapes.forEach((etape, index) => {
-          if (!errors.etapes) errors.etapes = {};
-          let etapeErrors = [];
+          let messages = [];
 
-          if (!etape.titre_etape) etapeErrors.push("Le titre de l'étape est requis");
-          if (!etape.destinataire) etapeErrors.push('Le destinataire est requis');
-          if (!etape.date_echeance) etapeErrors.push("La date d'échéance est requise");
-          if (etape.date_echeance && new Date(etape.date_echeance) < new Date())
-            etapeErrors.push("La date d'échéance doit être dans le futur");
-          if (etape.date_echeance && data.date_fin && new Date(etape.date_echeance) > new Date(data.date_fin))
-            etapeErrors.push("La date d'échéance de l'étape ne peut pas dépasser la date de fin du circuit");
+          if (!etape.titre_etape) messages.push('Titre requis');
+          if (!etape.destinataire) messages.push('Destinataire requis');
+          if (!etape.date_echeance) messages.push('Échéance requise');
 
-          if (etapeErrors.length > 0) {
-            errors.etapes[index] = etapeErrors.join(', ');
+          const currentEcheance = new Date(etape.date_echeance);
+          const now = new Date();
+
+          if (etape.date_echeance && currentEcheance < now) {
+            messages.push("L'échéance doit être dans le futur");
+          }
+
+          if (etape.date_echeance && data.date_fin && currentEcheance > new Date(data.date_fin)) {
+            messages.push("L'échéance ne peut pas dépasser la fin du circuit");
+          }
+
+          if (index > 0 && etape.date_echeance) {
+            const prevEcheanceRaw = data.etapes[index - 1].date_echeance;
+            if (prevEcheanceRaw) {
+              const prevEcheance = new Date(prevEcheanceRaw);
+              if (currentEcheance < prevEcheance) {
+                messages.push("L'échéance doit être après celle de l'étape précédente");
+              }
+            }
+          }
+
+          if (messages.length > 0) {
+            etapesErrors[index] = messages.join(', ');
           }
         });
+
+        if (Object.keys(etapesErrors).length > 0) {
+          errors.etapes = etapesErrors;
+        }
       }
     }
 
@@ -110,27 +150,43 @@ export const CirculationService = {
   },
 
   /**
-   * Valide spécifiquement la décision sur une étape
+   * Valide les données du formulaire de traitement d'étape
+   * Supporte aussi bien un objet simple qu'un FormData
+   * @param {FormData|Object} data
+   * @returns {boolean}
    */
   validateDecision(data) {
+    console.log('Validation des données de décision :', data);
     const errors = {};
-    const validDecisions = ['valide', 'rejete', 'retourne'];
+    const validDecisions = ['valide', 'rejete'];
 
-    const decision = data instanceof FormData ? data.get('decision') : data.decision;
-    const commentaire = data instanceof FormData ? data.get('commentaire') : data.commentaire;
+    const isFormData = data instanceof FormData;
+    const decision = isFormData ? data.get('decision') : data.decision;
+    const commentaire = isFormData ? data.get('commentaire') : data.commentaire;
+    const fichier = isFormData ? data.get('fichier') : data.fichier;
 
     if (!decision || !validDecisions.includes(decision)) {
-      errors.decision = ['Une décision valide est requise'];
+      errors.decision = ['Veuillez sélectionner une décision (Valider ou Rejeter).'];
     }
 
-    // Obliger un commentaire en cas de rejet ou retour
-    if ((decision === 'rejete' || decision === 'retourne') && (!commentaire || commentaire.trim().length < 5)) {
-      errors.commentaire = ['Un commentaire explicatif est requis (min. 5 caractères)'];
+    if (decision === 'rejete') {
+      if (!commentaire || commentaire.trim().length < 5) {
+        errors.commentaire = ['Un commentaire explicatif est obligatoire pour justifier le rejet (min. 5 caractères).'];
+      }
+    }
+
+    if (decision === 'valide' && (!fichier || (fichier instanceof File && fichier.size === 0))) {
+      errors.fichier = ['Veuillez joindre la nouvelle version du document.'];
     }
 
     if (Object.keys(errors).length > 0) {
-      throw { data: { errors: errors, message: 'Validation de décision échouée' } };
+      throw {
+        data: {
+          errors: errors
+        }
+      };
     }
+
     return true;
   }
 };

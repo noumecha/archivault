@@ -44,11 +44,6 @@ class DocumentPermissionService:
         if document.cellule == user.cellule:
             return True
 
-        return document.permissions.filter(
-            utilisateur=user,
-            can_view=True
-        ).exists()
-
     @staticmethod
     def can_download(user, document):
         if is_admin(user) or is_superadmin(user):
