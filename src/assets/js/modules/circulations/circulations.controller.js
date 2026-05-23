@@ -282,6 +282,7 @@ export const CirculationController = {
       const $btn = $(e.currentTarget);
       const id = $btn.data('id');
       const ordre = $btn.data('ordre') || 'En cours';
+      console.log('Titre document : ', $btn.data('doc-titre'));
 
       $('#process-circ-id').val(id);
       $('#display-etape-ordre').text(ordre);

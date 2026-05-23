@@ -92,49 +92,57 @@
                     <h5 class="mb-0">Historique des versions</h5>
                     <span class="badge rounded-pill bg-primary">{{ document.versions.count }}</span>
                 </div>
-                <div class="card-body pb-0 pt-3">
+                <div class="card-body pb-3 pt-3">
                     <ul class="timeline mb-0">
-                        {# Version Actuelle (Le document principal) #}
-                        <li class="timeline-item timeline-item-transparent border-primary">
-                            <span class="timeline-point timeline-point-primary"></span>
+                        {# Document Original #}
+                        <li class="timeline-item timeline-item-transparent border-info">
+                            <span class="timeline-point timeline-point-info"></span>
                             <div class="timeline-event">
                                 <div class="timeline-header mb-1">
-                                    <h6 class="mb-0 text-primary fw-bold">Version Actuelle (Dernière)</h6>
-                                    <small class="text-muted">{{ document.Date_miseajour|date:"d/m/Y" }}</small>
+                                    <h6 class="mb-0 text-info fw-bold">Document Original</h6>
+                                    <small class="text-muted">{{ document.Date_creation|date:"d/m/Y" }}</small>
                                 </div>
-                                <p class="mb-2">Document en vigueur</p>
+                                <p class="mb-2">Fichier initialement déposé</p>
                                 <div class="d-flex flex-wrap gap-2">
                                     <button class="btn btn-sm btn-outline-info"
                                             data-action="preview-doc"
                                             data-url="{{ document.fichier.url }}"
                                             data-type="{{ document.extension }}"
-                                            data-title="Version Actuelle">
+                                            data-title="Document Original">
                                         <i class="ri-eye-line me-1"></i> Aperçu
                                     </button>
                                 </div>
                             </div>
                         </li>
 
-                        {# Liste des anciennes versions #}
-                        {% for version in document.versions.all|dictsortreversed:"numero_version" %}
-                        <li class="timeline-item timeline-item-transparent">
+                        {# Liste des versions par ordre chronologique inverse (plus récente en haut) #}
+                        {% for version in document.versions.all|dictsortreversed:"Date_creation" %}
+                        <li class="timeline-item timeline-item-transparent {% if forloop.first %}border-primary{% endif %}">
+                            {% if forloop.first %}
+                            <span class="timeline-point timeline-point-primary"></span>
+                            {% else %}
                             <span class="timeline-point timeline-point-secondary"></span>
+                            {% endif %}
                             <div class="timeline-event">
                                 <div class="timeline-header mb-1">
-                                    <h6 class="mb-0">Version {{ version.numero_version }}</h6>
+                                    <h6 class="mb-0 {% if forloop.first %}text-primary fw-bold{% endif %}">
+                                        Version {{ version.numero_version }} {% if forloop.first %}(Dernière){% endif %}
+                                    </h6>
                                     <small class="text-muted">{{ version.Date_creation|date:"d/m/Y" }}</small>
                                 </div>
-                                <p class="mb-2 text-truncate" title="{{ version.titre }}">{{ version.titre }}</p>
+                                <p class="mb-2 text-truncate" title="{{ version.commentaire|default:version.titre }}">
+                                    {{ version.commentaire|default:"Mise à jour du document" }}
+                                </p>
                                 <div class="d-flex flex-wrap gap-2">
-                                    <button class="btn btn-sm btn-label-info"
+                                    <button class="btn btn-sm btn-outline-info"
                                             data-action="preview-doc"
                                             data-url="{{ version.fichier.url }}"
                                             data-type="{{ version.extension }}"
                                             data-title="Version {{ version.numero_version }}">
-                                        <i class="ri-eye-line"></i>
+                                        <i class="ri-eye-line me-1"></i> Aperçu
                                     </button>
-                                    <a href="{{ version.fichier.url }}" download class="btn btn-sm btn-label-primary">
-                                        <i class="ri-download-line"></i>
+                                    <a href="{{ version.fichier.url }}" download class="btn btn-sm btn-outline-primary">
+                                        <i class="ri-download-line me-1"></i> Télécharger
                                     </a>
                                 </div>
                             </div>

@@ -87,6 +87,29 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
         self.check_role_permission(request)
         return super().delete_action(request, pk, *args, **kwargs)
 
+    def retrieve(self, request, *args, **kwargs):
+        """Surcharge du point d'accès Détail pour détecter la consultation de la tâche."""
+        response = super().retrieve(request, *args, **kwargs)
+        tache = self.get_object()
+
+        # Si c'est l'assigné qui consulte la tâche pour la première fois (ou à chaque fois)
+        if tache.assignee_a == request.user:
+            # Optionnel : On peut ajouter un booléen 'consultee' sur le modèle Tache
+            # pour n'envoyer cette notification de consultation QU'UNE seule fois.
+
+            if tache.assignee_par and tache.assignee_par != request.user:
+                # Créer une notification à l'attention de l'initiateur pour lui dire que sa tâche est vue
+                Notification.objects.create(
+                    destinataire=tache.assignee_par,
+                    titre="Tâche consultée",
+                    message=f"{request.user.get_full_name() or request.user.username} a ouvert et consulté la tâche : {tache.titre}.",
+                    categorie=Notification.Category.TACHE,
+                    content_object=tache,
+                    url_action=f"/taches/detail/{tache.id}/"
+                )
+
+        return response
+
     # ─────────────────────────────────────────────────────────────────────────
     # ACTIONS PERSONNALISÉES
     # ─────────────────────────────────────────────────────────────────────────
@@ -94,6 +117,7 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
         'bulk_delete': 'action_bulk_delete',
         'comment': 'action_comment'
     }
+
 
     def action_bulk_delete(self, request, *args, **kwargs):
         """Suppression en masse."""
@@ -188,17 +212,17 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     def delete_action(self, request, *args, **kwargs):
         circulation = self.get_object()
         if circulation.statut == StatutCirculation.CLOS:
-            return Response({'error': 'Suppression impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'success': False, 'message': 'Suppression impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
         self.check_role_permission(request)
         return super().delete_action(request, *args, **kwargs)
 
     def update_action(self, request, *args, **kwargs):
         circulation = self.get_object()
         if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE, StatutCirculation.REJETE]:
-            return Response({'error': 'Modification impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'success': False, 'message': 'Modification impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
         self.check_role_permission(request)
         if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE]:
-            return Response({'error': 'Impossible de modifier une circulation terminée'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'success': False, 'message': 'Impossible de modifier une circulation terminée'}, status=status.HTTP_403_FORBIDDEN)
         if PermissionService.can_update_circulation(request.user, circulation):
             return super().update_action(request, *args, **kwargs)
         return super().update_action(request, *args, **kwargs)
@@ -306,7 +330,7 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                     last_ver = etape_actuelle.circulation.document.versions.count()
                     nouvelle_version = VersionDocument.objects.create(
                         document=etape_actuelle.circulation.document,
-                        titre=f"V{last_ver + 1} - {etape_actuelle.titre_etape}",
+                        titre=etape_actuelle.circulation.document.titre + " - " + timezone.now().strftime("%Y-%m-%d") + f" - V{last_ver + 1}",
                         fichier=nouveau_fichier,
                         numero_version=last_ver + 1,
                         cree_par=request.user

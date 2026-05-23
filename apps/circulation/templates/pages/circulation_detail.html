@@ -23,7 +23,7 @@
               <i class="ri-arrow-left-line"></i> Retour
             </button>
             {% if peut_traiter %}
-              <button class="btn btn-success shadow-sm" data-action="process" data-id="{{ circulation.id }}"
+              <button class="btn btn-success shadow-sm" data-doc-titre="{{ circulation.document.titre }}" data-action="process" data-id="{{ circulation.id }}"
                 data-ordre="{{ circulation.etape_actuelle.ordre }}">
                 <i class="ri-check-double-line me-1"></i> Traiter le document
               </button>
