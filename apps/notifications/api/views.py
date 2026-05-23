@@ -96,6 +96,29 @@ class NotificationAPIView(DRFRoleRequiredMixin, BaseAPIView):
             'data': self.get_serializer(notification).data
         })
 
+    """def action_mark_as_read(self, request, pk=None, *args, **kwargs):
+        #Marque une notification spécifique comme lue ET crée un suivi.
+        notification = get_object_or_404(self.get_queryset(), pk=pk)
+
+        if not notification.is_read:
+            notification.is_read = True
+            notification.save()
+
+            Notification.objects.create(
+                destinataire=request.user, # Ou un autre acteur (ex: admin, ou champ 'expediteur' si existant)
+                titre="Suivi : Notification lue",
+                message=f"Vous avez pris connaissance de la notification : '{notification.titre}' le {timezone.now().strftime('%d/%m/%m à %H:%M')}.",
+                categorie=Notification.Category.SYSTEME,
+                content_object=notification.content_object,
+                is_read=True
+            )
+
+        return Response({
+            'success': True,
+            'message': 'Notification marquée comme lue et suivi enregistré',
+            'data': self.get_serializer(notification).data
+        })"""
+
     def action_mark_all_as_read(self, request, *args, **kwargs):
         """Marque toutes les notifications de l'utilisateur comme lues."""
         updated_count = self.get_queryset().filter(is_read=False).update(is_read=True)

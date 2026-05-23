@@ -6,7 +6,14 @@ import { TacheService } from '../circulations/services/taches.services.js';
 import { CirculationService } from '../circulations/circulations.service.js';
 import { CirculationUi } from '../circulations/circulations.ui.js';
 import { CirculationController } from '../circulations/circulations.controller.js';
-import { startLoader, closeLoader, showAlertMessage, toggleBulkButton } from '../../helpers/utils.js';
+import {
+  startLoader,
+  closeLoader,
+  showAlertMessage,
+  toggleBulkButton,
+  disableElement,
+  enableElement
+} from '../../helpers/utils.js';
 
 export const DocumentController = {
   conflictQueue: [],
@@ -296,8 +303,6 @@ export const DocumentController = {
     $('#doc-select').on('change', e => {
       const docId = e.target.value;
       const celluleId = this.docCelluleMap[docId];
-      console.log('doc id : ', docId);
-      // Filtrer les selects déjà affichés
       CirculationUi.filterUserSelects(celluleId);
     });
 
@@ -331,29 +336,17 @@ export const DocumentController = {
       modal.show();
     });
 
-    // 2. Soumission du formulaire de tâche
+    // 2. Soumission du formulaire de circulation
     $('#documentCirculationForm').on('submit', async e => {
       e.preventDefault();
       const $form = $('#documentCirculationForm');
       const $saveBtn = $('#save-btn');
-      const data = {
-        document: $('#doc-select').val(),
-        titre: $('#circuit-titre').val(),
-        description: $('#circuit-desc').val(),
-        etapes: []
-      };
-
-      $('.etape-item').each(function (i) {
-        data.etapes.push({
-          destinataire: $(this).find('select').val(),
-          ordre: i + 1
-        });
-      });
+      const data = CirculationService.getFormData($('#documentCirculationForm'));
       console.log('Données avant envoi:', data);
       try {
         $saveBtn.prop('disabled', true);
         CirculationService.validate(data);
-        const response = await CirculationService.create(data);
+        const response = await CirculationService.initierCircuit(data);
         DocumentUi.showSuccess(response.message || 'Circulation initiée avec succès', '#circulation-form-success');
         setTimeout(() => {
           const modalInstance = bootstrap.Modal.getInstance(
@@ -361,10 +354,10 @@ export const DocumentController = {
           );
           if (modalInstance) modalInstance.hide();
           $form[0].reset();
-          $('#document').css({ 'pointer-events': '', 'background-color': '' });
+          enableElement('#document');
         }, 2000);
       } catch (err) {
-        console.error('Erreur création tâche:', err);
+        console.error('Erreur création Circulation :', err);
         const errorData = err.data?.errors || err.data?.message || 'Une erreur est survenue';
         DocumentUi.showError(errorData, '#circulation-form-error');
       } finally {

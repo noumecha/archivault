@@ -124,14 +124,14 @@
             <h5 class="modal-title" id="modal-title">Enregistrement d'un document</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <hr class="my-0">
-          <div class="modal-body">
+          <hr>
+          <div class="py-0 modal-body">
             {% include 'components/document_form.html' %}
             <div class="alert alert-success mt-2" style="display: none;" id="form-success"></div>
             <div class="alert alert-danger mt-2" style="display: none;" id="form-error"></div>
             <input type="hidden" name="id" id="update-id">
           </div>
-          <hr class="my-0">
+          <hr>
           <div class="modal-footer flex-row-reverse">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
             <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
@@ -155,14 +155,14 @@
             <h5 class="modal-title" id="modal-title">Création d'une tache sur le document</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <hr class="my-0">
-          <div class="modal-body">
+          <hr>
+          <div class="py-0 modal-body">
             {% include 'components/forms/tache_form.html' %}
             <div class="alert alert-success mt-2" style="display: none;" id="tache-form-success"></div>
             <div class="alert alert-danger mt-2" style="display: none;" id="tache-form-error"></div>
             <input type="hidden" name="id" id="update-id">
           </div>
-          <hr class="my-0">
+          <hr>
           <div class="modal-footer mt-2 flex-row-reverse">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
             <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
@@ -186,20 +186,22 @@
             <h5 class="modal-title" id="modal-title">Création d'une Circulation sur le document</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <hr class="my-0">
-          <div class="modal-body">
-            {% include 'components/forms/circulation_form.html' %}
+          <hr>
+          <div class="py-0 modal-body">
+            <div id="circulation-form-content">
+              <input type="hidden" name="id" id="update-id">
+              {% include 'components/forms/circulation_form.html' %}
+            </div>
             <div class="alert alert-success mt-2" style="display: none;" id="circulation-form-success"></div>
             <div class="alert alert-danger mt-2" style="display: none;" id="circulation-form-error"></div>
-            <input type="hidden" name="id" id="update-id">
           </div>
-          <hr class="my-0">
-          <div class="modal-footer mt-2 flex-row-reverse">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-            <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
-              <span id="save-btn-text">Initier la Circulation</span>
-              <div id="form-loader" class="d-none ms-2">
-                <i class="ri-loader-2-fill spin text-white"></i>
+          <hr>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button id="save-circuit-btn" class="d-flex justify-content-center align-items-center btn btn-primary no-transform" type="submit">
+              <span class="" id="save-btn-text">Initier la Circulation</span>
+              <div id="form-loader" class="d-none text-center">
+                <i class="ri-loader-2-fill ri-2x spin text-white"></i>
               </div>
             </button>
           </div>
@@ -216,7 +218,7 @@
           <h5 class="modal-title">Supprimer le document</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
+        <div class="py-0 modal-body">
           <p>Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible.</p>
           <div class="alert alert-danger" style="display: none;" id="delete-form-error"></div>
         </div>
@@ -239,7 +241,7 @@
           <h5 class="modal-title">Suppression groupée</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body">
+        <div class="py-0 modal-body">
           <p>Confirmer la suppression des documents sélectionnés ?</p>
           <div class="alert alert-danger" style="display: none;" id="bulk-delete-form-error"></div>
         </div>
@@ -262,7 +264,7 @@
         <h5 class="modal-title">Conflit de document</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
+      <div class="py-0 modal-body">
         <p id="dup-text"></p>
         <p class="text-muted small">Choisissez une action pour continuer l'importation.</p>
       </div>

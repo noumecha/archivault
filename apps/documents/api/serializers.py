@@ -47,7 +47,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 class VersionDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = VersionDocument
-        fields = ['id', 'numero_version', 'fichier', 'Date_creation', 'cree_par_username']
+        fields = ['id', 'numero_version', 'fichier', 'Date_creation', 'cree_par']
 
 class ThemeSerializer(serializers.ModelSerializer):
     cellule_info = serializers.SerializerMethodField()

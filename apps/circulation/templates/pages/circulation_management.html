@@ -76,16 +76,17 @@
     <div class="modal-content">
       <form id="initierCircuitForm">
         <div class="modal-header">
-          <h5 class="modal-title">Initier une nouvelle circulation</h5>
+          <h5 class="modal-title" id="modal-title">Initier une nouvelle circulation</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <hr>
-        <div class="modal-body">
-          <div id="tache-form-content">
+        <div class="py-0 modal-body">
+          <div id="circulation-form-content">
+            <input type="hidden" name="id" id="update-id">
             {% include 'components/forms/circulation_form.html' %}
           </div>
-          <div class="alert alert-danger mt-3" style="display: none;" id="form-error"></div>
-          <div class="alert alert-success mt-3" style="display: none;" id="form-success"></div>
+          <div class="alert alert-danger mt-2" style="display: none;" id="form-error"></div>
+          <div class="alert alert-success mt-2" style="display: none;" id="form-success"></div>
         </div>
         <hr>
         <div class="modal-footer">
@@ -110,7 +111,7 @@
         <h5 class="modal-title" id="modal-timeline-title">Suivi du circuit</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
+      <div class="py-0 modal-body">
         <div id="timeline-container">
             {# Injecté par CirculationUi.renderTimeline #}
         </div>
@@ -137,7 +138,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <hr>
-      <div class="modal-body pb-0">
+      <div class="py-0 modal-body">
         <p>Êtes-vous sûr de vouloir supprimer cette circulation ?</p>
         <div class="alert alert-danger" style="display: none;" id="delete-form-error"></div>
       </div>
@@ -164,7 +165,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <hr>
-      <div class="modal-body pb-0">
+      <div class="py-0 modal-body">
         <p>Êtes-vous sûr de vouloir supprimer les circulations sélectionnés ?</p>
         <div class="alert alert-danger" style="display: none;" id="bulk-delete-form-error"></div>
       </div>
@@ -204,5 +205,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script type="module" src="{% static 'js/modules/circulations/circulations.controller.js' %}"></script>
+  <script type="module" src="{% static 'js/modules/circulations/index.js' %}"></script>
 {% endblock %}

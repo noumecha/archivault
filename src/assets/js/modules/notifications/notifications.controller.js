@@ -180,19 +180,25 @@ export const NotificationController = {
         });
     });
 
-    // 1. Marquer comme lu (Unitaire)
-    $(document).on('click', '.mark-as-read-btn, .mark-as-read-link', async e => {
-      const id = $(e.currentTarget).closest('[data-id]').data('id');
-      try {
-        await NotificationService.markAsRead(id);
-        await this.refreshNavbar();
-        if ($('#notifications-tbody').length) {
-          await this.loadNotifications(this.getCurrentParams());
+    // 1. Marquer comme lu (Unitaire) - Gère aussi le clic sur l'item du dropdown
+    $(document).on(
+      'click',
+      '.mark-as-read-btn, .mark-as-read-link, .dropdown-notifications-item, [data-action="view"]',
+      async e => {
+        const $target = $(e.currentTarget);
+        const id = $target.closest('[data-id]').data('id');
+
+        try {
+          await NotificationService.markAsRead(id);
+          await this.refreshNavbar();
+          if ($('#notifications-tbody').length) {
+            await this.loadNotifications(this.getCurrentParams());
+          }
+        } catch (err) {
+          console.error('Erreur lecture notification:', err);
         }
-      } catch (err) {
-        console.error('Erreur lecture notification:', err);
       }
-    });
+    );
 
     // 2. Tout marquer comme lu
     $(document).on('click', '#mark-all-read-btn, #mark-all-read-navbar', async e => {
@@ -209,7 +215,7 @@ export const NotificationController = {
         }
       } catch (err) {
         const errorData = err.data?.errors || err.data?.message || err.data?.error || 'Erreur inconnue';
-        NotificationUi.showError("Erreur lors de l'opération : ", msg, '#message-show-error');
+        NotificationUi.showError("Erreur lors de l'opération : ", errorData, '#message-show-error');
       }
     });
 

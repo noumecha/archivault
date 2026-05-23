@@ -23,7 +23,7 @@
               <i class="ri-arrow-left-line"></i> Retour
             </button>
             {% if peut_traiter %}
-              <button class="btn btn-success shadow-sm" data-action="process" data-id="{{ circulation.id }}"
+              <button class="btn btn-success shadow-sm" data-doc-titre="{{ circulation.document.titre }}" data-action="process" data-id="{{ circulation.id }}"
                 data-ordre="{{ circulation.etape_actuelle.ordre }}">
                 <i class="ri-check-double-line me-1"></i> Traiter le document
               </button>
@@ -62,40 +62,88 @@
                     </div>
                 </div>
             </div>
-
-            {# Timeline du Workflow #}
+            {# Timeline du Workflow Enrichie #}
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0"><i class="ri-git-commit-line me-2"></i>Parcours du document</h5>
+                    <h5 class="card-title mb-0">
+                        <i class="ri-git-commit-line me-2"></i>Parcours du document
+                    </h5>
+                    {# Ajout d'un badge de progression globale #}
+                    <span class="badge bg-label-primary rounded-pill">{{ circulation.progression_pourcentage }}% terminé</span>
                 </div>
                 <div class="card-body">
                     <ul class="timeline pb-0">
                         {% for etape in etapes %}
                         <li class="timeline-item timeline-item-transparent {% if forloop.last %}border-transparent{% endif %}">
-                            <span class="timeline-point {% if etape.statut == 'valide' %}timeline-point-success{% elif etape.statut == 'rejete' %}timeline-point-danger{% elif etape.est_actuelle %}timeline-point-warning{% else %}timeline-point-secondary{% endif %}"></span>
+                            {# Point de couleur dynamique #}
+                            <span class="timeline-point
+                                {% if etape.statut == 'valide' %}timeline-point-success
+                                {% elif etape.statut == 'rejete' %}timeline-point-danger
+                                {% elif etape.est_actuelle %}timeline-point-warning
+                                {% else %}timeline-point-secondary{% endif %}">
+                            </span>
+
                             <div class="timeline-event">
                                 <div class="timeline-header mb-1">
-                                    <h6>Étape {{ etape.ordre }} : {{ etape.destinataire.get_full_name|default:etape.destinataire.username }}</h6>
+                                    <h6 class="mb-0 text-primary">
+                                        {# Affichage du titre de l'étape s'il existe #}
+                                        {% if etape.titre_etape %}Étape {{ etape.ordre }}: {{ etape.titre_etape }}{% else %}Étape {{ etape.ordre }}{% endif %}
+                                    </h6>
                                     <small class="text-muted">
                                         {% if etape.date_traitement %}
-                                            {{ etape.date_traitement|date:"d/m/Y H:i" }}
+                                            <i class="ri-calendar-check-line me-1"></i>Traité le {{ etape.date_traitement|date:"d/m/Y H:i" }}
                                         {% elif etape.est_actuelle %}
-                                            <span class="badge badge-dot bg-warning"></span> En attente
+                                            <span class="badge bg-label-warning">En cours</span>
+                                        {% else %}
+                                            <span class="text-lowercase italic">Prévu</span>
                                         {% endif %}
                                     </small>
                                 </div>
+                                {# Informations détaillées sur l'acteur et l'échéance sur deux lignes #}
+                                <div class="mb-2">
+                                    {# 1ère ligne : Destinataire #}
+                                    <div class="mb-1">
+                                        <small class="text-muted">Destinataire :</small>
+                                        <span class="small fw-semibold text-dark">
+                                            {{ etape.destinataire.get_full_name|default:etape.destinataire.username }}
+                                        </span>
+                                    </div>
+
+                                    {# 2ème ligne : Échéance #}
+                                    <div>
+                                        <small class="text-muted">Échéance :</small>
+                                        <span class="small {% if etape.est_actuelle and etape.date_echeance < now %}text-danger fw-bold{% else %}text-body{% endif %}">
+                                            <i class="ri-time-line ms-1 me-1"></i>{{ etape.date_echeance|date:"d/m/Y" }}
+                                            {% if etape.est_actuelle and etape.date_echeance < now %}
+                                                <small class="ms-1">(Retard)</small>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
                                 <p class="mb-2">
                                     {% if etape.statut == 'valide' %}
-                                        <span class="text-success small fw-bold"><i class="ri-checkbox-circle-line"></i> Approuvé</span>
+                                        <span class="badge bg-label-success small"><i class="ri-checkbox-circle-line"></i> Approuvé</span>
+                                        {% if etape.version_produite %}
+                                            <small class="ms-2 text-muted">
+                                                <i class="ri-file-list-3-line"></i> Ver. {{ etape.version_produite.numero }}
+                                            </small>
+                                        {% endif %}
                                     {% elif etape.statut == 'rejete' %}
-                                        <span class="text-danger small fw-bold"><i class="ri-close-circle-line"></i> Rejeté</span>
+                                        <span class="badge bg-label-danger small"><i class="ri-close-circle-line"></i> Rejeté</span>
+                                    {% elif etape.est_actuelle %}
+                                        <span class="text-warning small fw-bold">Action attendue</span>
                                     {% else %}
-                                        <span class="text-muted small">En attente de traitement</span>
+                                        <span class="text-muted small italic">En attente de traitement</span>
                                     {% endif %}
                                 </p>
+
+                                {# Commentaire avec distinction de style selon le statut #}
                                 {% if etape.commentaire %}
-                                <div class="bg-light p-2 rounded border-start border-3 {% if etape.statut == 'rejete' %}border-danger{% else %}border-success{% endif %} small">
-                                    "{{ etape.commentaire }}"
+                                <div class="bg-light p-2 rounded border-start border-3 {% if etape.statut == 'rejete' %}border-danger{% elif etape.statut == 'valide' %}border-success{% else %}border-warning{% endif %}">
+                                    <div class="small italic text-dark text-break">
+                                        <i class="ri-chat-quote-line me-1 text-muted"></i>{{ etape.commentaire }}
+                                    </div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -156,5 +204,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script type="module" src="{% static 'js/modules/circulations/circulations.controller.js' %}"></script>
+  <script type="module" src="{% static 'js/modules/circulations/index.js' %}"></script>
 {% endblock %}

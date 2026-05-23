@@ -294,34 +294,83 @@ function submitForm(formId, baseUrl, fetchUrl, modalId = null) {
   });
 }
 
-// set the success message after form submission is successful
+/**
+ * Formate une clé de champ d'erreur en un format plus lisible pour l'utilisateur, en gérant les clés imbriquées et les indices de tableaux.
+ * Exemples :
+ * - "etapes.0.titre_etape" → "Etapes → #1 → Titre Etape"
+ * - "document" → "Document"
+ * @param {*} path
+ * @returns
+ */
+function formatFriendlyKey(path) {
+  return path
+    .split('.')
+    .map(part => {
+      if (!isNaN(part)) {
+        return `#${parseInt(part) + 1}`;
+      }
+      return part.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    })
+    .join(' → ');
+}
+
+/**
+ * Fonction récursive pour parser les erreurs d'une réponse API et les afficher de manière lisible
+ * dans une liste HTML. Gère les erreurs sous forme de string, d'objets ou de tableaux, avec un formatage clair des clés.
+ * @param {*} errors
+ * @param {*} list
+ * @param {*} parentKey
+ * @returns
+ */
+function parseErrors(errors, list, parentKey = '') {
+  if (typeof errors === 'string') {
+    const friendlyKey = formatFriendlyKey(parentKey);
+    list.append($('<li></li>').text(friendlyKey ? `${friendlyKey}: ${errors}` : errors));
+    return;
+  }
+  if (Array.isArray(errors)) {
+    errors.forEach(error => {
+      parseErrors(error, list, parentKey);
+    });
+    return;
+  }
+  if (typeof errors === 'object' && errors !== null) {
+    Object.keys(errors).forEach(key => {
+      const newKey = parentKey ? `${parentKey}.${key}` : key;
+      parseErrors(errors[key], list, newKey);
+    });
+  }
+}
+
+/***
+ * Affiche un message d'alerte dans un conteneur donné, avec gestion intelligente des erreurs
+ * et option de loader. Le message peut être une string simple ou un objet d'erreurs complexe.
+ * Le conteneur doit être prévu pour accueillir des messages (ex: div d'alerte dans un modal).
+ * Le loader, s'il est fourni, sera affiché pendant 5 secondes pour indiquer un traitement en cours.
+ * Les messages d'erreur complexes (objets ou tableaux) seront formatés de manière lisible pour l'utilisateur.
+ * Les messages simples seront affichés tels quels.
+ * Après affichage, le message disparaîtra automatiquement après 5 secondes.
+ */
 function showAlertMessage(msg, id, loader = null) {
   const msgBlock = $(id);
   msgBlock.stop(true, true).empty();
-  if (typeof msg === 'object' && !Array.isArray(msg)) {
-    // Handle JSON object with fields and arrays of messages
-    const list = $('<ul></ul>');
-    Object.keys(msg).forEach(key => {
-      msg[key].forEach(error => {
-        if (key === '__all__') {
-          list.append($('<li></li>').text(error)); // Don't show the '__all__' key
-        } else {
-          list.append($('<li></li>').text(`${key}: ${error.message || error}`));
-        }
-      });
-    });
+  const list = $('<ul></ul>');
+  if (typeof msg === 'object' && msg !== null) {
+    parseErrors(msg, list);
     msgBlock.append(list);
   } else {
-    // Handle string messages
     msgBlock.append($('<p class="text-center mb-0"></p>').text(msg));
   }
-
   if (loader) {
     startLoader(loader);
-    setTimeout(() => closeLoader(loader), 5000);
+    setTimeout(() => {
+      closeLoader(loader);
+    }, 5000);
   }
   msgBlock.fadeIn().css('display', 'block');
-  setTimeout(() => msgBlock.fadeOut(), 5000);
+  setTimeout(() => {
+    msgBlock.fadeOut();
+  }, 5000);
 }
 
 // show message
@@ -421,7 +470,16 @@ function toggleBulkButton(selectCounterSelector, bulkActionsContainerSelector) {
   }
 }
 
-// reusable function for showing toast base on his id , message and type (success, error, info) with a timeout
+/**
+ * Affiche un toast de notification avec un message donné, un type de style (success, danger, info), et une durée d'affichage personnalisable.
+ * Le toast doit être défini dans le HTML avec l'ID spécifié (par défaut #toast-container) et doit contenir un élément avec la classe .toast-body pour le message.
+ * Exemple d'utilisation : showToast("Opération réussie", "success");
+ * @param {*} message
+ * @param {*} type
+ * @param {*} toastId
+ * @param {*} delay
+ * @returns
+ */
 function showToast(message, type = 'info', toastId = '#toast-container', delay = 5000) {
   const $toastEl = $(toastId);
   if ($toastEl.length === 0) {
@@ -448,6 +506,33 @@ function closeBootstrapModal(modalId) {
   if (modalInstance) modalInstance.hide();
 }
 
+/**
+ * function pour simuler la desactivation d'un élément
+ * @param {*} selector
+ */
+function disableElement(selector) {
+  const element = $(selector);
+  if (element.length) {
+    element.css({
+      'pointer-events': 'none',
+      'background-color': '#e9ecef'
+    });
+    element.attr('tabindex', '-1');
+    element.trigger('change');
+  }
+}
+
+/**
+ * function pour simuler l'activation d'un élément
+ * @param {*} selector
+ */
+function enableElement(selector) {
+  const element = $(selector);
+  if (element.length) {
+    element.css({ 'pointer-events': '', 'background-color': '' });
+  }
+}
+
 // export
 export {
   showMessage,
@@ -472,5 +557,7 @@ export {
   resetForm,
   showToast,
   renderPagination,
-  closeBootstrapModal
+  closeBootstrapModal,
+  disableElement,
+  enableElement
 };

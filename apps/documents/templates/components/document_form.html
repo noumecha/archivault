@@ -68,7 +68,7 @@
   <div class="col-md-6 form-group mb-4">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <select class="form-select" id="theme" name="theme" required>
+        <select class="form-select" id="theme" name="theme">
           <option value="">-- Sélectionner --</option>
           {% for th in themes %}
             <option value="{{ th.id }}">{{ th.libelle }}</option>

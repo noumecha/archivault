@@ -10,7 +10,9 @@ from django.shortcuts import get_object_or_404
 from .serializers import *
 from django.db.models import Q
 from ..models import *
+from apps.documents.models import VersionDocument
 from django.db import transaction
+from datetime import timedelta
 
 class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
     """
@@ -86,6 +88,29 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
         self.check_role_permission(request)
         return super().delete_action(request, pk, *args, **kwargs)
 
+    def retrieve(self, request, *args, **kwargs):
+        """Surcharge du point d'accès Détail pour détecter la consultation de la tâche."""
+        response = super().retrieve(request, *args, **kwargs)
+        tache = self.get_object()
+
+        # Si c'est l'assigné qui consulte la tâche pour la première fois (ou à chaque fois)
+        if tache.assignee_a == request.user:
+            # Optionnel : On peut ajouter un booléen 'consultee' sur le modèle Tache
+            # pour n'envoyer cette notification de consultation QU'UNE seule fois.
+
+            if tache.assignee_par and tache.assignee_par != request.user:
+                # Créer une notification à l'attention de l'initiateur pour lui dire que sa tâche est vue
+                Notification.objects.create(
+                    destinataire=tache.assignee_par,
+                    titre="Tâche consultée",
+                    message=f"{request.user.get_full_name() or request.user.username} a ouvert et consulté la tâche : {tache.titre}.",
+                    categorie=Notification.Category.TACHE,
+                    content_object=tache,
+                    url_action=f"/taches/detail/{tache.id}/"
+                )
+
+        return response
+
     # ─────────────────────────────────────────────────────────────────────────
     # ACTIONS PERSONNALISÉES
     # ─────────────────────────────────────────────────────────────────────────
@@ -93,6 +118,7 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
         'bulk_delete': 'action_bulk_delete',
         'comment': 'action_comment'
     }
+
 
     def action_bulk_delete(self, request, *args, **kwargs):
         """Suppression en masse."""
@@ -142,6 +168,30 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
             'data': TacheSerializer(tache, context={'request': request}).data
         })
 
+# cicurlaations API view
+def est_superieur_hierarchique(user_courant, user_precedent):
+    """
+    Détermine si user_courant a un rôle strictement supérieur à user_precedent
+    selon la hiérarchie de l'application.
+    """
+    # Cartographie de la hiérarchie (plus le score est élevé, plus le rôle est important)
+    hierarchie_roles = {
+        RoleUtilisateur.GESTIONNAIRE: 1,
+        RoleUtilisateur.RESPONSABLE: 2,
+        RoleUtilisateur.SUPERVISEUR: 3,
+        RoleUtilisateur.ADMIN: 4,
+        RoleUtilisateur.SUPERADMIN: 5,
+    }
+
+    # Récupération du rôle principal (ajustez selon votre implémentation réelle de récupération du rôle)
+    role_courant = getattr(user_courant, 'role', None)
+    role_precedent = getattr(user_precedent, 'role', None)
+
+    score_courant = hierarchie_roles.get(role_courant, 0)
+    score_precedent = hierarchie_roles.get(role_precedent, 0)
+
+    return score_courant > score_precedent
+
 class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     """
     API pour la gestion de la circulation des documents.
@@ -150,7 +200,6 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     Endpoints :
 
         GET    /api/circulations/              → Liste (paginée, filtrée, recherchée)
-        POST   /api/circulations/create              → Créer
         GET    /api/circulations/<id>/         → Détail
         PUT    /api/circulations/<id>/update         → Mise à jour complète
         PATCH  /api/circulations/<id>/update         → Mise à jour partielle
@@ -185,6 +234,31 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
         return super().get_queryset(queryset=qs)
 
+    def delete_action(self, request, *args, **kwargs):
+        circulation = self.get_object()
+        if circulation.statut == StatutCirculation.CLOS:
+            return Response({'success': False, 'message': 'Suppression impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
+        self.check_role_permission(request)
+        return super().delete_action(request, *args, **kwargs)
+
+    def update_action(self, request, *args, **kwargs):
+        circulation = self.get_object()
+        # AJOUT : Si la circulation est retournée à l'état initial, l'initiateur a le droit de la modifier
+        # Même si elle était initialement verrouillée.
+        is_initiateur = (circulation.initie_par == request.user)
+        a_un_retour_initial = circulation.etapes.filter(ordre=1, statut=StatutCirculation.RETOURNE).exists()
+        if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE]:
+            return Response({'success': False, 'message': 'Modification impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
+        # Si le circuit est en cours mais qu'il a subi un retour à l'étape 1, l'initiateur peut réorganiser
+        if circulation.statut == StatutCirculation.EN_COURS and a_un_retour_initial and is_initiateur:
+            return super().update_action(request, *args, **kwargs)
+        if circulation.statut == StatutCirculation.REJETE:
+            return Response({'success': False, 'message': 'Modification impossible : le circuit est marqué comme rejeté.'}, status=status.HTTP_403_FORBIDDEN)
+        self.check_role_permission(request)
+        if PermissionService.can_update_circulation(request.user, circulation):
+            return super().update_action(request, *args, **kwargs)
+        return super().update_action(request, *args, **kwargs)
+
     # ─────────────────────────────────────────────────────────────────────────
     # ACTIONS CUSTOM
     # ─────────────────────────────────────────────────────────────────────────
@@ -203,7 +277,7 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                 'success': False,
                 'message': 'Aucun ID fourni'
             }, status=status.HTTP_400_BAD_REQUEST)
-        deleted_count, _ = CirculationDocument.objects.filter(id__in=ids).delete()
+        deleted_count, _ = CirculationDocument.objects.filter(id__in=ids).exclude(statut=StatutCirculation.CLOS).delete()
         return Response({
             'success': True,
             'message': f'{deleted_count} circulation(s) supprimée(s)',
@@ -229,7 +303,8 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                     titre=data.get('titre'),
                     description=data.get('description', ''),
                     initie_par=request.user,
-                    statut=StatutCirculation.EN_COURS
+                    statut=StatutCirculation.EN_COURS,
+                    date_fin=data.get('date_fin')
                 )
 
                 # 2. Créer les étapes
@@ -237,67 +312,123 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                     is_first = (i == 0)
                     EtapeCirculation.objects.create(
                         circulation=circulation,
+                        titre_etape=etape.get('titre_etape'),
                         destinataire_id=etape.get('destinataire'),
                         ordre=etape.get('ordre', i + 1),
                         statut=StatutCirculation.EN_COURS if is_first else StatutCirculation.EN_ATTENTE,
                         est_actuelle=is_first,
-                        date_reception=timezone.now() if is_first else None
+                        date_reception=timezone.now() if is_first else None,
+                        date_echeance=etape.get('date_echeance')
                     )
 
-                return Response(CirculationDocumentSerializer(circulation).data, status=status.HTTP_201_CREATED)
+                return Response(CirculationDocumentSerializer(circulation, context={'request': request}).data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def action_traiter_etape(self, request, pk=None, *args, **kwargs):
-        """
-        Valider ou rejeter l'étape actuelle.
-        Attendu : { "decision": "valide" | "rejete" | "retourne", "commentaire": "..." }
-        """
         circulation = get_object_or_404(CirculationDocument, pk=pk)
         etape_actuelle = circulation.etapes.filter(est_actuelle=True).first()
-
+        if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE]:
+            return Response({
+                'success': False,
+                'message': 'Ce circuit est déjà clôturé et ne peut plus être traité.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         if not etape_actuelle:
             return Response({'success': False, 'message': 'Aucune étape active sur ce circuit'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier que c'est bien le destinataire qui traite
         if etape_actuelle.destinataire != request.user and not is_admin(request.user):
             return Response({'success': False, 'message': 'Vous n\'êtes pas le destinataire de cette étape'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Récupération des données
         decision = request.data.get('decision')
         commentaire = request.data.get('commentaire', '')
+        delai_heures_soumis = request.data.get('delai_retour_heures')
+        nouveau_fichier = request.FILES.get('fichier')
 
         if decision not in [StatutCirculation.VALIDE, StatutCirculation.REJETE, StatutCirculation.RETOURNE]:
             return Response({'success' : False, 'message': 'Décision invalide'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             with transaction.atomic():
-                # 1. Clôturer l'étape actuelle
+                # 1. Mise à jour de l'étape actuelle
                 etape_actuelle.statut = decision
                 etape_actuelle.commentaire = commentaire
                 etape_actuelle.date_traitement = timezone.now()
                 etape_actuelle.traite_par = request.user
                 etape_actuelle.est_actuelle = False
+
+                # --- LOGIQUE DE VERSIONNEMENT ---
+                if decision == StatutCirculation.VALIDE and nouveau_fichier:
+                    # Calcul du prochain numéro de version
+                    last_ver = etape_actuelle.circulation.document.versions.count()
+                    nouvelle_version = VersionDocument.objects.create(
+                        document=etape_actuelle.circulation.document,
+                        titre=etape_actuelle.circulation.document.titre + " - " + timezone.now().strftime("%Y-%m-%d") + f" - V{last_ver + 1}",
+                        fichier=nouveau_fichier,
+                        numero_version=last_ver + 1,
+                        cree_par=request.user
+                    )
+                    etape_actuelle.version_produite = nouvelle_version
+
                 etape_actuelle.save()
 
-                # 2. Logique de flux
+                # --- LOGIQUE DE FLUX (REJET / RETOUR / VALIDE) ---
+
                 if decision == StatutCirculation.VALIDE:
                     etape_suivante = circulation.etapes.filter(ordre__gt=etape_actuelle.ordre).first()
                     if etape_suivante:
-                        etape_suivante.est_actuelle = True
-                        etape_suivante.statut = StatutCirculation.EN_COURS
-                        etape_suivante.date_reception = timezone.now()
-                        etape_suivante.save()
+                        self._activer_etape(etape_suivante)
+                        circulation.statut = StatutCirculation.EN_COURS
+                        circulation.save()
                     else:
-                        # Plus d'étapes -> Circuit terminé
                         circulation.statut = StatutCirculation.CLOS
                         circulation.date_fin = timezone.now()
                         circulation.save()
 
-                elif decision == StatutCirculation.REJETE:
-                    circulation.statut = StatutCirculation.REJETE
-                    circulation.date_fin = timezone.now()
+                elif decision in [StatutCirculation.REJETE, StatutCirculation.RETOURNE]:
+                    # On cherche l'étape précédente
+                    etape_precedente = circulation.etapes.filter(ordre__lt=etape_actuelle.ordre).last()
+
+                    if etape_precedente:
+                        nouvelle_date_limite = etape_precedente.date_echeance
+                        if est_superieur_hierarchique(request.user, etape_precedente.destinataire):
+                            if delai_heures_soumis:
+                                nouvelle_date_limite = timezone.now() + timedelta(hours=int(delai_heures_soumis))
+                            else:
+                                nouvelle_date_limite = timezone.now() + timedelta(days=2)
+                            if circulation.date_echeance and nouvelle_date_limite > circulation.date_echeance:
+                                nouvelle_date_limite = circulation.date_echeance
+                        else:
+                            pass
+                        self._activer_etape(etape_precedente, nouvelle_date_limite=nouvelle_date_limite)
+                        circulation.statut = StatutCirculation.EN_COURS
+
+                    else:
+                        # On réactive l'étape 1 mais avec un tag spécifique, ou on permet la modification globale.
+                        first_etape = circulation.etapes.filter(ordre=1).first()
+                        if first_etape:
+                            # On passe le statut à RETOURNE pour signifier à l'initiateur qu'il doit corriger le tir
+                            first_etape.statut = StatutCirculation.RETOURNE
+                            first_etape.est_actuelle = True # L'étape redevient active visuellement
+                            first_etape.save()
+
+                            circulation.statut = StatutCirculation.RETOURNE
+                        else:
+                            circulation.statut = StatutCirculation.REJETE
+                            circulation.date_fin = timezone.now()
+
                     circulation.save()
 
-                return Response({'success' : True, 'message': 'Étape traitée avec succès'})
+                return Response({'success': True, 'message': 'Traitement effectué avec succès'}, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def _activer_etape(self, etape, nouvelle_date_limite=None):
+        """Méthode utilitaire pour activer une étape"""
+        etape.est_actuelle = True
+        etape.statut = StatutCirculation.EN_COURS
+        etape.date_reception = timezone.now()
+        if nouvelle_date_limite:
+            etape.date_echeance = nouvelle_date_limite
+        etape.save()
