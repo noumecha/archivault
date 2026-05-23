@@ -1,6 +1,7 @@
 # apps/circulation/api/serializers.py
 from rest_framework import serializers
 from apps.circulation.models import *
+from apps.documents.models import DocumentPermission
 from config.roles import *
 from ..services.permission_service import *
 from django.utils import timezone
@@ -153,6 +154,29 @@ class TacheSerializer(serializers.ModelSerializer):
             'Date_creation', 'Date_miseajour', 'tache_actions'
         ]
         read_only_fields = ['assignee_par', 'date_cloture', 'Date_creation', 'Date_miseajour']
+
+    def create(self, validated_data):
+        tache = super().create(validated_data)
+        self._gerer_acces_temporaire(tache)
+        return tache
+
+    def update(self, instance, validated_data):
+        tache = super().update(instance, validated_data)
+        self._gerer_acces_temporaire(tache)
+        return tache
+
+    def _gerer_acces_temporaire(self, tache):
+        """Donne un accès au document si l'assigné est hors de la cellule."""
+        document = tache.document
+        utilisateur = tache.assignee_a
+
+        if utilisateur and document.cellule and utilisateur.cellule != document.cellule:
+            # On s'assure qu'il n'a pas déjà une permission écrite
+            DocumentPermission.objects.get_or_create(
+                document=document,
+                utilisateur=utilisateur,
+                defaults={'type_acces': 'lecture_ecriture'} # Adapte selon tes choix d'accès
+            )
 
     def get_tache_actions(self, obj):
         user = self.context['request'].user

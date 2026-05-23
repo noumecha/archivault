@@ -33,10 +33,10 @@ export const TacheService = {
     });
   },
 
-  addComment(id, data) {
+  addComment(id, formData) {
     return ApiClient.request(`/api/taches/${id}/commenter/`, {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: formData
     });
   },
 

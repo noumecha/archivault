@@ -24,6 +24,7 @@ class DocumentPermissionService:
         return qs.filter(
             Q(cellule=user.cellule) |
             Q(cree_par=user) |
+            Q(permissions=user) |
             Q(document_permissions__utilisateur=user,
             document_permissions__can_view=True
         )
