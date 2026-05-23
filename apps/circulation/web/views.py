@@ -194,11 +194,12 @@ class TacheManagementView(RoleRequiredMixin, BaseCRUDView):
         ('priorite', PrioriteTache, 'Priorité'),
         ('assignee_a', Utilisateur, 'Assigné à'),
         ('document', Document, 'Document'),
+        ('assignee_par', Utilisateur, 'Assigné par'),
     ]
 
     search_fields = ['titre', 'description', 'document__titre']
-    headers = ["Titre", "Document", "Assigné à", "Statut", "Priorité", "Échéance"]
-    fields = ['titre', 'document', 'assignee_a', 'statut', 'priorite', 'date_echeance']
+    headers = ["Titre", "Document", "Assigné à", "Assigné par", "Statut", "Priorité", "Échéance"]
+    fields = ['titre', 'document', 'assignee_a', 'assignee_par', 'statut', 'priorite', 'date_echeance']
 
     def get_queryset(self, search_query=None):
         user = self.request.user
@@ -235,7 +236,7 @@ class TacheManagementView(RoleRequiredMixin, BaseCRUDView):
             context['documents'] = Document.objects.filter(cellule=user.cellule)
 
         for f in context.get('filters', []):
-            if f['name'] == 'assignee_a':
+            if f['name'] == 'assignee_a' or f['name'] == 'assignee_par':
                 f['items'] = context['utilisateurs']
             if f['name'] == 'document':
                 f['items'] = context['documents']
