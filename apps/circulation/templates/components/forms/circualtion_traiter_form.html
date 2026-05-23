@@ -18,6 +18,24 @@
           <label class="btn btn-outline-danger" for="dec-rejete"><i class="ri-close-line"></i> Rejeter</label>
       </div>
     </div>
+    <!-- AJOUT : Section délai personnalisé (Affiché dynamiquement en JS si retour et supérieur hiérarchique) -->
+    <div class="mb-4">
+      <div id="delai-retour-section" style="display: none;">
+        <label class="form-label">Délai accordé pour la correction (en heures)</label>
+        <input type="number" id="delai_retour_heures" class="form-control" min="1" placeholder="Ex: 24 (Laissez vide pour le délai par défaut)">
+      </div>
+    </div>
+
+    <!-- AJOUT : Choix Forcé Obligatoire "Document modifié ?" (Affiché uniquement si décision == valide) -->
+    <div class="mb-4" id="document-modifie-section">
+      <label class="form-label d-block">Avez-vous modifié le document original ? <span class="text-danger">*</span></label>
+      <div class="btn-group w-100" role="group">
+          <input type="radio" class="btn-check" name="is_document_modifie" id="mod-oui" value="oui" autocomplete="off">
+          <label class="btn btn-outline-primary" for="mod-oui">Oui, j'ai modifié le document</label>
+          <input type="radio" class="btn-check" name="is_document_modifie" id="mod-non" value="non" autocomplete="off">
+          <label class="btn btn-outline-info" for="mod-non">Non, identique</label>
+      </div>
+    </div>
     <div class="mb-4">
       <div id="version-upload-section" style="display:none;">
           <label class="form-label">Document modifié (Nouvelle version)</label>
@@ -34,7 +52,7 @@
   <hr>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-    <button type="submit" class="btn btn-primary d-flex align-items-center">
+    <button type="submit" id="save-traiter-btn" class="btn btn-primary d-flex align-items-center">
       <span id="save-btn-text">Confirmer la décision</span>
       <div id="traiter-form-loader" class="d-none text-center">
         <i class="ri-loader-2-fill ri-2x spin text-white"></i>

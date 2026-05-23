@@ -82,10 +82,10 @@ export const CirculationUi = {
                 <i class="ri-checkbox-circle-line me-1"></i>Traiter l'étape
               </a>
               <div class="dropdown-divider"></div>
-              <a href="#" class="dropdown-item text-primary ${isClos ? 'disabled' : ''}" data-action="edit-circulation" data-id="${circ.id}">
+              <a href="#" class="dropdown-item text-primary ${isClos || !circ.can_update ? 'disabled' : ''}" data-action="edit-circulation" data-id="${circ.id}">
                 <i class="ri-edit-line me-1"></i>Modifier
               </a>
-              <a href="#" class="dropdown-item text-danger  ${isClos ? 'disabled' : ''}" data-action="delete-circulation" data-id="${circ.id}">
+              <a href="#" class="dropdown-item text-danger  ${isClos || !circ.can_delete ? 'disabled' : ''}" data-action="delete-circulation" data-id="${circ.id}">
                 <i class="ri-delete-bin-6-line me-1"></i>Supprimer
               </a>
             </div>
@@ -192,51 +192,6 @@ export const CirculationUi = {
     );
   },
 
-  /*renderTimeline(circulation) {
-    const container = $('#timeline-container');
-    container.empty();
-
-    if (!circulation.etapes || circulation.etapes.length === 0) {
-      container.html('<p class="text-center">Aucune étape définie</p>');
-      return;
-    }
-
-    const timelineHtml = circulation.etapes
-      .map((etape, index) => {
-        const isCompleted = ['valide', 'rejete', 'retourne'].includes(etape.statut);
-        const isActive = etape.est_actuelle;
-        const icon = isCompleted
-          ? 'ri-checkbox-circle-fill text-success'
-          : isActive
-            ? 'ri-time-line text-primary'
-            : 'ri-checkbox-blank-circle-line text-muted';
-
-        const dateEcheance = etape.date_echeance ? new Date(etape.date_echeance).toLocaleDateString() : '-';
-
-        return `
-            <div class="timeline-item pb-4 border-start ms-3 ps-4 position-relative">
-                <span class="position-absolute translate-middle start-0 bg-white">
-                    <i class="${icon} fs-4"></i>
-                </span>
-                <div class="timeline-header d-flex justify-content-between">
-                    <h6 class="mb-0 ${isActive ? 'fw-bold text-primary' : ''}">Étape ${etape.ordre} : ${etape.titre_etape || 'Sans titre'} (${etape.destinataire_name})</h6>
-                    <small class="text-muted">${etape.date_traitement ? new Date(etape.date_traitement).toLocaleString() : ''}</small>
-                </div>
-                <div class="d-flex align-items-center gap-2 mb-1">
-                    ${this.getStatusBadge(etape.statut, etape.statut_display)}
-                </div>
-                <div class="text-muted"><i class="ri-user-follow-line"></i> Destinataire : ${etape.destinataire_name}</div>
-                <div class="small text-muted mb-2"><i class="ri-calendar-todo-line"></i> Échéance : ${dateEcheance}</div>
-                ${etape.commentaire ? `<div class="alert alert-light p-2 mb-0 small">"${etape.commentaire}"</div>` : ''}
-            </div>
-        `;
-      })
-      .join('');
-
-    container.html(timelineHtml);
-    $('#modal-timeline-title').text(`Suivi : ${circulation.document_titre}`);
-  },*/
-
   /**
    * filtrer les utilisateurs en foncton de la cellule pour garder la cohérence dans la création des circulation
    * @param {*} celluleId - ID de la cellule à filtrer. Si null, désactive le filtrage et affiche un message d'erreur.
@@ -319,7 +274,7 @@ export const CirculationUi = {
         </div>
         <div class="col-md-4 mb-3">
           <label class="form-label">Destinataire</label>
-          <select class="form-select user-select" name="etapes[${index}][destinataire]" required ${disabledAttr}>
+          <select id="etape-user-select" class="form-select user-select" name="etapes[${index}][destinataire]" required ${disabledAttr}>
             ${optionsFinales}
           </select>
         </div>

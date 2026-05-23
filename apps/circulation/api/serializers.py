@@ -39,6 +39,8 @@ class CirculationDocumentSerializer(serializers.ModelSerializer):
     etapes_count = serializers.SerializerMethodField()
     etapes = EtapeCirculationSerializer(many=True, required=True)
     etape_actuelle = serializers.SerializerMethodField()
+    can_update = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
 
     class Meta:
         model = CirculationDocument
@@ -46,7 +48,7 @@ class CirculationDocumentSerializer(serializers.ModelSerializer):
             'id', 'document', 'document_titre', 'titre', 'description',
             'initie_par', 'initie_par_name', 'statut', 'statut_display',
             'date_debut', 'date_fin', 'etapes_count',
-            'Date_creation', 'Date_miseajour', 'etapes', 'etape_actuelle'
+            'Date_creation', 'Date_miseajour', 'etapes', 'etape_actuelle', 'can_update', 'can_delete'
         ]
         read_only_fields = ['initie_par', 'Date_creation', 'Date_miseajour']
 
@@ -57,6 +59,14 @@ class CirculationDocumentSerializer(serializers.ModelSerializer):
                     "Cette circulation est terminée. Aucune modification n'est autorisée."
                 )
         return data
+
+    def get_can_delete(self, obj):
+        user = self.context['request'].user
+        return PermissionService.can_delete_circulation(user, obj)
+
+    def get_can_update(self, obj):
+        user = self.context['request'].user
+        return PermissionService.can_update_circulation(user, obj)
 
     def update(self, instance, validated_data):
         etapes_data = validated_data.pop('etapes', None)

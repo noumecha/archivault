@@ -277,32 +277,63 @@ export const CirculationController = {
       }
     });
 
-    // 2. TRAITEMENT D'UNE ÉTAPE (Décision)
+    // 1. Écouteur sur le changement de décision globale
+    $(document).on('change', 'input[name="decision"]', function () {
+      const decision = $(this).val();
+
+      if (decision === 'valide') {
+        $('#document-modifie-section').slideDown();
+        $('#delai-retour-section').slideUp();
+
+        // Rétablir l'affichage de l'upload si 'Oui' était déjà coché
+        if ($('input[name="is_document_modifie"]:checked').val() === 'oui') {
+          $('#version-upload-section').slideDown();
+        }
+      } else {
+        // Si 'rejete' ou 'retourne'
+        $('#document-modifie-section').slideUp();
+        $('#version-upload-section').slideUp();
+        $('#delai-retour-section').slideDown();
+      }
+    });
+
+    // Ecouteur sur le changement du choix "Document modifié"
+    $(document).on('change', 'input[name="is_document_modifie"]', function () {
+      if ($(this).val() === 'oui') {
+        $('#version-upload-section').slideDown();
+      } else {
+        $('#version-upload-section').slideUp();
+        $('#document-revision').val('');
+      }
+    });
+
+    // OUVERTURE DE LA MODAL (Déclencheur)
     $(document).on('click', '[data-action="process"]', e => {
       const $btn = $(e.currentTarget);
       const id = $btn.data('id');
       const ordre = $btn.data('ordre') || 'En cours';
-      console.log('Titre document : ', $btn.data('doc-titre'));
+
+      // Reset du formulaire à blanc à chaque ouverture
+      const form = document.getElementById('traitementForm');
+      if (form) form.reset();
 
       $('#process-circ-id').val(id);
       $('#display-etape-ordre').text(ordre);
       $('#display-doc-titre').text($btn.data('doc-titre') || 'Document inconnu');
+      $('#traiter-show-error').hide().text('');
+      $('#traiter-show-success').hide().text('');
 
-      // Reset visibility based on default checked radio (valide)
-      $('#version-upload-section').show();
+      // États initiaux par défaut (Puisque 'valide' est coché par défaut dans le HTML)
+      $('#dec-valide').prop('checked', true);
+      $('#document-modifie-section').show();
+      $('#version-upload-section').hide();
+      $('#delai-retour-section').hide();
 
-      // Toggle visibility when decision changes
-      $('input[name="decision"]').on('change', function () {
-        if ($(this).val() === 'valide') {
-          $('#version-upload-section').slideDown();
-        } else {
-          $('#version-upload-section').slideUp();
-        }
-      });
-
+      // Affichage de la modal Bootstrap
       new bootstrap.Modal(document.getElementById('modal-traiter-etape')).show();
     });
 
+    // TRAITEMENT D'UNE ÉTAPE (Décision)
     $('#traitementForm').on('submit', async e => {
       e.preventDefault();
       const $form = $(e.currentTarget);
@@ -316,12 +347,25 @@ export const CirculationController = {
 
       // Utilisation de FormData pour supporter l'upload de fichier
       const formData = new FormData();
-      formData.append('decision', $('input[name="decision"]:checked').val());
+      const decision = $('input[name="decision"]:checked').val();
+      const isDocumentModifie = $('input[name="is_document_modifie"]:checked').val();
+      formData.append('decision', decision);
+      formData.append('is_document_modifie', isDocumentModifie);
       formData.append('commentaire', $('#decision-commentaire').val());
 
-      const fileInput = document.getElementById('document-revision');
-      if (fileInput && fileInput.files[0]) {
-        formData.append('fichier', fileInput.files[0]);
+      // Gestion conditionnelle des paramètres selon la décision
+      if (decision === 'valide') {
+        if (isDocumentModifie === 'oui') {
+          const fileInput = document.getElementById('document-revision');
+          if (fileInput && fileInput.files[0]) {
+            formData.append('fichier', fileInput.files[0]);
+          }
+        }
+      } else if (decision === 'retourne') {
+        const delaiHeures = $('#delai_retour_heures').val();
+        if (delaiHeures) {
+          formData.append('delai_retour_heures', delaiHeures);
+        }
       }
 
       try {

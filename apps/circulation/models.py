@@ -87,6 +87,7 @@ class EtapeCirculation(models.Model):
     date_reception = models.DateTimeField(null=True, blank=True) # Traçabilité : "Vu à telle heure"
     date_echeance = models.DateTimeField(default=timezone.now)
     titre_etape = models.CharField(max_length=255, null=True, blank=True)
+    is_document_modifie = models.BooleanField(default=False) # Indique si le document a été modifié pendant cette étape
     version_produite = models.ForeignKey(
         'documents.VersionDocument',
         on_delete=models.SET_NULL,

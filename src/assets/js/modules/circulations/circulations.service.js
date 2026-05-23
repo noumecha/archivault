@@ -75,7 +75,7 @@ export const CirculationService = {
     $form.find('.etape-item').each(function (i) {
       data.etapes.push({
         id: $(this).find('.etape-id').val() || null,
-        destinataire: $(this).find('select').val(),
+        destinataire: $(this).find('#etape-user-select').val(),
         ordre: i + 1,
         titre_etape: $(this).find('input[name*="[titre_etape]"]').val(),
         date_echeance: $(this).find('input[name*="[date_echeance]"]').val()
@@ -158,27 +158,47 @@ export const CirculationService = {
   validateDecision(data) {
     console.log('Validation des données de décision :', data);
     const errors = {};
-    const validDecisions = ['valide', 'rejete'];
+
+    // Prise en compte de 'retourne'
+    const validDecisions = ['valide', 'rejete', 'retourne'];
 
     const isFormData = data instanceof FormData;
     const decision = isFormData ? data.get('decision') : data.decision;
     const commentaire = isFormData ? data.get('commentaire') : data.commentaire;
+    const isDocumentModifie = isFormData ? data.get('is_document_modifie') : data.is_document_modifie;
+
+    // Récupération du fichier : attention, le nom dans le FormData doit correspondre au name de l'input HTML
     const fichier = isFormData ? data.get('fichier') : data.fichier;
 
+    // 1. Validation de la décision globale
     if (!decision || !validDecisions.includes(decision)) {
-      errors.decision = ['Veuillez sélectionner une décision (Valider ou Rejeter).'];
+      errors.decision = ['Veuillez sélectionner une décision valide (Valider, Rejeter ou Retourner).'];
     }
 
-    if (decision === 'rejete') {
+    // 2. Validation du commentaire pour Rejet OU Retour
+    if (decision === 'rejete' || decision === 'retourne') {
       if (!commentaire || commentaire.trim().length < 5) {
-        errors.commentaire = ['Un commentaire explicatif est obligatoire pour justifier le rejet (min. 5 caractères).'];
+        errors.commentaire = [
+          `Un commentaire explicatif est obligatoire pour justifier le ${decision === 'rejete' ? 'rejet' : 'retour'} (min. 5 caractères).`
+        ];
       }
     }
 
-    if (decision === 'valide' && (!fichier || (fichier instanceof File && fichier.size === 0))) {
-      errors.fichier = ['Veuillez joindre la nouvelle version du document.'];
+    // 3. Validation spécifique à la validation ('valide')
+    if (decision === 'valide') {
+      // Vérifier si le choix Oui/Non a été fait
+      if (!isDocumentModifie) {
+        errors.is_document_modifie = ['Veuillez spécifier si vous avez modifié le document original ou non.'];
+      }
+      // Si "Oui", le fichier devient obligatoire
+      else if (isDocumentModifie === 'oui') {
+        if (!fichier || (fichier instanceof File && fichier.size === 0)) {
+          errors.fichier = ['Vous avez indiqué avoir modifié le document. Veuillez charger la nouvelle version.'];
+        }
+      }
     }
 
+    // Levée des erreurs si existantes
     if (Object.keys(errors).length > 0) {
       throw {
         data: {

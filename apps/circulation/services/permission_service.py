@@ -56,6 +56,16 @@ class PermissionService:
         )
 
     @staticmethod
+    def can_delete_circulation(user, circulation):
+        """Vérifier si l'utilisateur peut supprimer une circulation."""
+        # Seul le créateur ou un superviseur peut supprimer
+        return (
+            user == circulation.initie_par or
+            user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN] or
+            user.role in [RoleUtilisateur.SUPERVISEUR] and user.cellule == circulation.document.cellule
+        )
+
+    @staticmethod
     def peut_valider_tache(user, tache):
         """Vérifier si l'utilisateur peut valider une tâche."""
         # Le créateur ou un superviseur peut valider
