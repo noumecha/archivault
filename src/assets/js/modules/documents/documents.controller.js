@@ -6,6 +6,7 @@ import { TacheService } from '../circulations/services/taches.services.js';
 import { CirculationService } from '../circulations/circulations.service.js';
 import { CirculationUi } from '../circulations/circulations.ui.js';
 import { CirculationController } from '../circulations/circulations.controller.js';
+import { TacheUi } from '../circulations/ui/taches.ui.js';
 import {
   startLoader,
   closeLoader,
@@ -367,6 +368,13 @@ export const DocumentController = {
   },
 
   bindTacheEvents() {
+    // Écouter le changement de document pour filtrer
+    $('#document').on('change', e => {
+      const docId = e.target.value;
+      const celluleId = this.docCelluleMap[docId] || null;
+      TacheUi.filterAssigneeList(celluleId);
+    });
+
     // On suppose que ton bouton a l'attribut data-action="add-tache" et data-id="${doc.id}"
     $(document).on('click', '[data-action="add-tache"]', function (e) {
       e.preventDefault();
@@ -400,8 +408,7 @@ export const DocumentController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-documentTache-modal'));
           if (modalInstance) modalInstance.hide();
           $form[0].reset();
-          // On remet le style du select à la normale pour la prochaine ouverture
-          $('#document').css({ 'pointer-events': '', 'background-color': '' });
+          enableElement('#document');
         }, 2000);
       } catch (err) {
         console.error('Erreur création tâche:', err);
