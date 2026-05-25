@@ -1,5 +1,16 @@
 // helpers/utils.js
 
+// Extraction sécurisée des variables injectées par Django
+const userIdEl = document.getElementById('django-user-id');
+const userRoleEl = document.getElementById('django-user-role');
+
+if (userIdEl) {
+  window.CURRENT_USER_ID = JSON.parse(userIdEl.textContent);
+}
+if (userRoleEl) {
+  window.CURRENT_USER_ROLE = JSON.parse(userRoleEl.textContent);
+}
+
 /**
  * Gère le rendu universel de la pagination et des informations de compteurs
  * pour les listes interfacées avec DRF.
@@ -515,7 +526,8 @@ function disableElement(selector) {
   if (element.length) {
     element.css({
       'pointer-events': 'none',
-      'background-color': '#e9ecef'
+      'background-color': '#e9ecef',
+      cursor: 'not-allowed'
     });
     element.attr('tabindex', '-1');
     element.trigger('change');
@@ -529,7 +541,7 @@ function disableElement(selector) {
 function enableElement(selector) {
   const element = $(selector);
   if (element.length) {
-    element.css({ 'pointer-events': '', 'background-color': '' });
+    element.css({ 'pointer-events': '', 'background-color': '', cursor: 'default' });
   }
 }
 
