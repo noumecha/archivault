@@ -27,6 +27,12 @@ export const TacheService = {
     });
   },
 
+  logConsultation(id) {
+    return ApiClient.request(`/api/taches/${id}/log-consultation/`, {
+      method: 'POST'
+    });
+  },
+
   remove(id) {
     return ApiClient.request(`/api/taches/${id}/delete/`, {
       method: 'DELETE'

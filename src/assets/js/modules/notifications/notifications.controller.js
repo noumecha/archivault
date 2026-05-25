@@ -2,6 +2,8 @@
 import { NotificationService } from './notifications.service.js';
 import { NotificationUi } from './notifications.ui.js';
 import { startLoader, closeLoader, toggleBulkButton } from '../../helpers/utils.js';
+import { TacheService } from '../circulations/services/taches.services.js';
+import { CirculationService } from '../circulations/circulations.service.js';
 
 export const NotificationController = {
   async init() {
@@ -180,22 +182,53 @@ export const NotificationController = {
         });
     });
 
-    // 1. Marquer comme lu (Unitaire) - Gère aussi le clic sur l'item du dropdown
+    // 1. Marquer comme lu (Unitaire) - Gère le clic sur l'item pour contrôle hiérarchique
     $(document).on(
       'click',
-      '.mark-as-read-btn, .mark-as-read-link, .dropdown-notifications-item, [data-action="view"]',
-      async e => {
-        const $target = $(e.currentTarget);
-        const id = $target.closest('[data-id]').data('id');
+      '.mark-as-read-btn, .mark-as-read-link, .dropdown-notifications-item, .notification-action-view',
+      async function (e) {
+        const $target = $(this);
+        const isLink = $target.is('a') || $target.closest('a').length > 0;
+        const targetUrl = $target.attr('href') || $target.closest('a').attr('href');
+
+        // Bloquer la redirection immédiate du navigateur pour exécuter nos promesses d'API
+        if (isLink && targetUrl && targetUrl !== '#') {
+          e.preventDefault();
+        }
+
+        // Récupération des IDs de la notification
+        const notifId = $target.closest('[data-id]').data('id');
+
+        // Récupération des données cibles pour le contrôle hiérarchique
+        const targetModel = $target.data('target-model'); // ex: 'tache' ou 'circulation'
+        const targetId = $target.data('target-id'); // l'ID de la tâche en question
 
         try {
-          await NotificationService.markAsRead(id);
+          // PHASE A : Traitement de la notification générale
+          if (notifId) {
+            await NotificationService.markAsRead(notifId);
+          }
+
+          // PHASE B : Traçabilité métier spécifique (ex: si c'est une tâche)
+          // Ici, le backend vérifiera de toute façon si request.user == assignee_a
+          if (targetModel === 'tache' && targetId) {
+            await TacheService.logConsultation(targetId);
+          } else if (targetModel === 'circulationdocument' && targetId) {
+            await CirculationService.logConsultation(targetId);
+          }
+
+          // PHASE C : Rafraîchissement UI des notifications (en tâche de fond ou rapide)
           await this.refreshNavbar();
           if ($('#notifications-tbody').length) {
             await this.loadNotifications(this.getCurrentParams());
           }
         } catch (err) {
-          console.error('Erreur lecture notification:', err);
+          console.error('Erreur lors du traitement de la notification ou du tracking:', err);
+        } finally {
+          // PHASE D : Redirection finale garantie, même si une API a échoué
+          if (isLink && targetUrl && targetUrl !== '#') {
+            window.location.href = targetUrl;
+          }
         }
       }
     );

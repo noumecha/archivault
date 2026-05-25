@@ -151,7 +151,7 @@ class TacheSerializer(serializers.ModelSerializer):
             'assignee_par', 'assignee_par_name', 'assignee_a', 'assignee_a_name',
             'statut', 'statut_display', 'priorite', 'priorite_display',
             'date_echeance', 'date_cloture', 'is_overdue', 'commentaires',
-            'Date_creation', 'Date_miseajour', 'tache_actions'
+            'Date_creation', 'Date_miseajour', 'tache_actions', 'date_premiere_consultation', 'nb_consultations'
         ]
         read_only_fields = ['assignee_par', 'date_cloture', 'Date_creation', 'Date_miseajour']
 

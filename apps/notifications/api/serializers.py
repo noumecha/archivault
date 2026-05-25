@@ -10,17 +10,17 @@ class NotificationSerializer(serializers.ModelSerializer):
     """
     categorie_display = serializers.CharField(source='get_categorie_display', read_only=True)
     created_at_since = serializers.SerializerMethodField()
-    # On imite ta structure 'tache_actions' pour la cohérence
     notification_actions = serializers.SerializerMethodField()
+    target_model = serializers.CharField(source='content_type.model', read_only=True, default='')
 
     class Meta:
         model = Notification
         fields = [
             'id', 'titre', 'message', 'categorie', 'categorie_display',
             'url_action', 'is_read', 'created_at', 'created_at_since',
-            'notification_actions', 'object_id', 'content_type'
+            'notification_actions', 'object_id', 'content_type', 'target_model'
         ]
-        read_only_fields = ['id', 'created_at', 'created_at_since']
+        read_only_fields = ['id', 'created_at', 'created_at_since', 'target_model']
 
     def get_created_at_since(self, obj):
         """Retourne le temps écoulé (ex: 'il y a 2 minutes')"""
@@ -33,14 +33,14 @@ class NotificationSerializer(serializers.ModelSerializer):
         """
         Définit ce que l'utilisateur peut faire avec cette notification.
         """
-        # On récupère la requête de manière sécurisée comme discuté avant
-        request = self.context.get('request')
-        user = request.user if request else None
+        objet_existe = True
+        if obj.content_type_id and obj.object_id:
+            objet_existe = (obj.content_object is not None)
 
         return {
             'can_mark_read': not obj.is_read,
             'can_delete': True, # Généralement un utilisateur peut supprimer ses notifs
-            'has_target': obj.url_action is not None
+            'has_target': obj.url_action is not None and objet_existe
         }
 
     def validate_url_action(self, value):

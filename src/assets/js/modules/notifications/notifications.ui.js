@@ -127,11 +127,16 @@ export const NotificationUi = {
             </button>
             <div class="dropdown-menu">
               ${
-                notif.url_action
-                  ? `<a href="${notif.url_action}" class="dropdown-item" data-action="view" data-id="${notif.id}">
+                notif.notification_actions && notif.notification_actions.has_target
+                  ? `<a href="${notif.url_action}"
+                    class="dropdown-item notification-action-view"
+                    data-action="view"
+                    data-id="${notif.id}"
+                    data-target-model="${notif.target_model || 'tache'}"
+                    data-target-id="${notif.object_id || ''}">
                     <i class="ri-eye-line me-1"></i>Détails
                   </a>`
-                  : ''
+                  : `<span class="dropdown-item text-muted italic small"><i class="ri-delete-bin-line me-1"></i>Élément supprimé</span>`
               }
               <a href="#" class="dropdown-item text-danger" data-action="delete-notification" data-id="${notif.id}">
                 <i class="ri-delete-bin-6-line me-1"></i>Supprimer

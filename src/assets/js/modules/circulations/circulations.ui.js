@@ -44,9 +44,10 @@ export const CirculationUi = {
     const totalEtapes = circ.etapes_count || 0;
     const etapeActuelleOrdre = circ.etape_actuelle ? circ.etape_actuelle.ordre : totalEtapes;
     const isClos = circ.statut === 'clos';
+    const actuelActeurId = circ.etape_actuelle ? circ.etape_actuelle.destinataire : '';
 
     return `
-      <tr data-id="${circ.id}">
+      <tr data-circulation-id="${circ.id}" data-actuel-acteur-id="${actuelActeurId}">
         <th style="width: 40px;">
           <div class="form-check mb-0">
             <input class="form-check-input circulation-checkbox" type="checkbox" value="${circ.id}">

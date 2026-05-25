@@ -84,40 +84,42 @@ class NotificationAPIView(DRFRoleRequiredMixin, BaseAPIView):
         })
 
     def action_mark_as_read(self, request, pk=None, *args, **kwargs):
-        """Marque une notification spécifique comme lue."""
+        """
+        Marque une notification spécifique comme lue ET horodate la prise de connaissance
+        de l'objet lié (Tâche/Circulation) pour le contrôle hiérarchique.
+        """
         notification = get_object_or_404(self.get_queryset(), pk=pk)
+        now = timezone.now()
+
         if not notification.is_read:
             notification.is_read = True
             notification.save()
 
+            # 🟢 HISTORISATION ET CONTRÔLE HIÉRARCHIQUE VIA LE CONTENT_TYPE
+            target_object = notification.content_object
+
+            if target_object:
+                # Cas 1 : C'est une Tâche
+                if hasattr(target_object, 'date_premiere_consultation'):
+                    if not target_object.date_premiere_consultation:
+                        target_object.date_premiere_consultation = now
+                    if hasattr(target_object, 'nb_consultations'):
+                        target_object.nb_consultations += 1
+                    target_object.save()
+
+                    # Optionnel : Envoyer un signal ou créer un log d'audit système
+                    # AuditService.log(request, "LECTURE_TACHE", target_object, message="L'assigné a ouvert la notification de tâche.")
+
+                # Cas 2 : C'est une Étape de Circulation
+                elif target_object.__class__.__name__ == 'CirculationDocument':
+                    # Tu peux appliquer une logique similaire pour prouver qu'il a vu le document circuler
+                    pass
+
         return Response({
             'success': True,
-            'message': 'Notification marquée comme lue',
+            'message': 'Notification consultée et traçabilité hiérarchique enregistrée',
             'data': self.get_serializer(notification).data
         })
-
-    """def action_mark_as_read(self, request, pk=None, *args, **kwargs):
-        #Marque une notification spécifique comme lue ET crée un suivi.
-        notification = get_object_or_404(self.get_queryset(), pk=pk)
-
-        if not notification.is_read:
-            notification.is_read = True
-            notification.save()
-
-            Notification.objects.create(
-                destinataire=request.user, # Ou un autre acteur (ex: admin, ou champ 'expediteur' si existant)
-                titre="Suivi : Notification lue",
-                message=f"Vous avez pris connaissance de la notification : '{notification.titre}' le {timezone.now().strftime('%d/%m/%m à %H:%M')}.",
-                categorie=Notification.Category.SYSTEME,
-                content_object=notification.content_object,
-                is_read=True
-            )
-
-        return Response({
-            'success': True,
-            'message': 'Notification marquée comme lue et suivi enregistré',
-            'data': self.get_serializer(notification).data
-        })"""
 
     def action_mark_all_as_read(self, request, *args, **kwargs):
         """Marque toutes les notifications de l'utilisateur comme lues."""
