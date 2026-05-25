@@ -168,9 +168,9 @@
 
                     {% if etape_actuelle %}
                     <div class="mb-4 text-center">
-                        {% if etape_actuelle.date_premiere_consultation %}
-                            <span class="badge bg-label-success px-3 py-2 rounded-pill w-100" data-bs-toggle="tooltip" title="Consulté {{ etape_actuelle.nb_consultations }} fois">
-                                <i class="ri-eye-line me-1"></i> Ouvert le {{ etape_actuelle.date_premiere_consultation|date:"d M Y à H:i" }}
+                        {% if etape_actuelle.circulation.date_premiere_consultation %}
+                            <span class="badge bg-label-success px-3 py-2 rounded-pill w-100" data-bs-toggle="tooltip" title="Consulté {{ etape_actuelle.circulation.nb_consultations }} fois">
+                                <i class="ri-eye-line me-1"></i> Ouvert le {{ etape_actuelle.circulation.date_premiere_consultation|date:"d M Y à H:i" }}
                             </span>
                         {% else %}
                             <span class="badge bg-label-danger px-3 py-2 rounded-pill w-100 animate-pulse">

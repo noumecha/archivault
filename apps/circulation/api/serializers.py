@@ -49,7 +49,8 @@ class CirculationDocumentSerializer(serializers.ModelSerializer):
             'id', 'document', 'document_titre', 'titre', 'description',
             'initie_par', 'initie_par_name', 'statut', 'statut_display',
             'date_debut', 'date_fin', 'etapes_count',
-            'Date_creation', 'Date_miseajour', 'etapes', 'etape_actuelle', 'can_update', 'can_delete'
+            'Date_creation', 'Date_miseajour', 'etapes', 'etape_actuelle', 'can_update', 'can_delete',
+            'date_premiere_consultation', 'nb_consultations'
         ]
         read_only_fields = ['initie_par', 'Date_creation', 'Date_miseajour']
 
