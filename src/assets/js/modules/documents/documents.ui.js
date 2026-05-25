@@ -38,7 +38,8 @@ export const DocumentUi = {
 
   createDocumentCard(doc) {
     const etatBadge = this.getEtatBadge(doc);
-    const fileExt = doc.fichier.split('.').pop().toLowerCase();
+    //const fileExt = doc.fichier.split('.').pop().toLowerCase();
+    const fileExt = doc.extension || 'unknown';
     const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
     const p = doc.user_actions;
 
@@ -244,22 +245,42 @@ export const DocumentUi = {
     renderPagination(data, '#documents-pagination', '#pagination-info');
   },
 
-  // ─── Remplissage du formulaire ───────────────────────────────────────────
-  renderForm(data = null) {
-    const isEdit = !!data;
+  /**
+   * Prépare le formulaire de création ou d'édition de document
+   * @param {Object|null} contextData - Le bloc complet renvoyé par l'API retrieve (contient document et options_formulaire)
+   */
+  renderForm(contextData = null) {
+    const isEdit = !!contextData;
     const $form = $('#documentForm');
 
     // Reset complet du formulaire
     $form[0].reset();
+
+    // Si on est en édition, on extrait l'objet document
+    const data = isEdit ? contextData.document : null;
+
     $('#update-id').val(isEdit ? data.id : '');
     $('#modal-title').text(isEdit ? 'Modifier le document' : 'Enregistrement multiple');
     $('#save-btn-text').text(isEdit ? 'Mettre à jour' : 'Enregistrer');
 
     if (isEdit) {
       // --- MODE ÉDITION ---
-      $('#container-titre').removeClass('d-none'); // On montre le titre
-      $('#container-fichier-unique').removeClass('d-none'); // On montre l'input file simple
-      $('#container-dropzone').addClass('d-none'); // On cache la dropzone
+      $('#container-titre').removeClass('d-none');
+      $('#container-fichier-unique').removeClass('d-none');
+      $('#container-dropzone').addClass('d-none');
+
+      // 🟢 RECONSTRUCTION DYNAMIQUE DES SELECTS (Pour éviter le blocage transverse)
+      if (contextData.options_formulaire) {
+        this.rebuildSelectOptions('#cellule', contextData.options_formulaire.cellules, 'nom', data.cellule);
+        this.rebuildSelectOptions(
+          '#type_document',
+          contextData.options_formulaire.types_documents,
+          'libelle',
+          data.type_document
+        );
+        this.rebuildSelectOptions('#theme', contextData.options_formulaire.themes, 'libelle', data.theme);
+        this.rebuildSelectOptions('#sous_type', contextData.options_formulaire.sous_types, 'libelle', data.sous_type);
+      }
 
       // Remplissage des données
       $('#titre').val(data.titre);
@@ -278,14 +299,35 @@ export const DocumentUi = {
       }
     } else {
       // --- MODE CRÉATION ---
-      $('#container-titre').addClass('d-none'); // On cache le titre (sera généré par le nom du fichier)
-      $('#container-fichier-unique').addClass('d-none'); // On cache l'input file simple
-      $('#container-dropzone').removeClass('d-none'); // On montre la dropzone
+      $('#container-titre').addClass('d-none');
+      $('#container-fichier-unique').addClass('d-none');
+      $('#container-dropzone').removeClass('d-none');
 
       $('#previews').empty();
       $('#current-file-info').empty();
       $('#file-input').val('');
+
+      // Optionnel : Recharger les options par défaut du DOM initial si nécessaire
+      // ou laisser l'état natif du template Django.
     }
+  },
+
+  /**
+   * Fonction utilitaire pour reconstruire proprement un Select avec les options autorisées
+   */
+  rebuildSelectOptions(selector, items, textProperty, selectedId) {
+    const $select = $(selector);
+    $select.empty().append('<option value="">-- Sélectionner --</option>');
+
+    if (!items) return;
+
+    items.forEach(item => {
+      const isSelected = String(item.id) === String(selectedId) ? 'selected' : '';
+      // Ajout de data-attributes si besoin (ex: type_document_id pour le chaînage des sous-types)
+      const dataAttr = item.type_document_id ? `data-type="${item.type_document_id}"` : '';
+
+      $select.append(`<option value="${item.id}" ${isSelected} ${dataAttr}>${item[textProperty]}</option>`);
+    });
   },
 
   resetForm(formSelector) {
@@ -325,23 +367,17 @@ export const DocumentUi = {
    */
   renderTacheFormForDocument(documentId) {
     const $form = $('#documentTacheForm');
-    $form[0].reset();
-    $('#update-id').val('');
-    const $documentSelect = $('#document');
+    const $documentSelect = $form.find('#document');
+
     if ($documentSelect.length) {
       $documentSelect.val(documentId).trigger('change');
-      $documentSelect
-        .css({
-          'pointer-events': 'none',
-          'background-color': '#e9ecef'
-        })
-        .attr('tabindex', '-1');
+      disableElement($documentSelect);
     }
 
-    $('#modal-title').text('Nouvelle tâche pour ce document');
-    $('#save-btn-text').text('Créer la tâche');
-
-    // Nettoyage des alertes précédentes
-    $('#form-error, #form-success').hide();
+    // On cible les éléments du modal de document spécifique
+    const $modal = $('#create-documentTache-modal');
+    $modal.find('#modal-title').text('Nouvelle tâche pour ce document');
+    $modal.find('#save-btn-text').text('Créer la tâche');
+    $modal.find('#form-error, #form-success').hide();
   }
 };

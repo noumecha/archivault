@@ -40,6 +40,16 @@
     {% block layout %}
     {% endblock layout %}
 
+    <!-- ajout des variable globale pour le js -->
+    {% if user.is_authenticated %}
+        {{ user.id|json_script:"django-user-id" }}
+        {{ user.role|json_script:"django-user-role" }}
+        {# Note : Adapte 'user.role' selon le nom exact du champ dans ton modèle Utilisateur #}
+    {% else %}
+        {{ None|json_script:"django-user-id" }}
+        {{ ""|json_script:"django-user-role" }}
+    {% endif %}
+    <!-- Include the scripts partial (required ) -->
     {% include "./partials/scripts.html" %}
 
     <!--Vendors Javascript-->

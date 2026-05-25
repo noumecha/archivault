@@ -18,6 +18,13 @@ export const DocumentService = {
     });
   },
 
+  bulkDelete(ids) {
+    return ApiClient.request('/api/documents/bulk-delete/', {
+      method: 'POST',
+      body: JSON.stringify({ ids })
+    });
+  },
+
   create(formData) {
     return ApiClient.request('/api/documents/create/', {
       method: 'POST',
@@ -84,7 +91,7 @@ export const DocumentService = {
       }
     }
 
-    if (!formData.get('sous_type')) errors.sous_type = ['Le sous type du document est requis'];
+    //if (!formData.get('sous_type')) errors.sous_type = ['Le sous type du document est requis'];
     if (!formData.get('cellule')) errors.cellule = ['La cellule du document est requise'];
     if (!formData.get('etat')) errors.etat = ["L'état du document est requis"];
 

@@ -26,18 +26,15 @@ class DocumentService:
             'errors': []
         }
 
-        # IMPORTANT : On ne met pas le atomic() ici pour que chaque fichier
-        # soit indépendant.
+        # IMPORTANT : Chaque fichier est traité de manière autonome
         for f in files:
             try:
-                # On ouvre une transaction atomique pour CHAQUE fichier (Savepoint)
+                # Une transaction atomique pour CHAQUE fichier (Savepoint)
                 with transaction.atomic():
                     filename = f.name
                     name_without_ext, _ = os.path.splitext(filename)
                     titre = name_without_ext.replace("_", " ").replace("-", " ").strip()
 
-                    print(f"DEBUG: Fichiers reçu: '{files}'")
-                    print(f"DEBUG: Actions disponibles: {actions.keys()}")
                     action_info = actions.get(filename)
                     action = action_info['action'] if action_info else "create"
 
@@ -56,7 +53,7 @@ class DocumentService:
                     # Recherche d'un document existant
                     doc_exist = Document.objects.filter(titre__iexact=titre).first()
 
-                    # --- LOGIQUE DES CAS ---
+                    # ─── LOGIQUE DES CAS MIS À JOUR (GED OPTIMALE) ───
 
                     # CAS A — Nouvelle version
                     if action == "version" and doc_exist:
@@ -64,29 +61,49 @@ class DocumentService:
                         next_v = (last_v.numero_version + 1) if last_v else 1
 
                         VersionDocument.objects.create(
-                            titre=f"{doc_exist.titre}-v{next_v}",
+                            titre=f"{doc_exist.titre} - V{next_v}",
                             document=doc_exist,
                             numero_version=next_v,
                             fichier=f,
                             cree_par=user,
+                            modifier_par=user,
                             responsable_version_id=data.get("responsable_document_id"),
                         )
+
+                        doc_exist.modifier_par = user
+                        doc_exist.save() # Pour mettre à jour Date_miseajour du parent
                         results['versioned'] += 1
 
-                    # CAS B — Écrasement
+                    # CAS B — Écrasement (Mise à jour du fichier de la version actuelle)
                     elif action == "overwrite" and doc_exist:
-                        doc_exist.fichier = f
+                        last_v = doc_exist.versions.order_by("-numero_version").first()
+
+                        if last_v:
+                            # On écrase le fichier de la version courante (Ex: la V2 existante reçoit le nouveau fichier)
+                            last_v.fichier = f
+                            last_v.modifier_par = user
+                            last_v.save()
+                        else:
+                            # Système de secours au cas où le document n'avait étonnamment aucune version liée
+                            VersionDocument.objects.create(
+                                titre=f"{doc_exist.titre} - V1",
+                                document=doc_exist,
+                                numero_version=1,
+                                fichier=f,
+                                cree_par=user,
+                                modifier_par=user,
+                                responsable_version_id=data.get("responsable_document_id"),
+                            )
+
                         doc_exist.modifier_par = user
                         doc_exist.save()
                         results['overwritten'] += 1
 
-                    # CAS C — Création (si n'existe pas OU forcé)
+                    # CAS C — Création initiale (Document Coquille + Version 1 simultanées)
                     else:
-                        # Si doc_exist est trouvé mais l'action est "create",
-                        # l'IntegrityError sera levée par la DB et capturée plus bas.
+                        # 1. Création de la coquille Document (SANS le champ fichier !)
                         doc = Document.objects.create(
                             titre=titre,
-                            fichier=f,
                             type_document_id=data.get("type_document_id"),
                             sous_type_id=data.get("sous_type_id"),
                             theme_id=data.get("theme_id"),
@@ -98,18 +115,28 @@ class DocumentService:
                             metadonnees=data.get("metadonnees"),
                             responsable_document_id=data.get("responsable_document_id"),
                         )
+
                         if data.get("regles_classement"):
                             doc.regles_classement.set(data.get("regles_classement"))
+
+                        # 2. Création immédiate et obligatoire de la V1 liée
+                        VersionDocument.objects.create(
+                            titre=f"{doc.titre} - V1",
+                            document=doc,
+                            numero_version=1,
+                            fichier=f,
+                            cree_par=user,
+                            modifier_par=user,
+                            responsable_version_id=data.get("responsable_document_id"),
+                        )
                         results['created'] += 1
 
             except IntegrityError:
-                # Erreur spécifique de doublon SQL (Unique Constraint)
                 results['errors'].append({
                     'file': f.name,
                     'error': f"Un document nommé '{titre}' existe déjà (conflit d'unicité)."
                 })
             except Exception as e:
-                # Autres erreurs (permissions, système de fichiers, etc.)
                 results['errors'].append({'file': f.name, 'error': str(e)})
 
         return results

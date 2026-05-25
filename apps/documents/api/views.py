@@ -76,7 +76,7 @@ class DocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
         if date_fin:
             qs = qs.filter(Date_creation__date__lte=date_fin)
         if extension:
-            qs = qs.filter(fichier__iendswith='.' + extension.lstrip('.'))
+            qs = qs.filter(versions__fichier__iendswith='.' + extension.lstrip('.')).distinct()
         return super().get_queryset(queryset=qs)
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -143,23 +143,41 @@ class DocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
     def retrieve_action(self, request, pk=None, *args, **kwargs):
         instance = get_object_or_404(Document, pk=pk)
 
-        # Vérification permissions
+        # Vérification permissions via le service mis à jour
         if not DocumentPermissionService.can_view(request.user, instance):
-            return Response({'error': 'Accès refusé'}, status=403)
+            return Response({'success': False, 'message': 'Accès refusé'}, status=403)
 
-        # Log d'audit
-        # AuditService.log(request, ActionAudit.CONSULTATION, instance)
+        user = request.user
 
-        # Récupération contextuelle pour le détail
+        # Détermination des querysets de paramètres selon le contexte du document
+        if is_admin(user) or is_superadmin(user):
+            cellules = Cellule.objects.all()
+            types_docs = TypeDocument.objects.all()
+            themes = Theme.objects.all()
+            sous_types = SousTypeDocument.objects.all()
+        else:
+            # Règle : La cellule du document en question (Accès transversal lié à la tâche)
+            cellules_ids = list(filter(None, [instance.cellule_id]))
+
+            cellules = Cellule.objects.filter(id__in=cellules_ids)
+            types_docs = TypeDocument.objects.filter(cellule_id__in=cellules_ids)
+            themes = Theme.objects.filter(cellule_id__in=cellules_ids)
+            sous_types = SousTypeDocument.objects.filter(type_document__cellule_id__in=cellules_ids)
+
+        # Récupération contextuelle complète pour l'injection côté UI
         context_data = {
             'document': self.get_serializer(instance).data,
             'versions': VersionDocumentSerializer(instance.versions.all(), many=True).data,
-            'taches': [], # À implémenter si besoin
-            'circulations': [] # À implémenter si besoin
+            'taches': [],
+            'circulations': [],
+            # 🟢 On injecte les listes de paramètres filtrées pour le formulaire d'édition
+            'options_formulaire': {
+                'cellules': [{'id': c.id, 'nom': c.nom} for c in cellules],
+                'types_documents': [{'id': t.id, 'libelle': t.libelle} for t in types_docs],
+                'themes': [{'id': th.id, 'libelle': th.libelle} for th in themes],
+                'sous_types': [{'id': st.id, 'libelle': st.libelle, 'type_document_id': st.type_document_id} for st in sous_types],
+            }
         }
-
-        # Si besoin d'ajouter des données non sérialisées
-        # context_data['can_edit'] = DocumentPermissionService.can_edit(request.user, instance)
 
         return Response({
             'success': True,
@@ -191,9 +209,20 @@ class DocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     # 6. Suppression groupée
     def bulk_delete_action(self, request, *args, **kwargs):
+        """Suppression en masse."""
+        self.check_role_permission(request)
         ids = request.data.get('ids', [])
+        if not ids:
+            return Response({
+                'success': False,
+                'message': 'Aucun ID fourni'
+            }, status=status.HTTP_400_BAD_REQUEST)
         deleted_count, _ = Document.objects.filter(id__in=ids).delete()
-        return Response({'success': True, 'message': f'{deleted_count} document(s) supprimé(s)'})
+        return Response({
+            'success': True,
+            'message': f'{deleted_count} document(s) supprimé(s)',
+            'deleted_count': deleted_count
+        })
 
     # Override de list_action pour gérer les filtres spécifiques si besoin
     def list_action(self, request, *args, **kwargs):

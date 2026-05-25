@@ -18,6 +18,25 @@ from apps.administration.models import Cellule
 from web_project import TemplateLayout
 from apps.circulation.models import CirculationDocument, StatutCirculation, EtapeCirculation
 
+"""
+    Fonctions utilitaires pour la récupération des utilisateurs et des documents selon le rôle
+"""
+def get_documents_for_user(user):
+    """Retourne la liste des documents accessibles pour les formulaires selon le rôle."""
+    if is_admin(user) or is_superadmin(user):
+        return Document.objects.all()
+    elif is_superviseur(user) or hasattr(user, 'cellule'):
+        return Document.objects.filter(cellule=user.cellule)
+    return Document.objects.none()
+
+def get_utilisateurs_for_user(user):
+    """Retourne la liste des utilisateurs assignables selon le rôle."""
+    if is_admin(user) or is_superadmin(user):
+        return Utilisateur.objects.all()
+    elif is_superviseur(user) and hasattr(user, 'cellule'):
+        return Utilisateur.objects.filter(cellule=user.cellule)
+    return [user]
+
 # ─────────────────────────────────────────────
 # MIXINS CUSTOM
 # ─────────────────────────────────────────────
@@ -162,6 +181,7 @@ class TacheDetailView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context = TemplateLayout.init(self, context)
 
+        user = self.request.user
         tache = get_object_or_404(Tache, pk=self.kwargs['pk'])
         commentaires = tache.commentaires.select_related('auteur').all()
 
@@ -170,6 +190,9 @@ class TacheDetailView(LoginRequiredMixin, TemplateView):
         context['tache'] = tache
         context['commentaires'] = commentaires
         context['can_validate'] = PermissionService.peut_valider_tache(self.request.user, tache)
+
+        context['documents'] = get_documents_for_user(user)
+        context['utilisateurs'] = get_utilisateurs_for_user(user)
 
         return context
 
@@ -223,17 +246,9 @@ class TacheManagementView(RoleRequiredMixin, BaseCRUDView):
         context['priorites'] = PrioriteTache.choices
         context['statuts'] = StatutTache.choices
         # Filtrage des options de formulaire/filtre selon la cellule
-        if is_admin(user) or is_superadmin(user):
-            context['utilisateurs'] = Utilisateur.objects.all()
-            context['documents'] = Document.objects.all()
-        elif is_superviseur(user):
-            # si c'est le superviseur on affiche uniquement les éléments de sa cellule
-            context['utilisateurs'] = Utilisateur.objects.filter(cellule=user.cellule)
-            context['documents'] = Document.objects.filter(cellule=user.cellule)
-        else:
-            # si c'est un utilisateur simple (responsable ou gestionnaire), on affiche seulement ceux à quoi il est lié
-            context['utilisateurs'] = [user]
-            context['documents'] = Document.objects.filter(cellule=user.cellule)
+        # 🟢 Utilisation des helpers centralisés pour le formulaire d'ajout
+        context['documents'] = get_documents_for_user(user)
+        context['utilisateurs'] = get_utilisateurs_for_user(user)
 
         for f in context.get('filters', []):
             if f['name'] == 'assignee_a' or f['name'] == 'assignee_par':

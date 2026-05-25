@@ -17,7 +17,7 @@
         <button type="button" class="btn" id="refresh-button">
           <i class="menu-icon ri-restart-line"></i> Rafraîchir
         </button>
-        {% if request.user.role in 'admin,superadmin,superviseur' %}
+        {% if request.user.role in 'administrateur,superadmin,superviseur' %}
           <button type="button" class="btn btn-lg btn-dark btn-primary text-white"
               id="add-button" data-bs-toggle="modal" data-bs-target="#create-tache-modal">
             <i class="menu-icon ri-add-line"></i> Ajouter

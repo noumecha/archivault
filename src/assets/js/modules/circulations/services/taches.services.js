@@ -20,23 +20,16 @@ export const TacheService = {
     });
   },
 
-  update(id, data) {
+  update(id, formData) {
     return ApiClient.request(`/api/taches/${id}/update/`, {
-      method: 'PATCH', // PATCH = mise à jour partielle
-      body: JSON.stringify(data)
+      method: 'PATCH',
+      body: formData
     });
   },
 
   remove(id) {
     return ApiClient.request(`/api/taches/${id}/delete/`, {
       method: 'DELETE'
-    });
-  },
-
-  addComment(id, data) {
-    return ApiClient.request(`/api/taches/${id}/commenter/`, {
-      method: 'POST',
-      body: JSON.stringify(data)
     });
   },
 

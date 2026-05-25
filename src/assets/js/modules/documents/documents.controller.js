@@ -160,7 +160,7 @@ export const DocumentController = {
 
       try {
         const res = await DocumentService.fetchOne(id);
-        DocumentUi.renderForm(res.data?.document);
+        DocumentUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-document-modal')).show();
       } catch (err) {
         DocumentUi.showError('Erreur chargement document');
@@ -370,44 +370,40 @@ export const DocumentController = {
   bindTacheEvents() {
     // Écouter le changement de document pour filtrer
     $('#document').on('change', e => {
+      const currentUserRole = window.CURRENT_USER_ROLE;
       const docId = e.target.value;
       const celluleId = this.docCelluleMap[docId] || null;
-      TacheUi.filterAssigneeList(celluleId);
+      TacheUi.filterAssigneeList(celluleId, currentUserRole);
     });
 
-    // On suppose que ton bouton a l'attribut data-action="add-tache" et data-id="${doc.id}"
+    // Clic pour ajouter une tâche depuis un document spécifique
     $(document).on('click', '[data-action="add-tache"]', function (e) {
       e.preventDefault();
       const documentId = $(this).data('id');
-
+      TacheUi.setupCreateForm('#documentTacheForm');
       DocumentUi.renderTacheFormForDocument(documentId);
-
       const modal = new bootstrap.Modal(document.getElementById('create-documentTache-modal'));
       modal.show();
     });
 
-    // 2. Soumission du formulaire de tâche
+    // 2. Soumission du formulaire de tâche (Inchangé mais sécurisé)
     $('#documentTacheForm').on('submit', async e => {
       e.preventDefault();
       const $form = $('#documentTacheForm');
       const $saveBtn = $('#save-btn');
-      // Extraction des données (incluant le document id caché ou sélectionné)
+
       const formData = new FormData($form[0]);
       const rawData = Object.fromEntries(formData.entries());
-      console.log('Données avant envoi:', rawData);
+
       try {
         $saveBtn.prop('disabled', true);
         TacheService.validate(rawData);
-        // On utilise directement le service des tâches
         const response = await TacheService.create(rawData);
-
         DocumentUi.showSuccess(response.message || 'Tâche créée avec succès', '#tache-form-success');
-
-        // Fermeture du modal après succès
         setTimeout(() => {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-documentTache-modal'));
           if (modalInstance) modalInstance.hide();
-          $form[0].reset();
+          TacheUi.setupCreateForm();
           enableElement('#document');
         }, 2000);
       } catch (err) {

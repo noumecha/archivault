@@ -19,18 +19,21 @@ class DocumentSerializer(serializers.ModelSerializer):
     sous_type_display = serializers.StringRelatedField(source='sous_type', read_only=True)
     user_actions = serializers.SerializerMethodField()
 
+    fichier = serializers.FileField(read_only=True)
+    extension = serializers.CharField(read_only=True)
+
     # Pour l'upload, on accepte l'ID ou l'objet (géré par le write)
     # Mais pour la liste, on veut les détails
     class Meta:
         model = Document
         fields = [
-            'id', 'titre', 'fichier', 'type_document', 'type_doc_display',
+            'id', 'titre', 'fichier', 'extension', 'type_document', 'type_doc_display',
             'sous_type', 'sous_type_display', 'theme', 'theme_display', 'cellule', 'cellulle_display',
             'etat', 'niveau_acces', 'profil_document', 'metadonnees',
             'cree_par', 'cree_par_display', 'modifier_par', 'modifier_par_display',
             'Date_creation', 'Date_miseajour', 'bailleur', 'avenant', 'user_actions',
         ]
-        read_only_fields = ['cree_par', 'modifier_par', 'Date_creation', 'Date_miseajour']
+        read_only_fields = ['fichier', 'extension', 'cree_par', 'modifier_par', 'Date_creation', 'Date_miseajour']
 
     def get_user_actions(self, obj):
         user = self.context['request'].user
@@ -38,7 +41,7 @@ class DocumentSerializer(serializers.ModelSerializer):
             'can_edit': DocumentPermissionService.can_edit(user, obj),
             'can_delete': DocumentPermissionService.can_delete(user, obj),
             'can_view': DocumentPermissionService.can_view(user, obj),
-            'can_print': obj.profil_document == ProfilDoc.IMPRIMABLE or user.is_superuser,
+            'can_print': obj.profil_document == ProfilDoc.IMPRIMABLE or user.is_superuser or is_admin(user) or is_superadmin(user),
             'can_share': DocumentPermissionService.can_share(user, obj),
             'can_download': DocumentPermissionService.can_download(user, obj),
             'can_addTask': is_admin(user) or is_superadmin(user) or is_superviseur(user),

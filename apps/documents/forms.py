@@ -255,7 +255,6 @@ class DocumentsForm(forms.ModelForm):
 
         fields = (
             "titre",
-            "fichier",
             "type_document",
             "sous_type",
             "theme",
@@ -272,7 +271,6 @@ class DocumentsForm(forms.ModelForm):
 
         labels = {
             "titre" : "Titre du Document",
-            "fichier" : "Selectionnez un fichier",
             "type_document" : "Type du Document",
             "sous_type" : "sous type du Document",
             "theme" : "Thème du Document",
@@ -302,7 +300,6 @@ class DocumentsForm(forms.ModelForm):
         self.helper.layout = Layout(
             Row(
                 Column(FloatingField("titre"), css_class='form-group col-md-12 mb-0'),
-                Column(Field("fichier"), css_class="form-group col-md-12 mb-0 mt-1"),
                 Column(FloatingField("type_document"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("sous_type"), css_class="form-group col-md-6 mb-0 mt-1"),
                 Column(FloatingField("theme"), css_class="form-group col-md-6 mb-0 mt-1"),
@@ -378,7 +375,7 @@ class VersionDocumentForm(forms.ModelForm):
             "titre" : "Titre de la version",
             "document" : "Document correspondant",
             "numero_version" : "Numero de version",
-            "fichier" : "Titre de la version",
+            "fichier" : "Fichier",
             "responsable_version": "Responsable de la version"
         }
 

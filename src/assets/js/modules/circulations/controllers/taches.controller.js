@@ -4,13 +4,26 @@ import { TacheUi } from '../ui/taches.ui.js';
 import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
 
 export const TacheController = {
-  docCelluleMap: {}, // Stockage du mapping
+  docCelluleMap: {},
 
+  /**
+   * Initialisation du module :
+    - Chargement de la map document-cellule depuis le DOM
+    - Chargement initial des tâches si on est sur la page de liste
+    - Liaison de tous les événements (liste et détail)
+   */
   async init() {
-    // Récupération du mapping
     const mapData = document.getElementById('doc-cellule-tache-data');
     if (mapData) {
       this.docCelluleMap = JSON.parse(mapData.textContent);
+    }
+
+    const detailContext = document.getElementById('detail-tache-context');
+    if (detailContext) {
+      const context = JSON.parse(detailContext.textContent);
+      if (context.document_id) {
+        this.docCelluleMap[context.document_id] = context.cellule_id;
+      }
     }
 
     if ($('#taches-tbody').length) {
@@ -21,8 +34,10 @@ export const TacheController = {
     this.bindDocumentFilter();
   },
 
-  // ─── Chargement des tâches ────────────────────────────────────────
-
+  /**
+   * chargement des taches
+   * @param {*} params
+   */
   async loadTaches(params = {}) {
     try {
       startLoader('#table-loader');
@@ -37,17 +52,63 @@ export const TacheController = {
     }
   },
 
-  // ─── Événements ─────────────────────────────────────────────────────────
+  /**
+   * gestion du formulaire de création/édition de tâche
+    - Si id est fourni => mode édition/traitement (Jira style)
+    - Sinon => mode création pure
+   * @param {*} id
+   */
+  async openTacheForm(id = null, modalId = '#create-tache-modal', formSelector = '#tacheForm') {
+    const currentUserId = window.CURRENT_USER_ID;
+    const currentUserRole = window.CURRENT_USER_ROLE;
+    const modalElement = document.querySelector(modalId);
+    if (!modalElement) return;
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
 
+    if (id) {
+      try {
+        startLoader('#form-loader');
+        const res = await TacheService.fetchOne(id);
+        const tache = res.data;
+        TacheUi.setupDynamicForm(tache, currentUserId, currentUserRole, formSelector);
+        const docId = tache.document;
+        const celluleId = this.docCelluleMap[docId] || null;
+        console.log('Cellule ID pour le document:', celluleId);
+        console.log('user role : ', currentUserRole);
+        TacheUi.filterAssigneeList(celluleId, currentUserRole);
+        modalInstance.show();
+      } catch (err) {
+        console.error(err);
+        TacheUi.showError('Erreur de chargement de la tâche');
+      } finally {
+        closeLoader('#form-loader');
+      }
+    } else {
+      TacheUi.setupCreateForm();
+      TacheUi.filterAssigneeList(null, currentUserRole);
+      modalInstance.show();
+    }
+  },
+
+  /**
+   * Gestion du filtrage dynamique des destinataires en fonction du document sélectionné dans le formulaire de tâche
+   */
   bindDocumentFilter() {
-    // On utilise la délégation d'événement car le select est dans un modal
     $(document).on('change', '#document', e => {
+      const currentUserRole = window.CURRENT_USER_ROLE;
       const docId = e.target.value;
       const celluleId = this.docCelluleMap[docId] || null;
-      TacheUi.filterAssigneeList(celluleId);
+      TacheUi.filterAssigneeList(celluleId, currentUserRole);
     });
   },
 
+  /**
+   * Gestion de tous les événements liés à la liste des tâches (sélection, pagination, recherche, actions sur les tâches, etc.)
+    - Sélection multiple + activation du bouton d'action groupée
+    - Pagination avec maintien des filtres
+    - Recherche avec délai de frappe (debounce)
+    - Clic sur les actions (voir, éditer, supprimer, basculer statut)
+   */
   bindEvents() {
     //Gestion de la sélection multiple
     $(document).on('change', '#check-all-taches', function () {
@@ -99,7 +160,10 @@ export const TacheController = {
     });
 
     // Ajouter
-    $('#add-button').on('click', () => TacheUi.renderForm(null));
+    // Ajouter une nouvelle tâche
+    $('#add-button').on('click', () => {
+      this.openTacheForm(null);
+    });
 
     // Voir (Détail)
     $(document).on('click', '[data-action="view"]', function (e) {
@@ -108,20 +172,11 @@ export const TacheController = {
       window.location.href = `/taches/detail/${id}/`;
     });
 
-    // Éditer
+    // Éditer / Traiter une tâche existante (Délégation d'événement)
     $(document).on('click', '[data-action="edit"]', async e => {
       e.preventDefault();
       const id = $(e.currentTarget).data('id');
-      try {
-        const res = await TacheService.fetchOne(id);
-        TacheUi.renderForm(res.data);
-        const docId = res.data.document;
-        const celluleId = this.docCelluleMap[docId];
-        TacheUi.filterAssigneeList(celluleId);
-        new bootstrap.Modal(document.getElementById('create-tache-modal')).show();
-      } catch (err) {
-        TacheUi.showError('Erreur chargement tâche');
-      }
+      this.openTacheForm(id);
     });
 
     // suppression groupée
@@ -219,29 +274,38 @@ export const TacheController = {
       e.preventDefault();
       const $form = $('#tacheForm');
       const $saveBtn = $('#save-btn');
+
       $saveBtn.prop('disabled', true);
 
+      // Captures TOUT (Inputs texte, selects, ET le fichier de version s'il y en a un)
       const formData = new FormData($form[0]);
-      const rawData = Object.fromEntries(formData.entries());
+      const id = $('#update-id').val();
 
       try {
-        const id = $('#update-id').val();
         let response;
         if (id) {
-          response = await TacheService.update(id, rawData);
+          response = await TacheService.update(id, formData);
         } else {
+          // Pour la création pure, un JSON ou FormData classique convient
+          const rawData = Object.fromEntries(formData.entries());
           response = await TacheService.create(rawData);
         }
+
         TacheUi.showSuccess(response.message || 'Opération réussie', '#form-success');
         setTimeout(async () => {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-tache-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadTaches(this.getCurrentParams());
           $form[0].reset();
+          window.location.reload();
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);
-        const errorData = err.data?.errors || err.data?.message || err.data?.error || 'Erreur inconnue';
+        const errorData =
+          err.data?.errors ||
+          err.data?.message ||
+          err.data?.error ||
+          'Une erreur est survenue lors de la soumission du formulaire. Veuillez réessayer.';
         TacheUi.showError(errorData, '#form-error');
       } finally {
         $saveBtn.prop('disabled', false);
@@ -249,71 +313,52 @@ export const TacheController = {
     });
   },
 
-  // Evènements de la page détail
+  /**
+   * Gestion de tous les événements liés à la page de détail d'une tâche (ajout de commentaire, édition dans le modal, etc.)
+    - Soumission du formulaire de commentaire
+    - Mise à jour de la tâche depuis le modal d'édition sur la page détail
+   */
   bindDetailEvents() {
-    const taskId = $('#update-id-detail').val() || '{{ tache.id }}'; // Récupéré du template
-
-    // 1. Soumission du commentaire
-    $('#commentForm').on('submit', async e => {
+    const taskId = $('#update-id-detail').val() || '{{ tache.id }}';
+    // 1. Clic sur le bouton "Mettre à jour"
+    $(document).on('click', '[data-action="edit-task"]', e => {
       e.preventDefault();
-      const $form = $('#commentForm');
-      const $btn = $form.find('button[type="submit"]');
-
-      const data = {
-        contenu: $form.find('textarea[name="contenu"]').val()
-        //statut: $form.find('select[name="statut"]').val() // si tu l'ajoutes au modal
-      };
-
-      try {
-        $btn.prop('disabled', true);
-
-        const res = await TacheService.addComment(taskId, data);
-
-        TacheUi.showSuccess(res.message || 'Commentaire ajouté', '#form-success');
-        console.log('res : ', res);
-        setTimeout(async () => {
-          const modalInstance = bootstrap.Modal.getInstance(document.getElementById('commentModal'));
-          if (modalInstance) modalInstance.hide();
-          await this.loadTaches(this.getCurrentParams());
-          $form[0].reset();
-        }, 3000);
-        setTimeout(() => window.location.reload(), 1000);
-      } catch (err) {
-        TacheUi.showError(err.data?.message || "Erreur lors de l'ajout du commentaire", '#form-error');
-      } finally {
-        $btn.prop('disabled', false);
-      }
+      const id = $(e.currentTarget).data('id');
+      this.openTacheForm(id, '#editTaskModal', '#editTaskForm');
     });
 
-    // 2. Mise à jour de la tâche (Modal Edit sur page détail)
-    $('#editTaskForm').on('submit', async e => {
+    $(document).on('submit', '#editTaskForm', async e => {
       e.preventDefault();
       const $form = $('#editTaskForm');
-      const $btn = $form.find('button[type="submit"]');
+      const $saveBtn = $('#save-btn');
+      const taskId = $form.find('#update-id').val();
+      if (!taskId) return;
+      $saveBtn.prop('disabled', true);
 
       const formData = new FormData($form[0]);
-      const data = Object.fromEntries(formData.entries());
 
       try {
-        $btn.prop('disabled', true);
+        $saveBtn.prop('disabled', true);
         startLoader('#form-loader');
-
-        // On utilise la méthode update existante dans TacheService
-        const res = await TacheService.update(taskId, data);
-
+        const res = await TacheService.update(taskId, formData);
         TacheUi.showSuccess(res.message || 'Tâche mise à jour avec succès');
         setTimeout(() => window.location.reload(), 1000);
       } catch (err) {
         const errorData = err.data?.errors || err.data?.message || 'Erreur de mise à jour';
         TacheUi.showError(errorData, '#edit-task-error');
       } finally {
-        $btn.prop('disabled', false);
+        $saveBtn.prop('disabled', false);
         closeLoader('#form-loader');
       }
     });
   },
 
-  // ─── Utilitaires ────────────────────────────────────────────────────────
+  /**
+   * fonction de recherche avec maintien des filtres et pagination
+    - Récupère les valeurs du formulaire de recherche
+    - Construit un objet de paramètres à partir de ces valeurs
+    - Appelle loadTaches avec ces paramètres pour rafraîchir la liste
+   */
   handleSearch() {
     const params = Object.fromEntries(
       $('#tache-search-form')
@@ -324,6 +369,9 @@ export const TacheController = {
     this.loadTaches(params);
   },
 
+  /**
+   * Récupère les paramètres de recherche actuels à partir du formulaire de recherche
+   */
   getCurrentParams() {
     return Object.fromEntries(
       $('#tache-search-form')

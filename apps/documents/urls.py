@@ -13,7 +13,6 @@ urlpatterns = [
     # documents
     path('document/details/<int:pk>/', DocumentDetailView.as_view(), name='document_detail'),
     path('document/upload/', DocumentCreateMultipleView.as_view(), name='upload_page'),
-    #path('document/documents/list/', DocumentListView.as_view(), name='list_document'),
     path('document/edit/<int:pk>/', DocumentUpdateView.as_view(), name='edit_document'),
     path('document/delete/<int:pk>/', DocumentDeleteView.as_view(), name='delete_document'),
     # autocomplete

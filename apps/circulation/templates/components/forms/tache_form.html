@@ -1,11 +1,10 @@
 {# apps/circulation/templates/components/tache_form.html #}
-{# Template réutilisable pour le formulaire #}
+{# Template réutilisable pour le formulaire unifié (Création, Édition & Traitement) #}
 <div class="row">
-  <!-- Document -->
   <div class="col-md-12 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <select class="form-select" id="document" name="document" required>
+        <select class="form-select meta-field" id="document" name="document" required>
           <option value="">-- Sélectionner un document --</option>
           {% for doc in documents %}
             <option value="{{ doc.id }}">{{ doc.titre }}</option>
@@ -16,33 +15,31 @@
     </div>
   </div>
 
-  <!-- Titre -->
   <div class="col-md-12 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <input type="text" id="titre" class="form-control" name="titre" placeholder="Titre de la tâche" required />
+        <input type="text" id="titre" class="form-control meta-field" name="titre" placeholder="Titre de la tâche" required />
         <label for="titre">Titre</label>
       </div>
     </div>
   </div>
 
-  <!-- Description -->
-  <div class="col-md-12 form-group mb-5">
+  <div class="col-md-12 mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Description de la tâche"></textarea>
+        <textarea class="form-control" id="description" name="description" placeholder="Description de la tâche (optionnel)" style="height: 100px"></textarea>
         <label for="description">Description</label>
       </div>
     </div>
   </div>
+
 </div>
 
 <div class="row">
-  <!-- Assignée à -->
   <div class="col-md-12 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <select class="form-select" id="assignee_a" name="assignee_a" required>
+        <select class="form-select meta-field" id="assignee_a" name="assignee_a" required>
           <option value="">-- Sélectionner --</option>
           {% for user in utilisateurs %}
             <option value="{{ user.id }}" data-cellule="{{ user.cellule.id|default:'' }}">
@@ -55,11 +52,10 @@
     </div>
   </div>
 
-  <!-- Priorité -->
   <div class="col-md-6 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <select class="form-select" id="priorite" name="priorite">
+        <select class="form-select meta-field" id="priorite" name="priorite">
           {% for value, label in priorites %}
             <option value="{{ value }}">{{ label }}</option>
           {% endfor %}
@@ -69,7 +65,6 @@
     </div>
   </div>
 
-  <!-- Statut -->
   <div class="col-md-6 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
@@ -85,13 +80,42 @@
 </div>
 
 <div class="row">
-  <!-- Date échéance -->
   <div class="col-md-12 form-group mb-5">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
-        <input type="date" id="date_echeance" class="form-control" name="date_echeance" />
+        <input type="date" id="date_echeance" class="form-control meta-field" name="date_echeance" />
         <label for="date_echeance">Date d'échéance</label>
       </div>
     </div>
   </div>
+</div>
+
+<hr class="my-4">
+
+<div id="zone-traitement-assigne" class="d-none row">
+  <div class="col-md-12 form-group mb-5">
+    <h6 class="text-primary mb-3"><i class="ri-chat-history-line me-1"></i>Rapport de traitement</h6>
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <textarea class="form-control" id="commentaire_traitement" name="commentaire_traitement" rows="3" style="height: 100px" placeholder="Décrivez le travail effectué ou l'avancement..."></textarea>
+        <label for="commentaire_traitement">Commentaire / Notes de traitement</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="zone-versioning-document" class="d-none row">
+  <div class="col-md-12 form-group mb-5">
+    <h6 class="text-primary mb-3"><i class="ri-file-shield-2-line me-1"></i>Gestion des versions</h6>
+    <div class="form-group">
+      <label for="fichier_version" class="form-label text-muted small mb-1">Téléverser le document révisé / traité (Optionnel)</label>
+      <input type="file" id="fichier_version" name="fichier_version" class="form-control" />
+      <div class="form-text text-warning small">
+        <i class="ri-information-line me-1"></i>Si un fichier est fourni, une nouvelle version du document sera automatiquement générée dans le système.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="timeline-commentaires" class="d-none mt-2 p-4 border rounded bg-light">
 </div>
