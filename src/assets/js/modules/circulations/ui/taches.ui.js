@@ -25,6 +25,30 @@ export const TacheUi = {
     annulee: 'bg-danger'
   },
 
+  /**
+   * Génération du badge de consultation
+   * @param {*} tache
+   * @returns
+   */
+  getConsultationBadge(tache) {
+    if (!tache.date_premiere_consultation) {
+      return `<span class="badge bg-label-danger d-flex align-items-center gap-1 w-100 justify-content-center">
+                <i class="ri-eye-off-line"></i> Non consulté
+              </span>`;
+    }
+
+    const dateLettre = new Date(tache.date_premiere_consultation).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    return `<span class="badge bg-label-success d-flex align-items-center gap-1 w-100 justify-content-center" data-bs-toggle="tooltip" title="Consulté ${tache.nb_consultations || 1} fois">
+              <i class="ri-eye-line"></i> Vu le ${dateLettre}
+            </span>`;
+  },
+
   getPriorityBadge(tache) {
     const colorClass = this.priorityColors[tache.priorite] || 'bg-secondary';
     return `<span class="badge rounded-pill ${colorClass}">
@@ -62,12 +86,13 @@ export const TacheUi = {
 
   createTacheRow(tache) {
     const priorityBadge = this.getPriorityBadge(tache);
+    const consultationBadge = this.getConsultationBadge(tache);
     const statusBadge = this.getStatusBadge(tache);
     const dateEcheance = tache.date_echeance ? new Date(tache.date_echeance).toLocaleDateString() : '-';
     const p = tache.tache_actions;
 
     return `
-      <tr data-tache-id="${tache.id}">
+      <tr data-tache-id="${tache.id}" data-assignee-id="${tache.assignee_a || ''}">
         <th style="width: 40px;">
           <div class="form-check mb-0">
             <input class="form-check-input tache-checkbox" type="checkbox" value="${tache.id}">
@@ -80,6 +105,7 @@ export const TacheUi = {
         <td>${priorityBadge}</td>
         <td>${dateEcheance}</td>
         <td>${statusBadge}</td>
+        <td>${consultationBadge}</td>
         <td>
           <div class="dropdown">
             <button class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

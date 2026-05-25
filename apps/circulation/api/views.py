@@ -180,7 +180,49 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     custom_actions = {
         'bulk_delete': 'action_bulk_delete',
+        'log_consultation': 'action_log_consultation',
     }
+
+    def action_log_consultation(self, request, pk=None):
+        """
+        Horodate la consultation de la tâche UNIQUEMENT si l'utilisateur connecté
+        est celui à qui la tâche a été assignée.
+        """
+        tache = self.get_object() # Récupère la tâche concernée
+        user_connecte = request.user
+
+        # 🟢 LA SÉCURITÉ ET L'ANTI-AMBIGUÏTÉ EST ICI :
+        if tache.assignee_a == user_connecte:
+            # On vérifie si c'est la TOUTE PREMIÈRE consultation
+            if not tache.date_premiere_consultation:
+                tache.date_premiere_consultation = timezone.now()
+
+                # 🟢 CRÉATION DE LA NOTIFICATION DE LECTURE HIERARCHIQUE
+                # On évite de notifier l'initiateur si c'est lui-même qui s'assigne la tâche
+                if tache.assignee_par and tache.assignee_par != user_connecte:
+                    Notification.objects.create(
+                        destinataire=tache.assignee_par,
+                        titre="Tâche consultée",
+                        message=f"{user_connecte.get_full_name() or user_connecte.username} a ouvert la tâche : '{tache.titre}'.",
+                        categorie=Notification.Category.TACHE,
+                        content_object=tache,
+                        url_action=f"/taches/detail/{tache.id}/"
+                    )
+
+            if hasattr(tache, 'nb_consultations'):
+                tache.nb_consultations += 1
+            tache.save()
+
+            return Response({
+                'success': True,
+                'message': 'Accusé de réception enregistré (Assigné confirmé).'
+            }, status=status.HTTP_200_OK)
+
+        # Si c'est un manager ou un admin qui regarde, on ne fait rien mais on valide la requête
+        return Response({
+            'success': True,
+            'message': 'Consultation anonyme (Manager/Admin/Tiers).'
+        }, status=status.HTTP_204_NO_CONTENT)
 
     def action_bulk_delete(self, request, *args, **kwargs):
         """Suppression en masse."""
@@ -296,7 +338,48 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
         'traiter_etape': 'action_traiter_etape',
         'initier_circuit': 'action_initier_circuit',
         'bulk_delete': 'action_bulk_delete',
+        'log_consultation': 'action_log_consultation',
     }
+
+    def action_log_consultation(self, request, pk=None):
+        """
+        Horodate la consultation de l'étape actuelle du circuit
+        uniquement si l'utilisateur connecté en est le destinataire.
+        """
+        circulation = self.get_object()
+        etape_actuelle = circulation.etape_actuelle  # Utilise ta property existante
+        user_connecte = request.user
+
+        # La traçabilité s'applique si le circuit est en cours et que l'utilisateur est le destinataire actif
+        if etape_actuelle and etape_actuelle.destinataire == user_connecte:
+            # On vérifie si c'est la TOUTE PREMIÈRE fois qu'il ouvre cette étape
+            if not etape_actuelle.date_premiere_consultation:
+                etape_actuelle.date_premiere_consultation = timezone.now()
+
+                # 🟢 CRÉATION DE LA NOTIFICATION DE LECTURE HIERARCHIQUE
+                # On notifie le créateur du circuit que l'acteur est en train de regarder le document
+                if circulation.initie_par and circulation.initie_par != user_connecte:
+                    Notification.objects.create(
+                        destinataire=circulation.initie_par,
+                        titre="Document en cours de lecture",
+                        message=f"{user_connecte.get_full_name() or user_connecte.username} a pris connaissance du document pour l'étape {etape_actuelle.ordre}.",
+                        categorie=Notification.Category.CIRCULATION,
+                        content_object=circulation,
+                        url_action=f"/circulations/detail/{circulation.id}/"
+                    )
+
+            etape_actuelle.nb_consultations += 1
+            etape_actuelle.save()
+
+            return Response({
+                'success': True,
+                'message': 'Accusé de réception enregistré pour cette étape.'
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            'success': True,
+            'message': 'Consultation sans impact (Auteur/Admin/Tiers).'
+        }, status=status.HTTP_204_NO_CONTENT)
 
     def action_bulk_delete(self, request, *args, **kwargs):
         """Suppression en masse."""

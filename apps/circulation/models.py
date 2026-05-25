@@ -41,6 +41,9 @@ class CirculationDocument(models.Model):
     statut        = models.CharField(max_length=20, choices=StatutCirculation.choices, default=StatutCirculation.EN_ATTENTE)
     date_debut    = models.DateTimeField(default=timezone.now)
     date_fin      = models.DateTimeField(null=True, blank=True)
+    date_premiere_consultation = models.DateTimeField(null=True, blank=True)
+    nb_consultations           = models.IntegerField(default=0)
+
     # timestamp
     Date_creation    = models.DateTimeField(auto_now_add=True)
     Date_miseajour   = models.DateTimeField(auto_now=True)
@@ -139,6 +142,10 @@ class Tache(models.Model):
     priorite      = models.CharField(max_length=20, choices=PrioriteTache.choices, default=PrioriteTache.NORMALE)
     date_echeance = models.DateField(null=True, blank=True)
     date_cloture  = models.DateTimeField(null=True, blank=True)
+
+    date_premiere_consultation = models.DateTimeField(null=True, blank=True)
+    nb_consultations = models.IntegerField(default=0)
+
     # timestamp
     Date_creation    = models.DateTimeField(auto_now_add=True)
     Date_miseajour   = models.DateTimeField(auto_now=True)

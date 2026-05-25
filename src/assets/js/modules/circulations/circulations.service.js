@@ -18,6 +18,12 @@ export const CirculationService = {
     });
   },
 
+  logConsultation(id) {
+    return ApiClient.request(`/api/circulations/${id}/log-consultation/`, {
+      method: 'POST'
+    });
+  },
+
   remove(id) {
     return ApiClient.request(`/api/circulations/${id}/delete/`, {
       method: 'DELETE'

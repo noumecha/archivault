@@ -12,6 +12,7 @@ urlpatterns = [
     path('taches/<int:pk>/delete/', TacheAPIView.as_view(), name='api_tache_delete', kwargs={'action': 'delete'}),
     path('taches/<int:pk>/commenter/', TacheAPIView.as_view(), name='api_tache_comment', kwargs={'action': 'comment'}),
     path('taches/bulk-delete/', TacheAPIView.as_view(), name='api_tache_bulk_delete', kwargs={'action': 'bulk_delete'}),
+    path('taches/<int:pk>/log-consultation/', TacheAPIView.as_view(), name='api_tache_log_consultation', kwargs={'action': 'log_consultation'}),
 
     # ─── Circulations API ────────────────────────────────────────────────────
     path('circulations/', CirculationAPIView.as_view(), name='api_circulation_list', kwargs={'action': 'list'}),
@@ -20,6 +21,7 @@ urlpatterns = [
     path('circulations/<int:pk>/update/', CirculationAPIView.as_view(), name='api_circulation_update', kwargs={'action': 'update'}),
     path('circulations/<int:pk>/delete/', CirculationAPIView.as_view(), name='api_circulation_delete', kwargs={'action': 'delete'}),
     path('circulations/bulk-delete/', CirculationAPIView.as_view(), name='api_circulation_bulk_delete', kwargs={'action': 'bulk_delete'}),
+    path('circulations/<int:pk>/log-consultation/', CirculationAPIView.as_view(), name='api_circulation_log_consultation', kwargs={'action': 'log_consultation'}),
 
     # Actions Spécifiques au Workflow
     path('circulations/initier/', CirculationAPIView.as_view(), name='api_circulation_initier', kwargs={'action': 'initier_circuit'}),

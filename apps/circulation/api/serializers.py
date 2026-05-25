@@ -49,7 +49,8 @@ class CirculationDocumentSerializer(serializers.ModelSerializer):
             'id', 'document', 'document_titre', 'titre', 'description',
             'initie_par', 'initie_par_name', 'statut', 'statut_display',
             'date_debut', 'date_fin', 'etapes_count',
-            'Date_creation', 'Date_miseajour', 'etapes', 'etape_actuelle', 'can_update', 'can_delete'
+            'Date_creation', 'Date_miseajour', 'etapes', 'etape_actuelle', 'can_update', 'can_delete',
+            'date_premiere_consultation', 'nb_consultations'
         ]
         read_only_fields = ['initie_par', 'Date_creation', 'Date_miseajour']
 
@@ -151,7 +152,7 @@ class TacheSerializer(serializers.ModelSerializer):
             'assignee_par', 'assignee_par_name', 'assignee_a', 'assignee_a_name',
             'statut', 'statut_display', 'priorite', 'priorite_display',
             'date_echeance', 'date_cloture', 'is_overdue', 'commentaires',
-            'Date_creation', 'Date_miseajour', 'tache_actions'
+            'Date_creation', 'Date_miseajour', 'tache_actions', 'date_premiere_consultation', 'nb_consultations'
         ]
         read_only_fields = ['assignee_par', 'date_cloture', 'Date_creation', 'Date_miseajour']
 

@@ -186,11 +186,32 @@ export const CirculationController = {
       }
     });
 
-    // Voir (Détail)
-    $(document).on('click', '[data-action="view"]', function (e) {
+    // Voir (Détail) - Gestion du tracking de lecture hiérarchique des circulations
+    $(document).on('click', '[data-action="view"]', async function (e) {
       e.preventDefault();
-      const id = $(this).data('id');
-      window.location.href = `/circulations/detail/${id}/`;
+
+      const $btn = $(this);
+      const circulationId = $btn.data('id');
+      const targetUrl = `/circulations/detail/${circulationId}/`;
+
+      const $row = $btn.closest('tr');
+      const actuelActeurId = $row.data('actuel-acteur-id');
+      const currentUserId = window.CURRENT_USER_ID;
+
+      const isActuelActeur =
+        $row.length && actuelActeurId && currentUserId && String(actuelActeurId) === String(currentUserId);
+
+      if (isActuelActeur) {
+        try {
+          await CirculationService.logConsultation(circulationId);
+        } catch (err) {
+          console.warn("Échec de l'enregistrement de l'accusé de réception circulation :", err);
+        } finally {
+          window.location.href = targetUrl;
+        }
+      } else {
+        window.location.href = targetUrl;
+      }
     });
 
     // Détail / Timeline
