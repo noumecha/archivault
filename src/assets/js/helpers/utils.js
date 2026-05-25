@@ -470,12 +470,15 @@ function getCookie(name) {
   return cookieValue;
 }
 
-// reusable toogleBulk Button function
+/**
+ * Fonction reutilisatble pour le toogle check
+ * @params selectCounterSelector, bulkActionsContainerSelector
+ */
 function toggleBulkButton(selectCounterSelector, bulkActionsContainerSelector) {
   const selectedCount = $(selectCounterSelector).length;
   if (selectedCount > 0) {
     $(bulkActionsContainerSelector).removeClass('d-none');
-    $(`${selectCounterSelector}, #selected-count`).text(selectedCount);
+    $('#selected-count').text(selectedCount);
   } else {
     $(bulkActionsContainerSelector).addClass('d-none');
   }

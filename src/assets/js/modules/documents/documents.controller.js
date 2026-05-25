@@ -97,12 +97,16 @@ export const DocumentController = {
     // Gestion de la sélection multiple (Grille)
     $(document).on('change', '#check-all-documents-grid', function () {
       const isChecked = $(this).is(':checked');
-      $('.document-checkbox').prop('checked', isChecked); // Cible les checkboxes des cartes
+      $('.document-checkbox').prop('checked', isChecked);
       toggleBulkButton('.document-checkbox:checked', '#bulk-actions-container');
     });
 
     $(document).on('change', '.document-checkbox', function () {
       toggleBulkButton('.document-checkbox:checked', '#bulk-actions-container');
+      const totalCheckboxes = $('.document-checkbox').length;
+      const checkedCheckboxes = $('.document-checkbox:checked').length;
+      const allChecked = totalCheckboxes === checkedCheckboxes;
+      $('#check-all-documents, #check-all-documents-grid').prop('checked', allChecked);
     });
 
     // Gestion des clics de pagination

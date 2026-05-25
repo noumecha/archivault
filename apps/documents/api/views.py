@@ -13,7 +13,7 @@ from .serializers import *
 import os, json
 from rest_framework import status, permissions
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db import transaction
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
@@ -42,7 +42,7 @@ class DocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
     """
     model = Document
     serializer_class = DocumentSerializer
-    parser_classes = [MultiPartParser, FormParser] # Pour gérer les fichiers
+    parser_classes = [MultiPartParser, FormParser, JSONParser] # Pour gérer les fichiers
     permission_classes = [permissions.IsAuthenticated]
 
     search_fields = ['titre']
