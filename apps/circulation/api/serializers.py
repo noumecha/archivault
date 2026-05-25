@@ -155,7 +155,19 @@ class TacheSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['assignee_par', 'date_cloture', 'Date_creation', 'Date_miseajour']
 
+    def validate(self, attrs):
+        if self.instance:
+            if 'document' in attrs and attrs['document'] != self.instance.document:
+                raise serializers.ValidationError({
+                    "document": "Il est interdit de modifier le document associé à une tâche existante."
+                })
+        return attrs
+
     def create(self, validated_data):
+        request = self.context.get('request')
+        if request and request.user:
+            validated_data['assignee_par'] = request.user
+
         tache = super().create(validated_data)
         self._gerer_acces_temporaire(tache)
         return tache
@@ -171,11 +183,13 @@ class TacheSerializer(serializers.ModelSerializer):
         utilisateur = tache.assignee_a
 
         if utilisateur and document.cellule and utilisateur.cellule != document.cellule:
-            # On s'assure qu'il n'a pas déjà une permission écrite
             DocumentPermission.objects.get_or_create(
                 document=document,
                 utilisateur=utilisateur,
-                defaults={'type_acces': 'lecture_ecriture'} # Adapte selon tes choix d'accès
+                can_view=True,
+                can_edit=True,
+                can_download=True,
+                defaults={'Date_creation': timezone.now()}
             )
 
     def get_tache_actions(self, obj):

@@ -131,7 +131,7 @@ class Tache(models.Model):
     Tâche confiée à un utilisateur sur un document.
     """
     document      = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='taches')
-    titre         = models.CharField(max_length=255)
+    titre         = models.CharField(max_length=255, unique=True)
     description   = models.TextField(blank=True)
     assignee_par  = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='taches_assignees')
     assignee_a    = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, related_name='mes_taches')
@@ -148,6 +148,18 @@ class Tache(models.Model):
 
     def __str__(self):
         return f"[{self.priorite.upper()}] {self.titre} → {self.assignee_a}"
+
+    @property
+    def statut_color(self):
+        """Retourne la classe de couleur Bootstrap associée au statut actuel."""
+        mapping = {
+            StatutTache.A_FAIRE: 'secondary',       # Gris
+            StatutTache.EN_COURS: 'primary',        # Bleu
+            StatutTache.EN_REVISION: 'warning',    # Orange / Jaune
+            StatutTache.TERMINEE: 'success',       # Vert
+            StatutTache.ANNULEE: 'danger',         # Rouge
+        }
+        return mapping.get(self.statut, 'dark')
 
     def is_overdue(self):
         """Vérifier si la tâche est en retard."""

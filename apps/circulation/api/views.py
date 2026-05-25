@@ -61,7 +61,9 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
             if hasattr(user, 'cellule') and user.cellule:
                 qs = qs.filter(
                     Q(assignee_a__cellule=user.cellule) |
-                    Q(assignee_par__cellule=user.cellule)
+                    Q(assignee_par__cellule=user.cellule) |
+                    Q(assignee_a=user) |
+                    Q(assignee_par=user)
                 )
             else:
                 qs = qs.filter(Q(assignee_a=user) | Q(assignee_par=user))
@@ -79,9 +81,71 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
         return super().create_action(request, *args, **kwargs)
 
     def update_action(self, request, pk=None, *args, **kwargs):
-        """Mise à jour avec vérification du rôle."""
+        """
+        Formulaire Unique : Gère à la fois la modification managériale,
+        le traitement par l'assigné, et le versioning automatique.
+        """
         self.check_role_permission(request)
-        return super().update_action(request, pk, *args, **kwargs)
+        tache = get_object_or_404(Tache, pk=pk)
+        data = request.data
+        fichier_nouvelle_version = request.FILES.get('fichier_version')
+        commentaire_traitement = data.get('commentaire_traitement')
+        nouveau_statut = data.get('statut')
+
+        ancien_statut = tache.statut
+
+        with transaction.atomic():
+            # ─── CAS 1 : GESTION DU VERSIONING DU DOCUMENT ───
+            if fichier_nouvelle_version:
+                document = tache.document
+
+                # 1. On récupère la dernière version pour incrémenter (si aucune, on commence à 1)
+                derniere_version = document.version_courante
+                prochain_numero = (derniere_version.numero_version + 1) if derniere_version else 1
+
+                # 2. On crée l'unique enregistrement de version (Zéro duplication de fichier !)
+                VersionDocument.objects.create(
+                    titre=f"{document.titre} - {timezone.now().strftime('%Y-%m-%d')} - V{prochain_numero}",
+                    document=document,
+                    numero_version=prochain_numero,
+                    fichier=fichier_nouvelle_version,
+                    cree_par=request.user,
+                    modifier_par=request.user
+                )
+
+                # 3. On met à jour uniquement les métadonnées de modification du document parent
+                document.modifier_par = request.user
+                document.save()  # Met à jour le timestamp Date_miseajour
+
+            # ─── CAS 2 : HISTORIQUE ET COMMENTAIRE DE TRAITMENT ───
+            # Si le statut change ou si l'assigné soumet un rapport/commentaire
+            if commentaire_traitement or (nouveau_statut and nouveau_statut != ancien_statut):
+                CommentaireTache.objects.create(
+                    tache=tache,
+                    auteur=request.user,
+                    contenu=commentaire_traitement or f"Statut mis à jour : {ancien_statut} → {nouveau_statut}",
+                    ancien_statut=ancien_statut,
+                    nouveau_statut=nouveau_statut or ancien_statut
+                )
+
+            # ─── CAS 3 : MISE À JOUR VIA LE SERIALIZER (Données de base + Accès temporaire) ───
+            # On laisse le sérialiseur traiter le reste des champs (titre, assignation, statut...)
+            serializer = self.serializer_class(tache, data=data, partial=True, context={'request': request})
+            if serializer.is_valid():
+                tache_mise_a_jour = serializer.save()
+
+                # Gestion de la date de clôture automatique
+                if tache_mise_a_jour.statut == StatutTache.TERMINEE and ancien_statut != StatutTache.TERMINEE:
+                    tache_mise_a_jour.date_cloture = timezone.now()
+                    tache_mise_a_jour.save()
+
+                return Response({
+                    'success': True,
+                    'message': 'Tâche mise à jour avec succès',
+                    'data': serializer.data
+                }, status=status.HTTP_200_OK)
+
+            return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete_action(self, request, pk=None, *args, **kwargs):
         """Suppression avec vérification du rôle."""
@@ -116,9 +180,7 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
     # ─────────────────────────────────────────────────────────────────────────
     custom_actions = {
         'bulk_delete': 'action_bulk_delete',
-        'comment': 'action_comment'
     }
-
 
     def action_bulk_delete(self, request, *args, **kwargs):
         """Suppression en masse."""
@@ -134,38 +196,6 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
             'success': True,
             'message': f'{deleted_count} tâche(s) supprimée(s)',
             'deleted_count': deleted_count
-        })
-
-    def action_comment(self, request, pk=None, *args, **kwargs):
-        """Ajouter un commentaire à une tâche et éventuellement changer son statut."""
-        tache = get_object_or_404(Tache, pk=pk)
-        contenu = request.data.get('contenu')
-        nouveau_statut = request.data.get('statut')
-
-        if not contenu:
-            return Response({'success': False, 'message': 'Le contenu est requis'}, status=status.HTTP_400_BAD_REQUEST)
-
-        ancien_statut = tache.statut
-
-        # Création du commentaire
-        CommentaireTache.objects.create(
-            tache=tache,
-            auteur=request.user,
-            contenu=contenu,
-            ancien_statut=ancien_statut,
-            nouveau_statut=nouveau_statut or ancien_statut
-        )
-
-        if nouveau_statut and nouveau_statut in StatutTache.values:
-            tache.statut = nouveau_statut
-            if nouveau_statut == StatutTache.TERMINEE:
-                tache.date_cloture = timezone.now()
-            tache.save()
-
-        return Response({
-            'success': True,
-            'message': 'Commentaire ajouté avec succès',
-            'data': TacheSerializer(tache, context={'request': request}).data
         })
 
 # cicurlaations API view

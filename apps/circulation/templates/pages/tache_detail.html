@@ -4,219 +4,209 @@
 
 {% block content %}
 <input type="hidden" id="update-id-detail" value="{{ tache.id }}">
+
 <div class="container-xxl flex-grow-1 container-p-y">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
         <div class="d-flex flex-column">
-            <h4 class="fw-bold text-white mb-1">Tâche #{{ tache.id }} : {{ tache.titre }}</h4>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-label-dark text-uppercase fw-bold">TASK-#{{ tache.id }}</span>
+                <span class="badge bg-label-{{ tache.priorite }} text-uppercase">{{ tache.get_priorite_display }}</span>
+            </div>
+            <h4 class="fw-semibold mb-1 text-white">Titre : {{ tache.titre }}</h4>
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb breadcrumb-style1 mb-0">
+                <ol class="breadcrumb breadcrumb-style1 mb-0 small" style="--bs-breadcrumb-divider-color: #ffffff;">
                     <li class="breadcrumb-item"><a href="javascript:void(0);" class="text-white">Circulation</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'tache_management' %}" class="text-white">Tâches</a></li>
-                    <li class="breadcrumb-item active text-white">{{ tache.titre|truncatechars:30 }}</li>
+                    <li class="breadcrumb-item text-white active">{{ tache.titre|truncatechars:20 }}</li>
                 </ol>
             </nav>
         </div>
-        <div class="d-flex align-content-center flex-wrap gap-2 mt-2 mt-md-0">
-            <button class="btn btn-label-secondary text-white" onclick="history.back()">
-              <i class="ri-arrow-left-line"></i> Retour
+        <div class="d-flex align-content-center flex-wrap gap-2 w-100 w-md-auto justify-content-md-end">
+            <button class="btn btn-outline-info" onclick="history.back()">
+                <i class="ri-arrow-left-line me-1"></i> Retour
             </button>
             {% if can_validate %}
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editTaskModal">
-                    <i class="bx bx-check-double no-transform me-1"></i> Mettre à jour
-                </button>
+              <button class="btn btn-primary shadow-sm" data-action="edit-task" data-id="{{ tache.id }}">
+                <i class="ri-edit-box-line me-1"></i> Mettre à jour / Traiter
+              </button>
             {% endif %}
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-xl-8 col-lg-7 col-md-12">
-            <div class="card mb-4">
+    <div class="row g-4">
+
+        <div class="col-xl-8 col-lg-7">
+
+            <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-body">
                     <div class="alert alert-success mt-2" style="display:none;" id="message-show-success"></div>
                     <div class="alert alert-danger mt-2" style="display:none;" id="message-show-error"></div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Description</h5>
-                        <span class="badge bg-label-{{ tache.priorite }}">{{ tache.get_priorite_display }}</span>
+
+                    <h5 class="card-title mb-3 d-flex align-items-center text-primary">
+                        <i class="ri-file-text-line me-2"></i> Description de la tâche
+                    </h5>
+                    <div class="text-body lh-base p-3 bg-light rounded-2 border-start border-3 border-primary">
+                        {{ tache.description|linebreaks|default:"*Aucune description détaillée fournie.*" }}
                     </div>
-                    <p class="card-text">{{ tache.description|linebreaks|default:"*Aucune description fournie.*" }}</p>
 
-                    <hr class="my-4">
-
-                    <h5 class="card-title mb-3">Document associé</h5>
-                    <div class="d-flex align-items-center bg-lighter p-3 rounded">
-                        <div class="avatar flex-shrink-0 me-3">
-                            <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-file"></i></span>
-                        </div>
-                        <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                            <div class="me-2">
-                                <h6 class="mb-0">{{ tache.document.titre }}</h6>
-                                <small class="text-muted">{{ tache.document.type_document }}</small>
+                    <h5 class="card-title mt-4 mb-3 d-flex align-items-center text-heading">
+                        <i class="ri-attachment-2 me-2"></i> Document de référence
+                    </h5>
+                    <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-white hover-elevate">
+                        <div class="d-flex align-items-center me-3">
+                            <div class="avatar avatar-md flex-shrink-0 me-3">
+                                <span class="avatar-initial rounded-3 bg-label-primary">
+                                    <i class="ri-file-pdf-2-line fs-3"></i>
+                                </span>
                             </div>
-                            <a href="{% url 'document_detail' tache.document.pk %}" class="btn btn-sm btn-outline-primary">Voir le document</a>
+                            <div>
+                                <h6 class="mb-0 text-heading fw-semibold">{{ tache.document.titre }}</h6>
+                                <span class="badge bg-label-secondary size-sm mt-1">{{ tache.document.type_document }}</span>
+                            </div>
                         </div>
+                        <a href="{% url 'document_detail' tache.document.pk %}" class="btn btn-sm btn-icon btn-label-primary" data-bs-toggle="tooltip" title="Consulter le document">
+                            <i class="ri-external-link-line fs-5"></i>
+                        </a>
                     </div>
                 </div>
             </div>
 
-            <div class="card card-action">
-                <div class="card-header align-items-center">
-                    <h5 class="card-action-title mb-0"><i class="bx bx-list-ul me-2"></i>Activité & Commentaires</h5>
-                    <div class="card-action-element">
-                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#commentModal">
-                            <i class="bx bx-plus me-1"></i>Commenter
-                        </button>
-                    </div>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header border-bottom bg-transparent py-3">
+                    <h5 class="card-action-title mb-0 d-flex align-items-center text-heading">
+                        <i class="ri-discuss-line me-2 fs-4 text-primary"></i>Activité & Historique de traitement
+                    </h5>
                 </div>
-                <div class="card-body">
-                    <ul class="timeline ms-2">
+                <div class="card-body pt-4">
+                    <ul class="timeline timeline-dashed ms-2 mb-0">
                         {% for commentaire in commentaires %}
                         <li class="timeline-item timeline-item-transparent {% if forloop.last %}border-transparent{% endif %}">
-                            <span class="timeline-point timeline-point-primary"></span>
-                            <div class="timeline-event">
-                                <div class="timeline-header mb-1">
-                                    <h6 class="mb-0">{{ commentaire.auteur.get_full_name|default:commentaire.auteur.username }}</h6>
-                                    <small class="text-muted">{{ commentaire.Date_creation|timesince }}</small>
+                            <span class="timeline-point timeline-point-primary mt-1"></span>
+                            <div class="timeline-event bg-light p-3 rounded-3 border-0 shadow-none mb-3">
+                                <div class="timeline-header d-flex flex-wrap justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 fw-semibold text-heading">{{ commentaire.auteur.get_full_name|default:commentaire.auteur.username }}</h6>
+                                    <small class="text-muted fw-light"><i class="ri-time-line me-1"></i>{{ commentaire.Date_creation|timesince }}</small>
                                 </div>
-                                <p class="mb-2">{{ commentaire.contenu }}</p>
+                                <p class="mb-0 text-body small-text">{{ commentaire.contenu }}</p>
+
                                 {% if commentaire.nouveau_statut != commentaire.ancien_statut %}
-                                <div class="d-flex align-items-center">
-                                    <span class="badge bg-label-secondary">
-                                        {{ commentaire.ancien_statut }} <i class="bx bx-right-arrow-alt mx-1"></i> {{ commentaire.nouveau_statut }}
+                                <div class="d-flex align-items-center mt-2 pt-2 border-top border-dashed">
+                                    <span class="badge bg-label-secondary d-flex align-items-center gap-1 py-1 px-2">
+                                        {{ commentaire.ancien_statut }}
+                                        <i class="ri-arrow-right-line mx-1"></i>
+                                        {{ commentaire.nouveau_statut }}
                                     </span>
                                 </div>
                                 {% endif %}
                             </div>
                         </li>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="ri-chat-smile-line ri-2x mb-2 d-block"></i>
+                            <span class="small">Aucun historique ou rapport de traitement pour le moment.</span>
+                        </div>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-lg-5 mt-3 col-md-12">
-            <div class="card mb-4">
-                <div class="card-header"><h5 class="mb-0">Détails du flux</h5></div>
-                <div class="card-body">
-                    <small class="text-uppercase text-muted">Statut Actuel</small>
-                    <div class="d-flex align-items-center mt-2 mb-4">
-                        <div class="badge bg-label-{{ tache.statut }} p-2 me-2 rounded">
-                            <i class="bx bx-loader-circle fs-4"></i>
-                        </div>
-                        <h4 class="mb-0">{{ tache.get_statut_display }}</h4>
-                    </div>
+        <div class="col-xl-4 col-lg-5">
+            <div class="card border-0 shadow-sm position-sticky" style="top: 1rem;">
+                <div class="card-header border-bottom bg-transparent py-3">
+                    <h5 class="mb-0 d-flex align-items-center text-heading">
+                        <i class="ri-git-repository-line me-2 text-primary"></i>Détails du flux
+                    </h5>
+                </div>
+                <div class="card-body pt-4">
+                  <div class="mb-4 text-center p-3 bg-lighter rounded-3">
+                    <small class="text-uppercase text-muted d-block mb-1 fw-medium tracking-wider">Statut Actuel</small>
+                    <span class="badge bg-label-{{ tache.statut_color }} fs-6 px-3 py-2 text-uppercase rounded-2 fw-semibold">
+                      <i class="ri-checkbox-blank-circle-fill me-1 small"></i>{{ tache.get_statut_display }}
+                    </span>
+                  </div>
 
                     <div class="info-container">
-                        <ul class="list-unstyled">
-                            <li class="mb-3 d-flex justify-content-between">
-                                <span class="fw-bold me-2 text-heading">Assigné à:</span>
-                                <span>{{ tache.assignee_a.username }}</span>
-                            </li>
-                            <li class="mb-3 d-flex justify-content-between">
-                                <span class="fw-bold me-2 text-heading">Créé par:</span>
-                                <span>{{ tache.assignee_par.username }}</span>
-                            </li>
-                            <li class="mb-3 d-flex justify-content-between">
-                                <span class="fw-bold me-2 text-heading">Date d'échéance:</span>
-                                <span class="{% if tache.is_overdue %}text-danger fw-bold{% endif %}">
-                                    {{ tache.date_echeance|date:"d M Y" }}
-                                </span>
-                            </li>
-                            <li class="mb-3 d-flex justify-content-between">
-                                <span class="fw-bold me-2 text-heading">Date de clôture:</span>
-                                <span>{{ tache.date_cloture|date:"d M Y"|default:"En cours" }}</span>
-                            </li>
-                        </ul>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-light">
+                            <div class="d-flex align-items-center text-muted small">
+                                <i class="ri-user-received-line me-2 fs-5"></i> Assigné à
+                            </div>
+                            <span class="fw-semibold text-heading">{{ tache.assignee_a.get_full_name|default:tache.assignee_a.username }}</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-light">
+                            <div class="d-flex align-items-center text-muted small">
+                                <i class="ri-user-shared-line me-2 fs-5"></i> Initié par
+                            </div>
+                            <span class="fw-semibold text-heading">{{ tache.assignee_par.get_full_name|default:'-' }}</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-light">
+                            <div class="d-flex align-items-center text-muted small">
+                                <i class="ri-calendar-todo-line me-2 fs-5"></i> Date d'échéance
+                            </div>
+                            <span class="fw-semibold {% if tache.is_overdue %}text-danger fw-bold d-flex align-items-center gap-1{% else %}text-heading{% endif %}">
+                                {% if tache.is_overdue %}<i class="ri-error-warning-line"></i>{% endif %}
+                                {{ tache.date_echeance|date:"d M Y"|default:"Non définie" }}
+                            </span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center text-muted small">
+                                <i class="ri-checkbox-circle-line me-2 fs-5"></i> Clôturée le
+                            </div>
+                            <span class="fw-semibold text-heading">
+                                {% if tache.date_cloture %}
+                                    {{ tache.date_cloture|date:"d M Y" }}
+                                {% else %}
+                                    <span class="badge bg-label-warning text-lowercase py-1 px-2 fw-normal">en cours</span>
+                                {% endif %}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal : Ajouter un commentaire -->
-    <div class="modal fade" id="commentModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <form id="commentForm" method="post" action="">
-            <div class="modal-header">
-              <h5 class="modal-title">Ajouter un commentaire</h5>
+    <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg p-0">
+          <form id="editTaskForm"> <div class="modal-header py-3 bg-light">
+              <h5 class="modal-title fw-semibold text-heading d-flex align-items-center" id="modal-title">
+                  <i class="ri-edit-circle-line me-2 text-primary"></i> Traiter / Modifier la tâche
+              </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <hr class="my-0">
-            <div class="modal-body">
-                <div class="mb-3">
-                  <label class="form-label">Votre commentaire <span class="text-danger">*</span></label>
-                  <textarea name="contenu" class="form-control" rows="4" required placeholder="Décrivez votre avancement, vos difficultés..."></textarea>
-                </div>
-                <div class="alert alert-success mt-2" style="display: none;" id="form-success"></div>
-                <div class="alert alert-danger mt-2" style="display: none;" id="form-error"></div>
-            </div>
-            <hr>
-            <div class="modal-footer flex-row-reverse">
-              <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
-                  <span id="save-btn-text">Envoyer</span>
-                  <div id="form-loader" class="d-none ms-2">
-                    <i class="ri-loader-2-fill spin text-white"></i>
-                  </div>
-                </button>
+            <div class="modal-body py-4">
+              <div id="tache-form-content">
+                {% include 'components/forms/tache_form.html' %}
               </div>
+              <div class="alert alert-success mt-3" style="display: none;" id="form-success"></div>
+              <div class="alert alert-danger mt-3" style="display: none;" id="form-error"></div>
+              <input type="hidden" name="id" id="update-id">
+            </div>
+            <div class="modal-footer bg-light py-2 d-flex justify-content-between">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+              <button id="save-btn" class="btn btn-primary d-flex align-items-center gap-2" type="submit">
+                <span id="save-btn-text">Enregistrer les modifications</span>
+                <div id="form-loader" class="d-none spinner-border spinner-border-sm text-white" role="status"></div>
+              </button>
             </div>
           </form>
         </div>
       </div>
     </div>
-
-    <!-- Modal : Modifier la tâche -->
-    <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Modifier la tâche</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <form id="editTaskForm" method="" action="">
-              {% csrf_token %}
-              <div class="mb-3">
-                <label class="form-label">Statut</label>
-                <select name="statut" class="form-select" required>
-                  <option value="">-- Sélectionner --</option>
-                  {% for statut in statuts %}
-                  <option value="{{ statut.0 }}" {% if tache.statut == statut.0 %}selected{% endif %}>{{ statut.1 }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Priorité</label>
-                <select name="priorite" class="form-select" required>
-                  <option value="">-- Sélectionner --</option>
-                  {% for priorite in priorites %}
-                  <option value="{{ priorite.0 }}" {% if tache.priorite == priorite.0 %}selected{% endif %}>{{ priorite.1 }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Échéance</label>
-                <input type="date" name="date_echeance" class="form-control" value="{{ tache.date_echeance|date:'Y-m-d' }}">
-              </div>
-              <div class="alert alert-success mt-2" style="display: none;" id="form-success"></div>
-              <div class="alert alert-danger mt-2" style="display: none;" id="form-error"></div>
-              <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button id="save-btn" class="btn btn-primary no-transform d-flex align-items-center" type="submit">
-                  <span id="save-btn-text">Enregistrer</span>
-                  <div id="form-loader" class="d-none ms-2">
-                    <i class="ri-loader-2-fill spin text-white"></i>
-                  </div>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
 </div>
+
+{# Script JSON Contextuel pour le Controlleur #}
+<script id="detail-tache-context" type="application/json">
+  {
+    "document_id": "{{ tache.document.id }}",
+    "cellule_id": "{{ tache.document.cellule.id|default:'' }}"
+  }
+</script>
 {% endblock %}
 
 {% block extra_js %}

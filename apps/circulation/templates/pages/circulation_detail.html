@@ -11,7 +11,7 @@
         <div class="d-flex flex-column">
             <h4 class="fw-bold text-white mb-1">Circuit #{{ circulation.id }} : {{ circulation.titre }}</h4>
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb breadcrumb-style1 mb-0">
+                <ol class="breadcrumb breadcrumb-style1 mb-0" style="--bs-breadcrumb-divider-color: #ffffff;">
                     <li class="breadcrumb-item"><a href="javascript:void(0);" class="text-white">Workflow</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'circulation_list' %}" class="text-white">Circulations</a></li>
                     <li class="breadcrumb-item active text-white">{{ circulation.titre|truncatechars:30 }}</li>
