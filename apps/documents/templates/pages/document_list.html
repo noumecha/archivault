@@ -97,6 +97,19 @@
       <p class="mt-2 text-white">Chargement des données...</p>
     </div>
 
+    <div id="directory-navigation-container" class="mb-4">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb breadcrumb-style1" id="directory-breadcrumb">
+          <li class="breadcrumb-item active" data-level="root" style="cursor: pointer;">
+            <i class="ri-home-4-line me-1"></i>Racine (Tous les types)
+          </li>
+        </ol>
+      </nav>
+
+      <div id="folders-grid" class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3 mb-3">
+        </div>
+    </div>
+
     <div id="document-table-view">
       <div id="document-table-container" class="bg-white">
         {% include 'components/document_table.html' %}

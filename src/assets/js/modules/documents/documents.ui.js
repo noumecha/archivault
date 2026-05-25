@@ -2,9 +2,15 @@
 import { showAlertMessage, resetForm, renderPagination, disableElement, enableElement } from '../../helpers/utils.js';
 export const DocumentUi = {
   currentView: 'table', // 'table' ou 'grid'
+  // 🟢 Nouveaux états pour le suivi des dossiers virtuels
+  currentType: null, // ID du type sélectionné
+  currentSubtype: null, // ID du sous-type sélectionné
   // pour le rendu de la liste
   render(response) {
     const documents = response.results || response;
+
+    // 1. Gérer l'affichage des dossiers ou de la liste
+    this.renderDirectories();
 
     if (this.currentView === 'table') {
       this.renderTable(documents);
@@ -17,6 +23,108 @@ export const DocumentUi = {
     }
 
     this.renderPagination(response);
+  },
+
+  // 🟢 Génère visuellement les répertoires ou les masque selon le niveau où l'on se trouve
+  renderDirectories() {
+    const $foldersGrid = $('#folders-grid');
+    $foldersGrid.empty();
+
+    // Cas 1 : À la Racine -> On affiche tous les TYPES de documents disponibles comme des dossiers
+    if (!this.currentType && !this.currentSubtype) {
+      const typesOptions = [];
+      $('#id_type_document option').each(function () {
+        if ($(this).val()) {
+          typesOptions.push({ id: $(this).val(), label: $(this).text() });
+        }
+      });
+
+      if (typesOptions.length > 0) {
+        const foldersHtml = typesOptions.map(t => this.createFolderHtml(t.id, t.label, 'type')).join('');
+        $foldersGrid.html(foldersHtml);
+        $('#directory-navigation-container').removeClass('d-none');
+      }
+
+      // On force le nettoyage visuel du fil d'ariane
+      this.updateBreadcrumb();
+    }
+
+    // Cas 2 : Dans un Type -> On affiche ses SOUS-TYPES comme des sous-dossiers
+    else if (this.currentType && !this.currentSubtype) {
+      const subTypesOptions = [];
+      // On extrait les sous-types liés au type sélectionné (via ton select chaîné existant s'il a un attribut data-type)
+      $('#id_sous_type option').each(function () {
+        const typeParent = $(this).data('type') || $(this).attr('data-type');
+        if ($(this).val() && (!typeParent || String(typeParent) === String(DocumentUi.currentType))) {
+          subTypesOptions.push({ id: $(this).val(), label: $(this).text() });
+        }
+      });
+
+      if (subTypesOptions.length > 0) {
+        const foldersHtml = subTypesOptions.map(st => this.createFolderHtml(st.id, st.label, 'subtype')).join('');
+        $foldersGrid.html(foldersHtml);
+      } else {
+        $foldersGrid.html(
+          '<div class="col-12 text-muted small ps-2"><i>Aucun sous-type associé à ce répertoire.</i></div>'
+        );
+      }
+      this.updateBreadcrumb();
+    }
+
+    // Cas 3 : Dans un Sous-type -> Les dossiers disparaissent pour laisser place nette aux fichiers
+    else {
+      $foldersGrid.empty();
+      this.updateBreadcrumb();
+    }
+  },
+
+  // 🟢 Helper HTML pour le design d'un dossier (Compatible thèmes style Bootstrap / Material)
+  createFolderHtml(id, label, level) {
+    return `
+      <div class="col">
+        <div class="card h-100 border shadow-none text-center folder-item cursor-pointer"
+             style="transition: all 0.2s ease-in-out; cursor: pointer;"
+             data-id="${id}"
+             data-level="${level}">
+          <div class="card-body p-3 d-flex flex-column align-items-center justify-content-center">
+            <div class="avatar avatar-md mb-2">
+              <span class="avatar-initial rounded bg-label-warning text-warning fs-3">
+                <i class="ri-folder-shared-line"></i>
+              </span>
+            </div>
+            <h6 class="mb-0 text-wrap text-truncate w-100 small fw-semibold text-heading">${label}</h6>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  // 🟢 Met à jour le fil d'ariane dynamiquement
+  updateBreadcrumb() {
+    const $breadcrumb = $('#directory-breadcrumb');
+    $breadcrumb.html(`
+      <li class="breadcrumb-item ${!this.currentType ? 'active' : ''}" data-level="root" style="cursor: pointer;">
+        <i class="ri-home-4-line me-1"></i>Racine
+      </li>
+    `);
+
+    if (this.currentType) {
+      const typeLabel = $(`#id_type_document option[value="${this.currentType}"]`).text();
+      $breadcrumb.append(`
+        <li class="breadcrumb-item ${!this.currentSubtype ? 'active' : ''}" data-level="type" data-id="${this.currentType}" style="cursor: pointer;">
+          ${typeLabel}
+        </li>
+      `);
+    }
+
+    if (this.currentSubtype) {
+      const subtypeLabel = $(`#id_sous_type option[value="${this.currentSubtype}"]`).text();
+      $breadcrumb.append(`
+        <li class="breadcrumb-item active" data-level="subtype" data-id="${this.currentSubtype}">
+          ${subtypeLabel}
+        </li>
+      `);
+    }
   },
 
   renderGrid(response) {

@@ -22,8 +22,9 @@ export const DocumentController = {
   currentConflict: null,
   actions: [],
   allFiles: new DataTransfer(),
-  // circulations datas
   etapeIndex: 0,
+  currentType: null,
+  currentSubtype: null,
   docCelluleMap: {},
 
   async init() {
@@ -37,6 +38,7 @@ export const DocumentController = {
     this.switchView(savedView);
     await this.loadDatas();
     this.bindEvents();
+    this.bindFolderEvents();
     this.bindTacheEvents();
     this.bindCirculationEvents();
     // Toggle View Management
@@ -71,8 +73,136 @@ export const DocumentController = {
     }
   },
 
-  // ─── Événements ─────────────────────────────────────────────────────────
+  /**
+   * Gestion des événements liés à la navigation dans les dossiers virtuels (types et sous-types) et au fil d'Ariane
+   */
+  bindFolderEvents() {
+    const self = this;
+
+    // 1. Clic sur un Dossier Virtuel (Type ou Sous-type)
+    $(document).on('click', '.folder-item', function () {
+      const $folder = $(this);
+      const id = $folder.data('id');
+      const level = $folder.data('level');
+
+      if (level === 'type') {
+        self.currentType = id;
+        self.currentSubtype = null;
+        // Synchronisation avec les champs du formulaire caché de recherche
+        $('#id_type_document').val(id).trigger('change');
+      } else if (level === 'subtype') {
+        self.currentSubtype = id;
+        $('#id_sous_type').val(id);
+      }
+
+      // Rafraîchit la liste en exécutant la recherche globale
+      self.handleSearch();
+    });
+
+    // 2. Clic sur les liens du Fil d'Ariane (Breadcrumb)
+    $(document).on('click', '#directory-breadcrumb .breadcrumb-item', function () {
+      const $item = $(this);
+      const level = $item.data('level');
+
+      if ($item.hasClass('active') && level !== 'root') return; // Déjà sur ce niveau
+
+      if (level === 'root') {
+        self.currentType = null;
+        self.currentSubtype = null;
+        $('#id_type_document').val('').trigger('change');
+        $('#id_sous_type').val('');
+      } else if (level === 'type') {
+        self.currentSubtype = null;
+        $('#id_sous_type').val('');
+      }
+
+      self.handleSearch();
+    });
+
+    // 3. Événement de Sécurité : Si l'utilisateur change manuellement les filtres natifs (via un select par exemple)
+    $('#id_type_document').on('change', function () {
+      const val = $(this).val();
+      if (self.currentType !== val) {
+        self.currentType = val || null;
+        self.currentSubtype = null;
+      }
+    });
+
+    $('#id_sous_type').on('change', function () {
+      const val = $(this).val();
+      if (self.currentSubtype !== val) {
+        self.currentSubtype = val || null;
+      }
+    });
+  },
+
+  /**
+   * Récupère les paramètres de recherche actuels à partir du formulaire et des états de dossier virtuel
+   */
   bindEvents() {
+    // 1. Événement : Clic sur un Dossier Virtuel (Type ou Sous-type)
+    $(document).on('click', '.folder-item', function () {
+      const $folder = $(this);
+      const id = $folder.data('id');
+      const level = $folder.data('level');
+
+      if (level === 'type') {
+        // On met à jour l'UI et on synchronise le vrai formulaire caché/existant
+        DocumentUi.currentType = id;
+        DocumentUi.currentSubtype = null;
+        $('#id_type_document').val(id).trigger('change');
+      } else if (level === 'subtype') {
+        DocumentUi.currentSubtype = id;
+        $('#id_sous_type').val(id);
+      }
+
+      // Déclenche la fonction de recherche globale que tu as déjà implémentée pour rafraîchir la liste
+      triggerDocumentSearch();
+    });
+
+    // 2. Événement : Clic sur les liens du Fil d'Ariane (Breadcrumb)
+    $(document).on('click', '#directory-breadcrumb .breadcrumb-item', function () {
+      const $item = $(this);
+      const level = $item.data('level');
+
+      if ($item.hasClass('active') && level !== 'root') return; // Déjà sur ce niveau
+
+      if (level === 'root') {
+        DocumentUi.currentType = null;
+        DocumentUi.currentSubtype = null;
+        $('#id_type_document').val('').trigger('change');
+        $('#id_sous_type').val('');
+      } else if (level === 'type') {
+        DocumentUi.currentSubtype = null;
+        $('#id_sous_type').val('');
+      }
+
+      triggerDocumentSearch();
+    });
+
+    // 3. Événement de Sécurité : Si l'utilisateur change manuellement les filtres natifs
+    $('#id_type_document').on('change', function () {
+      const val = $(this).val();
+      if (DocumentUi.currentType !== val) {
+        DocumentUi.currentType = val || null;
+        DocumentUi.currentSubtype = null;
+      }
+    });
+
+    $('#id_sous_type').on('change', function () {
+      const val = $(this).val();
+      if (DocumentUi.currentSubtype !== val) {
+        DocumentUi.currentSubtype = val || null;
+      }
+    });
+
+    // Aide : Exemple de fonction qui soumet la requête AJAX à l'API
+    function triggerDocumentSearch() {
+      // Ici tu appelles ta fonction existante qui lit le formulaire '#document-search-form'
+      // et effectue l'appel API (ex: `DocumentService.fetchAndRender()`)
+      $('#document-search-form').trigger('submit'); // Ou l'équivalent de ta méthode existante
+    }
+
     // 1. Initialiser le Drag & Drop
     this.initDragAndDrop();
 
@@ -136,6 +266,8 @@ export const DocumentController = {
     // Clear recherche
     $('#clearSearch').on('click', () => {
       $('#search').val('');
+      this.currentType = null;
+      this.currentSubtype = null;
       this.loadDatas();
     });
 
