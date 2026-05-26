@@ -17,10 +17,13 @@
         </div>
         <div class="col-md-4 text-end">
           <div class="btn-group me-2" role="group" aria-label="Style d'affichage">
-            <button type="button" class="btn btn-outline-primary active" id="view-table-btn" title="Vue Tableau">
+            <button type="button" class="btn btn-outline-primary view-btn" id="view-folder-btn" title="Vue Dossiers">
+              <i class="ri-folder-2-line"></i>
+            </button>
+            <button type="button" class="btn btn-outline-primary view-btn" id="view-table-btn" title="Vue Tableau">
               <i class="ri-table-line"></i>
             </button>
-            <button type="button" class="btn btn-outline-primary" id="view-grid-btn" title="Vue Grille">
+            <button type="button" class="btn btn-outline-primary view-btn" id="view-grid-btn" title="Vue Grille">
               <i class="ri-grid-fill"></i>
             </button>
           </div>
@@ -97,17 +100,15 @@
       <p class="mt-2 text-white">Chargement des données...</p>
     </div>
 
-    <div id="directory-navigation-container" class="mb-4">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb breadcrumb-style1" id="directory-breadcrumb">
-          <li class="breadcrumb-item active" data-level="root" style="cursor: pointer;">
-            <i class="ri-home-4-line me-1"></i>Racine (Tous les types)
-          </li>
-        </ol>
-      </nav>
-
-      <div id="folders-grid" class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3 mb-3">
-        </div>
+    <div id="document-folder-view" class="d-none">
+      <div id="directory-navigation-container" class="card p-4 mb-3 bg-white">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb breadcrumb-style1" id="directory-breadcrumb">
+            </ol>
+        </nav>
+        <div id="folders-grid" class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3 mt-2">
+          </div>
+      </div>
     </div>
 
     <div id="document-table-view">
