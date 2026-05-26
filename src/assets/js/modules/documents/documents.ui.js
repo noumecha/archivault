@@ -1,22 +1,132 @@
 // modules/documents/documents.ui.js
 import { showAlertMessage, resetForm, renderPagination, disableElement, enableElement } from '../../helpers/utils.js';
 export const DocumentUi = {
-  currentView: 'table', // 'table' ou 'grid'
-  // pour le rendu de la liste
+  currentView: 'table', // 'folder', 'table', ou 'grid'
+
+  currentType: null,
+  currentSubtype: null,
+
   render(response) {
     const documents = response.results || response;
 
-    if (this.currentView === 'table') {
+    // Cache systématique de tous les layouts
+    $('#document-folder-view, #document-table-view, #document-grid-view').addClass('d-none');
+
+    if (this.currentView === 'folder') {
+      // 1. Rendu graphique des répertoires virtuels et du fil d'Ariane
+      this.renderFolders();
+      $('#document-folder-view').removeClass('d-none');
+
+      // 2. Si on a sélectionné un sous-type (niveau terminal), on affiche la table de fichiers sous le dossier
+      if (this.currentType && this.currentSubtype) {
+        this.renderTable(documents);
+        $('#document-table-view').removeClass('d-none');
+      }
+    } else if (this.currentView === 'table') {
       this.renderTable(documents);
       $('#document-table-view').removeClass('d-none');
-      $('#document-grid-view').addClass('d-none');
-    } else {
+    } else if (this.currentView === 'grid') {
       this.renderGrid(documents);
       $('#document-grid-view').removeClass('d-none');
-      $('#document-table-view').addClass('d-none');
     }
 
     this.renderPagination(response);
+  },
+
+  // 🟢 CONSTRUIT LA GRILLE DE DOSSIERS EN FONCTION DE LA POSITION SUR L'ARBRE
+  renderFolders() {
+    const $foldersGrid = $('#folders-grid');
+    $foldersGrid.empty();
+
+    // NIVEAU 1 : Racine -> On liste tous les types de documents présents dans le select du filtre
+    if (!this.currentType && !this.currentSubtype) {
+      const typesList = [];
+      $('#id_type_document option').each(function () {
+        if ($(this).val()) {
+          typesList.push({ id: $(this).val(), label: $(this).text() });
+        }
+      });
+
+      if (typesList.length > 0) {
+        const html = typesList.map(t => this.createFolderHtml(t.id, t.label, 'type')).join('');
+        $foldersGrid.html(html);
+      }
+    }
+    // NIVEAU 2 : Dans un Type -> On extrait et liste ses sous-types associés
+    else if (this.currentType && !this.currentSubtype) {
+      const subTypesList = [];
+      $('#id_sous_type option').each(function () {
+        const parentType = $(this).data('type') || $(this).attr('data-type');
+        if ($(this).val() && (!parentType || String(parentType) === String(DocumentUi.currentType))) {
+          subTypesList.push({ id: $(this).val(), label: $(this).text() });
+        }
+      });
+
+      if (subTypesList.length > 0) {
+        const html = subTypesList.map(st => this.createFolderHtml(st.id, st.label, 'subtype')).join('');
+        $foldersGrid.html(html);
+      } else {
+        $foldersGrid.html('<div class="col-12 text-muted small italic ps-2">Aucun sous-répertoire associé.</div>');
+      }
+    }
+    // NIVEAU 3 : Dans un sous-type terminal -> La grille de dossier s'efface (la table s'affiche en dessous)
+    else {
+      $foldersGrid.empty();
+    }
+
+    this.updateBreadcrumb();
+  },
+
+  createFolderHtml(id, label, level) {
+    return `
+    <div class="col-3 mb-4">
+      <div class="card h-100 border border-dashed text-center folder-item"
+           style="cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 16px; background: transparent;"
+           onmouseover="this.style.backgroundColor='#ffffff'; this.style.borderStyle='solid'; this.style.borderColor='#ff9f43'; this.style.boxShadow='0 10px 20px rgba(255, 159, 67, 0.08)';"
+           onmouseout="this.style.backgroundColor='transparent'; this.style.borderStyle='dashed'; this.style.borderColor='rgba(0,0,0,0.12)'; this.style.boxShadow='none';"
+           data-id="${id}"
+           data-level="${level}">
+
+        <div class="card-body p-4 d-flex flex-column align-items-center justify-content-center">
+          <div class="avatar mb-3" style="width: 56px; height: 56px;">
+            <span class="avatar-initial rounded-circle d-flex align-items-center justify-content-center"
+                  style="background: linear-gradient(135deg, rgba(255, 159, 67, 0.15) 0%, rgba(255, 159, 67, 0.05) 100%); color: #ff9f43; font-size: 2rem;">
+              <i class="ri-folder-2-fill"></i>
+            </span>
+          </div>
+          <h6 class="mb-1 text-wrap fw-bold text-heading text-truncate w-100" style="font-size: 0.88rem; letter-spacing: -0.2px;">${label}</h6>
+        </div>
+
+      </div>
+    </div>
+  `;
+  },
+
+  updateBreadcrumb() {
+    const $breadcrumb = $('#directory-breadcrumb');
+    $breadcrumb.html(`
+      <li class="breadcrumb-item ${!this.currentType ? 'active' : ''}" data-level="root" style="cursor: pointer;">
+        <i class="ri-home-4-line me-1"></i>Racine
+      </li>
+    `);
+
+    if (this.currentType) {
+      const typeLabel = $(`#id_type_document option[value="${this.currentType}"]`).text();
+      $breadcrumb.append(`
+        <li class="breadcrumb-item ${!this.currentSubtype ? 'active' : ''}" data-level="type" data-id="${this.currentType}" style="cursor: pointer;">
+          ${typeLabel}
+        </li>
+      `);
+    }
+
+    if (this.currentSubtype) {
+      const subtypeLabel = $(`#id_sous_type option[value="${this.currentSubtype}"]`).text();
+      $breadcrumb.append(`
+        <li class="breadcrumb-item active" data-level="subtype" data-id="${this.currentSubtype}">
+          ${subtypeLabel}
+        </li>
+      `);
+    }
   },
 
   renderGrid(response) {
