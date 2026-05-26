@@ -1,0 +1,115 @@
+{# apps/circulation/templates/pages/audit_log_detail.html #}
+{% extends layout_path %}
+
+{% block title %}Audit #{{ log.id }} - Détails d'inspection{% endblock %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+
+  <div class="mb-3">
+    <a href="{% url 'audit_log_management' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="ri-arrow-left-line"></i> Retour au journal complet
+    </a>
+  </div>
+
+  <div class="row">
+    {# Colonne 1 : Métadonnées Globales de l'opération #}
+    <div class="col-lg-5">
+      <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-label-dark p-3">
+          <h5 class="mb-0 text-white"><i class="ri-fingerprint-line"></i> Empreinte de l'action</h5>
+        </div>
+        <div class="card-body pt-3">
+          <table class="table table-sm table-borderless gap-2">
+            <tr>
+              <td class="fw-bold text-muted px-0 py-2" style="width: 35%;">ID Enregistrement :</td>
+              <td class="py-2"><code>#{{ log.id }}</code></td>
+            </tr>
+            <tr>
+              <td class="fw-bold text-muted px-0 py-2">Horodatage précis :</td>
+              <td class="py-2 fw-medium">{{ log.timestamp|date:"d F Y à H:i:s" }}</td>
+            </tr>
+            <tr>
+              <td class="fw-bold text-muted px-0 py-2">Opérateur :</td>
+              <td class="py-2">
+                {% if log.utilisateur %}
+                  <strong class="text-primary">{{ log.utilisateur.get_full_name }}</strong> <span class="text-sm text-muted">(@{{ log.utilisateur.username }})</span>
+                {% else %}
+                  <span class="text-danger fw-bold"><i class="ri-shield-user-line"></i> Processus Système / Serveur</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td class="fw-bold text-muted px-0 py-2">Type d'action :</td>
+              <td class="py-2">
+                <span class="badge bg-label-{% if log.action == 'creation' %}success{% elif log.action == 'modification' %}warning{% elif log.action == 'suppression' %}danger{% else %}secondary{% endif %}">
+                  {{ log.get_action_display|upper }}
+                </span>
+              </td>
+            </tr>
+            <tr>
+              <td class="fw-bold text-muted px-0 py-2">Résultat :</td>
+              <td class="py-2">
+                <span class="badge {% if log.statut == 'success' %}bg-success{% else %}bg-danger{% endif %} text-white">
+                  {{ log.get_statut_display }}
+                </span>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header p-3 border-bottom">
+          <h6 class="mb-0 fw-bold"><i class="ri-global-line"></i> Environnement Technique du Client</h6>
+        </div>
+        <div class="card-body pt-3">
+          <div class="mb-2">
+            <small class="text-muted d-block">Adresse IP émettrice :</small>
+            <code class="fs-5">{{ log.ip_address|default:"Non communiquée" }}</code>
+          </div>
+          <div>
+            <small class="text-muted d-block">Navigateur & Système (User-Agent) :</small>
+            <p class="bg-light p-2 border rounded text-xs mb-0 text-wrap font-monospace" style="color: #444;">
+              {{ log.user_agent|default:"Non collecté" }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Colonne 2 : Inspection de la Cible et du Payload JSON #}
+    <div class="col-lg-7">
+      <div class="card mb-4 shadow-sm border-0 h-100">
+        <div class="card-header p-3 border-bottom d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 fw-bold"><i class="ri-scan-2-line"></i> Élément ciblé & Changements</h5>
+        </div>
+        <div class="card-body pt-3 d-flex flex-column justify-content-between">
+          <div class="bg-light p-3 border rounded mb-3">
+            <small class="text-muted text-xs d-block mb-1">REPRÉSENTATION TEXTUELLE DE L'OBJET :</small>
+            <span class="fs-5 fw-bold text-dark">{{ log.objet_label }}</span>
+            {% if log.content_type %}
+              <div class="mt-2 text-xs text-muted">
+                <i class="ri-git-repository-private-line"></i> Modèle de données : <strong>{{ log.content_type.app_label }}.{{ log.content_type.model }}</strong> | Clé Primaire : <strong>#{{ log.object_id }}</strong>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="flex-grow-1">
+            <label class="form-label fw-bold text-muted mb-2"><i class="ri-code-s-slash-line"></i> Métadonnées et charge utile (Détails JSON) :</label>
+            {% if log.details %}
+              <pre class="p-3 font-monospace shadow-inner border rounded-3 text-sm mb-0"
+                   style="background: #282c34; color: #abb2bf; max-height: 450px; overflow-y: auto;">{{ log.details|pretty_json|safe|default:log.details }}</pre>
+            {% else %}
+              <div class="text-center py-5 border border-dashed rounded text-muted">
+                <i class="ri-file-search-line ri-2x mb-1 d-block"></i>
+                Aucune métadonnée supplémentaire n'a été rattachée à cet événement d'audit.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

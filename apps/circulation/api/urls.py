@@ -4,7 +4,7 @@ from apps.circulation.api.views import *
 from config.utils.urls import *
 
 urlpatterns = [
-    # Tâches API
+    # ─── Tâches API ──────────────────────────────────────────────────────────
     path('taches/', TacheAPIView.as_view(), name='api_tache_list', kwargs={'action': 'list'}),
     path('taches/create/', TacheAPIView.as_view(), name='api_tache_create', kwargs={'action': 'create'}),
     path('taches/<int:pk>/', TacheAPIView.as_view(), name='api_tache_detail', kwargs={'action': 'retrieve'}),
@@ -22,8 +22,11 @@ urlpatterns = [
     path('circulations/<int:pk>/delete/', CirculationAPIView.as_view(), name='api_circulation_delete', kwargs={'action': 'delete'}),
     path('circulations/bulk-delete/', CirculationAPIView.as_view(), name='api_circulation_bulk_delete', kwargs={'action': 'bulk_delete'}),
     path('circulations/<int:pk>/log-consultation/', CirculationAPIView.as_view(), name='api_circulation_log_consultation', kwargs={'action': 'log_consultation'}),
-
-    # Actions Spécifiques au Workflow
     path('circulations/initier/', CirculationAPIView.as_view(), name='api_circulation_initier', kwargs={'action': 'initier_circuit'}),
     path('circulations/<int:pk>/traiter/', CirculationAPIView.as_view(), name='api_circulation_traiter', kwargs={'action': 'traiter_etape'}),
+
+    # ─── Audit API ───────────────────────────
+    path('audit/', AuditLogAPIView.as_view(), name='api_audit_list', kwargs={'action': 'list'}),
+    path('audit/<int:pk>/', AuditLogAPIView.as_view(), name='api_audit_detail', kwargs={'action': 'retrieve'}),
+    path('audit/purger/', AuditLogAPIView.as_view(), name='api_audit_purger', kwargs={'action': 'purger_logs'}),
 ]

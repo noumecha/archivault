@@ -31,8 +31,8 @@ SIDEBAR_MENU = [
             },
             {
                 "title": "Audit",
-                "url_name": "audit_log_list",
-                "url_prefix": "/circulation/audit/",
+                "url_name": "audit_log_management",
+                "url_prefix": "/circulation/supervision/audit/",
                 "roles": ["superadmin", "administrateur", "superviseur"],
             },
         ],

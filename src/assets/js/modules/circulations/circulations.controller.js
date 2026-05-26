@@ -1,3 +1,4 @@
+// src/assets/js/modules/circulations/circulations.controller.js
 import { CirculationService } from './circulations.service.js';
 import { CirculationUi } from './circulations.ui.js';
 import { startLoader, closeLoader, toggleBulkButton, enableElement } from '../../helpers/utils.js';

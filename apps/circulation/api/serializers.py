@@ -205,3 +205,20 @@ class TacheSerializer(serializers.ModelSerializer):
         if value and value < timezone.now().date():
             raise serializers.ValidationError("La date d'échéance ne peut pas être dans le passé.")
         return value
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    utilisateur_nom = serializers.CharField(source='utilisateur.get_full_name', read_only=True)
+    utilisateur_username = serializers.CharField(source='utilisateur.username', read_only=True)
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
+    statut_display = serializers.CharField(source='get_statut_display', read_only=True)
+    object_type_label = serializers.CharField(source='content_type.model', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id', 'utilisateur', 'utilisateur_nom', 'utilisateur_username',
+            'action', 'action_display', 'statut', 'statut_display',
+            'object_type_label', 'object_id', 'objet_label',
+            'details', 'ip_address', 'user_agent', 'timestamp'
+        ]

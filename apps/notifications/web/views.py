@@ -40,6 +40,7 @@ class NotificationManagementView(LoginRequiredMixin, BaseCRUDView):
                 Q(titre__icontains=search_query) |
                 Q(message__icontains=search_query)
             )
+
         return queryset
 
     def get_context_data(self, **kwargs):

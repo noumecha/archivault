@@ -261,23 +261,74 @@ class TacheManagementView(RoleRequiredMixin, BaseCRUDView):
 # ─────────────────────────────────────────────
 # AUDIT LOG
 # ─────────────────────────────────────────────
-class AuditLogListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = "pages/audit_log_list.html"
+class AuditLogManagementView(RoleRequiredMixin, BaseCRUDView):
+    """
+    Vue de supervision et de filtrage du journal d'audit système.
+    Hérite de BaseCRUDView pour bénéficier de la recherche et de la pagination.
+    """
+    model = AuditLog
+    list_route = 'audit_log_management'  # Le nom de ta route d'URL web
+    template_name = "pages/audit_log_management.html"
+    context_object_name = 'logs'
 
-    def test_func(self):
-        from apps.users.models import RoleUtilisateur
-        return self.request.user.role in [
-            RoleUtilisateur.SUPERADMIN,
-            RoleUtilisateur.ADMIN,
-            RoleUtilisateur.SUPERVISEUR,
-        ]
+    # Seuls les rôles de haute supervision ont le droit de voir l'audit
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR,
+    ]
+
+    # Configuration des filtres natifs de ton BaseCRUDView
+    filters = [
+        ('action', ActionAudit, 'Action'),
+        ('statut', StatutAudit, 'Résultat'),
+        ('utilisateur', Utilisateur, 'Opérateur'),
+    ]
+
+    search_fields = ['objet_label', 'ip_address', 'utilisateur__username', 'utilisateur__first_name', 'utilisateur__last_name']
+    headers = ["Date & Heure", "Opérateur", "Action", "Cible", "Résultat", "Adresse IP", "Actions"]
+
+    def get_queryset(self, search_query=None):
+        """Optimisation ORM avec select_related pour le rendu du tableau."""
+        queryset = super().get_queryset(search_query)
+        # On cible le timestamp renommé en snake_case et indexé
+        return queryset.select_related('utilisateur', 'content_type').order_by('-timestamp')
+
+    def get_context_data(self, **kwargs):
+        context = TemplateLayout.init(self, super().get_context_data(**kwargs))
+
+        # Récupération de la liste des utilisateurs pour alimenter le filtre de recherche
+        context['utilisateurs'] = Utilisateur.objects.all().order_by('username')
+
+        # Injection dynamique des items dans la structure de filtrage de BaseCRUDView
+        for f in context.get('filters', []):
+            if f['name'] == 'utilisateur':
+                f['items'] = context['utilisateurs']
+
+        return context
+
+class AuditLogDetailView(RoleRequiredMixin, TemplateView):
+    """
+    Vue détaillée pour inspecter les métadonnées d'une action spécifique
+    (Payloads JSON, User-Agent complet, etc.).
+    """
+    template_name = "pages/audit_log_detail.html"
+
+    allowed_roles = [
+        RoleUtilisateur.SUPERADMIN,
+        RoleUtilisateur.ADMIN,
+        RoleUtilisateur.SUPERVISEUR,
+    ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context = TemplateLayout.init(self, context)
 
-        logs = AuditLog.objects.select_related('utilisateur').order_by('-Date_creation')[:100]
+        # Récupération du log ou 404
+        log = get_object_or_404(
+            AuditLog.objects.select_related('utilisateur', 'content_type'),
+            pk=self.kwargs['pk']
+        )
 
-        context['logs'] = logs
-
+        context['log'] = log
         return context

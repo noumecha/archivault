@@ -1,0 +1,111 @@
+{# apps/circulation/templates/pages/audit_log_management.html #}
+{% extends layout_path %}
+
+{% load static %}
+
+{% block title %}Journal d'Audit Système{% endblock %}
+
+{% block content %}
+<div class="card p-3">
+  <div class="card-header">
+    <div class="row d-flex justify-content-between align-items-center">
+      <div class="col-md-8">
+        <h3 class="text-white">Journal d'Audit Système</h3>
+        <p class="text-sm text-muted">Traçabilité complète, sécurité des opérations et intégrité des circuits</p>
+      </div>
+      <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-outline-secondary" id="refresh-button">
+          <i class="ri-restart-line"></i> Rafraîchir
+        </button>
+        {% if request.user.role == 'superadmin' %}
+          <button type="button" class="btn btn-danger no-transform text-white"
+              id="purge-button" data-bs-toggle="modal" data-bs-target="#modal-purger-logs">
+            <i class="ri-delete-bin-4-line"></i> Maintenance / Purge
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Formulaire de recherche et filtres de BaseCRUDView #}
+    <form class="row d-flex mt-3" id="audit-search-form">
+      <div class="col-md-12">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0"><i class="ri-search-line"></i></span>
+          <input type="text" class="form-control border-start-0" placeholder="Rechercher par libellé cible, adresse IP, utilisateur..." name="search" id="search">
+          <button class="btn btn-outline-primary" type="button" id="clearSearch">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+
+      {# Génération dynamique des filtres hérités de ton BaseCRUDView #}
+      {% for filter in filters %}
+        <div class="col-md-4 d-flex mt-2 gap-2">
+          <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
+            <option value="">-- {{ filter.label|capfirst }} --</option>
+            {% for item in filter.items %}
+              {% if item.value %}
+                <option value="{{ item.value }}">{{ item.label }}</option>
+              {% else %}
+                <option value="{{ item.id }}">{{ item }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      {% endfor %}
+    </form>
+
+    <div class="alert alert-success col-12 text-center mt-2" style="display:none;" id="message-show-success"></div>
+    <div class="alert alert-danger col-12 text-center mt-2" style="display:none;" id="message-show-error"></div>
+  </div>
+
+  {# Conteneur pour la table asynchrone (géré par ton Controller JS) #}
+  <div id="audit-table-container" class="mt-2">
+    {% include 'components/tables/audit_log_table.html' %}
+  </div>
+</div>
+
+{# --- MODALS MAINTENANCE (SuperAdmin Uniquement) --- #}
+{% if request.user.role == 'superadmin' %}
+<div class="modal fade" id="modal-purger-logs" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="purgerAuditForm">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger"><i class="ri-error-warning-line"></i> Purge de maintenance du journal</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <hr class="my-0">
+        <div class="modal-body py-3">
+          <p>Cette opération supprime définitivement les traces d'audit les plus anciennes pour libérer l'espace disque de la base de données.</p>
+          <div class="form-group">
+            <label for="id_mois_conservation" class="form-label fw-bold">Seuil de conservation :</label>
+            <select name="mois_conservation" id="id_mois_conservation" class="form-select">
+              <option value="3">Supprimer les logs de plus de 3 mois</option>
+              <option value="6" selected>Supprimer les logs de plus de 6 mois</option>
+              <option value="12">Supprimer les logs de plus de 1 an</option>
+            </select>
+          </div>
+          <div class="alert alert-danger mt-3" style="display: none;" id="purge-form-error"></div>
+        </div>
+        <hr class="my-0">
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button id="confirm-purge-btn" class="btn btn-danger no-transform d-flex align-items-center gap-2" type="submit">
+            <span id="purge-btn-text">Confirmer la purge définitive</span>
+            <div id="purge-loader" class="d-none">
+              <i class="ri-loader-2-fill spin text-white"></i>
+            </div>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+  <script type="module" src="{% static 'js/modules/circulations/controllers/audit.controller.js' %}"></script>
+{% endblock %}

@@ -1,3 +1,4 @@
+// src/assets/js/modules/circulations/circulations.ui.js
 import { showAlertMessage, resetForm, renderPagination, disableElement, enableElement } from '../../helpers/utils.js';
 
 export const CirculationUi = {

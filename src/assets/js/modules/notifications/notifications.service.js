@@ -3,17 +3,16 @@
 import { ApiClient } from '../../helpers/api-client.js';
 
 export const NotificationService = {
-  // ── Récupération des données ─────────────────────────────────────────────
-
   /**
    * Récupère la liste des notifications (gère la pagination et les filtres via params)
    */
   fetchAll(params = {}) {
-    // Conversion explicite des booléens en 0/1 pour Django
-    if (params.hasOwnProperty('is_read')) {
-      params.is_read = params.is_read ? 1 : 0;
+    const queryParams = { ...params };
+    if (queryParams.hasOwnProperty('is_read')) {
+      const val = queryParams.is_read;
+      queryParams.is_read = val === 1 || val === '1' || val === true ? 1 : 0;
     }
-    const query = new URLSearchParams(params).toString();
+    const query = new URLSearchParams(queryParams).toString();
     return ApiClient.request(`/api/notifications/?${query}`);
   },
 
