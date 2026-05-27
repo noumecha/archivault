@@ -13,6 +13,8 @@ from ..models import *
 from apps.documents.models import VersionDocument
 from django.db import transaction
 from datetime import timedelta
+# Importations de tes modules d'audit et choix
+from apps.circulation.services.audit_service import AuditService
 
 class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
     """
@@ -309,8 +311,14 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
     def delete_action(self, request, *args, **kwargs):
         circulation = self.get_object()
         if circulation.statut == StatutCirculation.CLOS:
+            AuditService.log(
+                request, action=ActionAudit.SUPPRESSION, obj=circulation,
+                statut=StatutAudit.FAILED, details={"motif": "Tentative de suppression d'un circuit clôturé"}
+            )
             return Response({'success': False, 'message': 'Suppression impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
         self.check_role_permission(request)
+        label_document = str(circulation)
+        AuditService.log(request, action=ActionAudit.SUPPRESSION, obj=circulation, statut=StatutAudit.FAILED, label=label_document, details={"id_supprime": circulation.id})
         return super().delete_action(request, *args, **kwargs)
 
     def update_action(self, request, *args, **kwargs):
@@ -320,15 +328,20 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
         is_initiateur = (circulation.initie_par == request.user)
         a_un_retour_initial = circulation.etapes.filter(ordre=1, statut=StatutCirculation.RETOURNE).exists()
         if circulation.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE]:
+            AuditService.log(request, action=ActionAudit.MODIFICATION, obj=circulation, statut=StatutAudit.FAILED, details={"motif": "Circuit clôturé ou validé"})
             return Response({'success': False, 'message': 'Modification impossible : le circuit est déjà clôturé.'}, status=status.HTTP_403_FORBIDDEN)
         # Si le circuit est en cours mais qu'il a subi un retour à l'étape 1, l'initiateur peut réorganiser
         if circulation.statut == StatutCirculation.EN_COURS and a_un_retour_initial and is_initiateur:
             return super().update_action(request, *args, **kwargs)
         if circulation.statut == StatutCirculation.REJETE:
+            # 🟢 AUDIT LOG : Modification echouée
+            AuditService.log(request, action=ActionAudit.MODIFICATION, obj=circulation, statut=StatutAudit.FAILED, details={"motif": "Circuit rejeté"})
             return Response({'success': False, 'message': 'Modification impossible : le circuit est marqué comme rejeté.'}, status=status.HTTP_403_FORBIDDEN)
         self.check_role_permission(request)
         if PermissionService.can_update_circulation(request.user, circulation):
             return super().update_action(request, *args, **kwargs)
+        # 🟢 AUDIT LOG : Modification réussie
+        AuditService.log(request, action=ActionAudit.MODIFICATION, obj=circulation, statut=StatutAudit.SUCCESS, details={"methode": request.method})
         return super().update_action(request, *args, **kwargs)
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -371,15 +384,31 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
             etape_actuelle.nb_consultations += 1
             etape_actuelle.save()
 
+            # 🟢 AUDIT LOG : Consultation tracée
+            AuditService.log(
+                request, action=ActionAudit.CONSULTATION, obj=circulation, statut=StatutAudit.SUCCESS,
+                details={"type_consultation": "officielle_destinataire", "etape_ordre": etape_actuelle.ordre, "nb_consultations": etape_actuelle.nb_consultations}
+            )
+
             return Response({
                 'success': True,
                 'message': 'Accusé de réception enregistré pour cette étape.'
             }, status=status.HTTP_200_OK)
 
+        # 🟢 AUDIT LOG : Traçabilité de consultation passive/supervision
+        AuditService.log(
+            request, action=ActionAudit.CONSULTATION, obj=circulation, statut=StatutAudit.SUCCESS,
+            details={
+                "type_consultation": "lecture_tiers",
+                "etape_ordre": etape_actuelle.ordre if etape_actuelle else None,
+                "statut_circuit_au_visionnage": circulation.statut,
+                "role_consultant": getattr(user_connecte, 'role', 'non_defini')
+            }
+        )
         return Response({
             'success': True,
-            'message': 'Consultation sans impact (Auteur/Admin/Tiers).'
-        }, status=status.HTTP_204_NO_CONTENT)
+            'message': 'Consultation sans impact enregistrée (Auteur/Admin/Tiers).'
+        }, status=status.HTTP_200_OK)
 
     def action_bulk_delete(self, request, *args, **kwargs):
         """Suppression en masse."""
@@ -391,6 +420,8 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                 'message': 'Aucun ID fourni'
             }, status=status.HTTP_400_BAD_REQUEST)
         deleted_count, _ = CirculationDocument.objects.filter(id__in=ids).exclude(statut=StatutCirculation.CLOS).delete()
+        # 🟢 AUDIT LOG : Suppression de masse
+        AuditService.log(request, action=ActionAudit.SUPPRESSION_MASSE, obj=None, statut=StatutAudit.SUCCESS, details={"ids_soumis": ids, "quantite_supprimee": deleted_count})
         return Response({
             'success': True,
             'message': f'{deleted_count} circulation(s) supprimée(s)',
@@ -434,8 +465,14 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                         date_echeance=etape.get('date_echeance')
                     )
 
+                # 🟢 AUDIT LOG : Initialisation réussie (Placé dans le bloc atomique)
+                AuditService.log(
+                    request, action=ActionAudit.CREATION, obj=circulation, statut=StatutAudit.SUCCESS, details={"nb_etapes": len(etapes_data), "document_id": data.get('document')}
+                )
                 return Response(CirculationDocumentSerializer(circulation, context={'request': request}).data, status=status.HTTP_201_CREATED)
         except Exception as e:
+            # 🟢 AUDIT LOG : Échec technique lors de la création
+            AuditService.log(request, action=ActionAudit.CREATION, obj=circulation, statut=StatutAudit.FAILED, details={"erreur": str(e)})
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def action_traiter_etape(self, request, pk=None, *args, **kwargs):
@@ -531,10 +568,21 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                             circulation.date_fin = timezone.now()
 
                     circulation.save()
-
+                    # 🟢 AUDIT LOG : Décision métier majeure enregistrée
+                    AuditService.log(
+                        request, action=ActionAudit.TRAITEMENT, obj=circulation,
+                        details={
+                            "etape_ordre": etape_actuelle.ordre,
+                            "decision": decision,
+                            "commentaire_longueur": len(commentaire),
+                            "nouvelle_version_produite": True if request.FILES.get('fichier') else False
+                        }
+                    )
                 return Response({'success': True, 'message': 'Traitement effectué avec succès'}, status=status.HTTP_200_OK)
 
         except Exception as e:
+            # 🟢 AUDIT LOG : Échec lors du traitement
+            AuditService.log(request, action=ActionAudit.TRAITEMENT, obj=circulation, statut=StatutAudit.FAILED, details={"erreur": str(e), "decision_tentée": decision})
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def _activer_etape(self, etape, nouvelle_date_limite=None):

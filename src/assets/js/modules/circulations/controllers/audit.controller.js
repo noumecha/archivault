@@ -68,8 +68,9 @@ export const AuditController = {
 
     // Bouton de rafraîchissement complet
     $('#refresh-button').on('click', () => {
-      $('#audit-search-form').trigger('reset');
       this.loadAudits();
+      $('#audit-search-form').trigger('reset');
+      $('#clearSearch').trigger('click');
     });
   },
 
@@ -134,3 +135,4 @@ export const AuditController = {
     return params;
   }
 };
+AuditController.init();

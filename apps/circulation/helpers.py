@@ -1,5 +1,4 @@
 # apps/circulation/helpers.py
-
 def get_client_ip(request):
     """
     Extrait l'adresse IP du client en prenant en compte

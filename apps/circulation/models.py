@@ -207,6 +207,8 @@ class ActionAudit(models.TextChoices):
     TACHE          = 'tache',         'Tâche'
     CONNEXION      = 'connexion',     'Connexion'
     DECONNEXION    = 'deconnexion',   'Déconnexion'
+    SUPPRESSION_MASSE = 'suppression_masse', 'Suppression de masse'
+    TRAITEMENT = 'traitement', 'Traitement d\'une étape de circulation'
 
 
 class StatutAudit(models.TextChoices):

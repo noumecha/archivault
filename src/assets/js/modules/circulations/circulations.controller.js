@@ -195,22 +195,11 @@ export const CirculationController = {
       const circulationId = $btn.data('id');
       const targetUrl = `/circulations/detail/${circulationId}/`;
 
-      const $row = $btn.closest('tr');
-      const actuelActeurId = $row.data('actuel-acteur-id');
-      const currentUserId = window.CURRENT_USER_ID;
-
-      const isActuelActeur =
-        $row.length && actuelActeurId && currentUserId && String(actuelActeurId) === String(currentUserId);
-
-      if (isActuelActeur) {
-        try {
-          await CirculationService.logConsultation(circulationId);
-        } catch (err) {
-          console.warn("Échec de l'enregistrement de l'accusé de réception circulation :", err);
-        } finally {
-          window.location.href = targetUrl;
-        }
-      } else {
+      try {
+        await CirculationService.logConsultation(circulationId);
+      } catch (err) {
+        console.warn("Échec de l'enregistrement de l'audit de consultation :", err);
+      } finally {
         window.location.href = targetUrl;
       }
     });

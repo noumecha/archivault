@@ -10,11 +10,11 @@
   <div class="card-header">
     <div class="row d-flex justify-content-between align-items-center">
       <div class="col-md-8">
-        <h3 class="text-white">Journal d'Audit Système</h3>
+        <h3>Journal d'Audit Système</h3>
         <p class="text-sm text-muted">Traçabilité complète, sécurité des opérations et intégrité des circuits</p>
       </div>
       <div class="col-md-4 text-end">
-        <button type="button" class="btn btn-outline-secondary" id="refresh-button">
+        <button type="button" class="btn" id="refresh-button">
           <i class="ri-restart-line"></i> Rafraîchir
         </button>
         {% if request.user.role == 'superadmin' %}

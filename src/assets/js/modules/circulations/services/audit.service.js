@@ -8,7 +8,7 @@ export const AuditService = {
    */
   fetchAll(params = {}) {
     const query = new URLSearchParams(params).toString();
-    return ApiClient.request(`/api/audits/?${query}`);
+    return ApiClient.request(`/api/audit/?${query}`);
   },
 
   /**
@@ -16,7 +16,7 @@ export const AuditService = {
    * @param {number} id - ID du log d'audit
    */
   fetchOne(id) {
-    return ApiClient.request(`/api/audits/${id}/`);
+    return ApiClient.request(`/api/audit/${id}/`);
   },
 
   /**
@@ -24,7 +24,7 @@ export const AuditService = {
    * @param {Object} data - { mois_conservation: X }
    */
   purgerLogs(data) {
-    return ApiClient.request('/api/audits/purge/', {
+    return ApiClient.request('/api/audit/purge/', {
       method: 'POST',
       body: JSON.stringify(data)
     });
