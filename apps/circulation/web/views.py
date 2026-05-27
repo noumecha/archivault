@@ -119,11 +119,11 @@ class CirculationManagementView(RoleRequiredMixin, BaseCRUDView):
 
         # Filtrage des listes pour le formulaire d'initialisation
         if is_admin(user) or is_superadmin(user):
-            context['utilisateurs'] = Utilisateur.objects.exclude(id=user.id)
+            context['utilisateurs'] = Utilisateur.objects.all()
             context['documents'] = Document.objects.all()
         else:
             # On ne propose que les utilisateurs de la même cellule pour les étapes
-            context['utilisateurs'] = Utilisateur.objects.filter(cellule=user.cellule).exclude(id=user.id)
+            context['utilisateurs'] = Utilisateur.objects.filter(cellule=user.cellule)
             context['documents'] = Document.objects.filter(cellule=user.cellule)
 
         # Injection des items filtrés dans les filtres de BaseCRUDView

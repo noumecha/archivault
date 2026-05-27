@@ -12,6 +12,7 @@ class AuditService:
     def log(request, action, obj=None, label="", details=None, statut='success'):
         """
         Enregistre de manière sécurisée une action dans le journal d'audit.
+        Préfixe automatiquement le label avec le type d'objet si non spécifié.
         """
         try:
             # 1. Identification de l'acteur
@@ -28,8 +29,18 @@ class AuditService:
             if obj:
                 content_type = ContentType.objects.get_for_model(obj)
                 object_id = obj.id
+
                 if not label:
-                    label = str(obj)[:255]
+                    # 🟢 OPTIMISATION : Récupération du nom lisible du modèle (ex: "Tâche", "Circulation")
+                    nom_modele = content_type.model_class()._meta.verbose_name.title()
+                    # Donne un résultat propre du genre : "[Tâche] Mettre à jour puis faire valider"
+                    label = f"[{nom_modele}] {str(obj)} "[:255]
+
+            # Si pas d'obj mais un label manuel fourni (ex: suppression en masse)
+            elif label:
+                label = label[:255]
+            else:
+                label = "Action Système / Inconnue"
 
             # 4. Insertion en Base de données
             AuditLog.objects.create(
@@ -45,6 +56,4 @@ class AuditService:
             )
 
         except Exception as e:
-            # Sécurité maximale : on écrit l'erreur dans les logs serveurs,
-            # mais on ne lève pas d'exception pour ne pas figer l'application métier.
             logger.error(f"Échec critique de l'enregistrement de l'Audit Log: {str(e)}", exc_info=True)

@@ -1,6 +1,6 @@
 # apps/circulation/api/urls.py
 from django.urls import path
-from apps.circulation.api.views import *
+from .views import *
 from config.utils.urls import *
 
 urlpatterns = [

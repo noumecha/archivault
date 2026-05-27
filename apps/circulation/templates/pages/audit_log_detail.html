@@ -88,7 +88,15 @@
         <div class="card-body pt-3 d-flex flex-column justify-content-between">
           <div class="bg-light p-3 border rounded mb-3">
             <small class="text-muted text-xs d-block mb-1">REPRÉSENTATION TEXTUELLE DE L'OBJET :</small>
+
+            {% if log.content_type %}
+              <span class="badge bg-label-primary mb-2 text-uppercase fs-tiny">
+                <i class="ri-stack-line"></i> {{ log.content_type.name }}
+              </span>
+            {% endif %}
+
             <span class="fs-5 fw-bold text-dark">{{ log.objet_label }}</span>
+
             {% if log.content_type %}
               <div class="mt-2 text-xs text-muted">
                 <i class="ri-git-repository-private-line"></i> Modèle de données : <strong>{{ log.content_type.app_label }}.{{ log.content_type.model }}</strong> | Clé Primaire : <strong>#{{ log.object_id }}</strong>
