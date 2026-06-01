@@ -4,6 +4,8 @@ from django.db import transaction, IntegrityError
 from django.utils import timezone
 from apps.documents.models import Document, VersionDocument
 from config.roles import is_admin, is_superadmin
+from apps.circulation.services.audit_service import AuditService
+from apps.circulation.models import ActionAudit, StatutAudit
 
 class DocumentService:
 
@@ -17,7 +19,7 @@ class DocumentService:
         return doc_exist, titre
 
     @staticmethod
-    def process_upload(user, files, actions, data):
+    def process_upload(user, files, actions, data, request=None):
         results = {
             'created': 0,
             'versioned': 0,
@@ -74,6 +76,13 @@ class DocumentService:
                         doc_exist.save() # Pour mettre à jour Date_miseajour du parent
                         results['versioned'] += 1
 
+                        # 🟢 AUDIT LOG : Nouvelle Version
+                        if request:
+                            AuditService.log(
+                                request, action=ActionAudit.MODIFICATION, obj=doc_exist,
+                                details={"type_modification": "nouvelle_version", "version": next_v, "fichier": filename}
+                            )
+
                     # CAS B — Écrasement (Mise à jour du fichier de la version actuelle)
                     elif action == "overwrite" and doc_exist:
                         last_v = doc_exist.versions.order_by("-numero_version").first()
@@ -83,6 +92,7 @@ class DocumentService:
                             last_v.fichier = f
                             last_v.modifier_par = user
                             last_v.save()
+                            v_num = last_v.numero_version
                         else:
                             # Système de secours au cas où le document n'avait étonnamment aucune version liée
                             VersionDocument.objects.create(
@@ -98,6 +108,13 @@ class DocumentService:
                         doc_exist.modifier_par = user
                         doc_exist.save()
                         results['overwritten'] += 1
+
+                        # 🟢 AUDIT LOG : Écrasement de version
+                        if request:
+                            AuditService.log(
+                                request, action=ActionAudit.MODIFICATION, obj=doc_exist,
+                                details={"type_modification": "ecrasement_version", "version": v_num, "fichier": filename}
+                            )
 
                     # CAS C — Création initiale (Document Coquille + Version 1 simultanées)
                     else:
@@ -131,12 +148,25 @@ class DocumentService:
                         )
                         results['created'] += 1
 
+                        # 🟢 AUDIT LOG : Création initiale réussie
+                        if request:
+                            AuditService.log(
+                                request, action=ActionAudit.CREATION, obj=doc,
+                                details={"fichier_initial": filename, "cellule_id": cell_id}
+                            )
+
             except IntegrityError:
                 results['errors'].append({
                     'file': f.name,
                     'error': f"Un document nommé '{titre}' existe déjà (conflit d'unicité)."
                 })
             except Exception as e:
+                # 🟢 AUDIT LOG : Échec sur ce fichier spécifique
+                if request:
+                    AuditService.log(
+                        request, action=ActionAudit.CREATION, label=f"[Document] {f.name}",
+                        statut=StatutAudit.FAILED, details={"erreur": str(e), "action_tente": action}
+                    )
                 results['errors'].append({'file': f.name, 'error': str(e)})
 
         return results

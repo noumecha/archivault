@@ -102,7 +102,6 @@ class Avenants(models.Model):
 
 class Document(models.Model):
     titre = models.CharField(max_length=255, unique=True)
-    #fichier = models.FileField(upload_to='documents/')
     type_document = models.ForeignKey(TypeDocument, on_delete=models.SET_NULL, null=True)
     sous_type = models.ForeignKey(SousTypeDocument, on_delete=models.SET_NULL, null=True, blank=True)
     theme = models.ForeignKey(Theme, on_delete=models.SET_NULL, null=True, blank=True)

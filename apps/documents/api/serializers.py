@@ -22,8 +22,6 @@ class DocumentSerializer(serializers.ModelSerializer):
     fichier = serializers.FileField(read_only=True)
     extension = serializers.CharField(read_only=True)
 
-    # Pour l'upload, on accepte l'ID ou l'objet (géré par le write)
-    # Mais pour la liste, on veut les détails
     class Meta:
         model = Document
         fields = [

@@ -108,7 +108,7 @@
             <label class="form-label fw-bold text-muted mb-2"><i class="ri-code-s-slash-line"></i> Métadonnées et charge utile (Détails JSON) :</label>
             {% if log.details %}
               <pre class="p-3 font-monospace shadow-inner border rounded-3 text-sm mb-0"
-                   style="background: #282c34; color: #abb2bf; max-height: 450px; overflow-y: auto;">{{ log.details|pretty_json|safe|default:log.details }}</pre>
+              style="background: #282c34; color: #abb2bf; max-height: 450px; overflow-y: auto;">{{ log.details|pretty_json|safe|default:log.details }}</pre>
             {% else %}
               <div class="text-center py-5 border border-dashed rounded text-muted">
                 <i class="ri-file-search-line ri-2x mb-1 d-block"></i>
