@@ -224,6 +224,13 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
                     url_action=f"/taches/detail/{tache.id}/"
                 )
 
+        # 🟢 AUDIT LOG : Consultation de la tâche
+        AuditService.log(
+            request, action=ActionAudit.CONSULTATION, obj=tache,
+            statut=StatutAudit.SUCCESS if response.status_code == status.HTTP_200_OK else StatutAudit.FAILED,
+            details={"contexte": "vue_detail_tache", "statut_tache": tache.statut}
+        )
+
         return response
 
     # ─────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # apps/users/api/urls.py
 from django.urls import path
-from apps.users.api.views import LoginAPIView, LogoutAPIView, ProfileAPIView, UserAPIView
+from apps.users.api.views import *
 
 from config.utils.urls import *
 
