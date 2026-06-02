@@ -11,8 +11,9 @@ urlpatterns = [
     path('taches/detail/<int:pk>/', views.TacheDetailView.as_view(), name='tache_detail'),
     path('taches-management/', views.TacheManagementView.as_view(), name='tache_management'),
 
-    # Audit
-    path('audit/', views.AuditLogListView.as_view(), name='audit_log_list'),
+    # ─── Journaux d'Audit (Web) ──────────────────────────────────────────────
+    path('supervision/audit/', views.AuditLogManagementView.as_view(), name='audit_log_management'),
+    path('supervision/audit/<int:pk>/', views.AuditLogDetailView.as_view(), name='audit_log_detail'),
     # api views
     path('api/', include('apps.circulation.api.urls')),
 ]

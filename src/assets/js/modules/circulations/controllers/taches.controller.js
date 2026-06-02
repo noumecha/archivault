@@ -173,21 +173,11 @@ export const TacheController = {
       const tacheId = $btn.data('id');
       const targetUrl = `/taches/detail/${tacheId}/`;
 
-      const $row = $btn.closest('tr');
-      const assigneeId = $row.data('assignee-id');
-      const currentUserId = window.CURRENT_USER_ID;
-
-      const isAssignee = $row.length && assigneeId && currentUserId && String(assigneeId) === String(currentUserId);
-
-      if (isAssignee) {
-        try {
-          await TacheService.logConsultation(tacheId);
-        } catch (err) {
-          console.warn("Échec de l'enregistrement de l'accusé de réception :", err);
-        } finally {
-          window.location.href = targetUrl;
-        }
-      } else {
+      try {
+        await TacheService.logConsultation(tacheId);
+      } catch (err) {
+        console.warn("Échec de l'enregistrement de l'accusé de réception :", err);
+      } finally {
         window.location.href = targetUrl;
       }
     });

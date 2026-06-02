@@ -1,0 +1,33 @@
+{# apps/circulation/templates/components/tables/audit_log_table.html #}
+<div id="table-loader" class="d-none text-center my-4">
+  <i class="ri-loader-2-fill ri-2x spin text-primary"></i>
+  <p class="mt-2">Chargement du journal d'audit...</p>
+</div>
+
+<div class="table-responsive text-nowrap">
+  <table class="table table-hover" id="data-table">
+    <thead class="table-light">
+      <tr>
+        <th>Date & Heure</th>
+        <th>Opérateur</th>
+        <th>Action</th>
+        <th>Élément Ciblé</th>
+        <th>Résultat</th>
+        <th>Adresse IP</th>
+        <th style="width: 80px;">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="audits-tbody">
+      {# Injecté dynamiquement par AuditUi.renderTable #}
+    </tbody>
+  </table>
+</div>
+
+<div class="ms-3 me-3 d-flex justify-content-between align-items-center mt-4">
+  <div id="pagination-info" class="text-muted small">
+  </div>
+  <nav aria-label="Page navigation">
+    <ul class="pagination mb-0" id="audits-pagination">
+    </ul>
+  </nav>
+</div>

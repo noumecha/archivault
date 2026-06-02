@@ -122,7 +122,7 @@ class BaseAPIView(GenericAPIView):
         return Response({
             'success': True,
             'data': serializer.data
-        })
+        }, status=status.HTTP_200_OK)
 
     def retrieve_action(self, request, pk=None, *args, **kwargs):
         """Action pour récupérer un seul objet."""
@@ -131,7 +131,7 @@ class BaseAPIView(GenericAPIView):
         return Response({
             'success': True,
             'data': serializer.data
-        })
+        }, status=status.HTTP_200_OK)
 
     def create_action(self, request, *args, **kwargs):
         """Action pour créer un objet."""
@@ -171,7 +171,7 @@ class BaseAPIView(GenericAPIView):
                 'success': True,
                 'message': f'{self.model._meta.verbose_name.title()} mis à jour avec succès',
                 'data': self.get_serializer(instance).data
-            })
+            }, status=status.HTTP_200_OK)
 
         return Response({
             'success': False,
@@ -222,7 +222,7 @@ class BaseAPIView(GenericAPIView):
                     return Response({
                         'success': False,
                         'message': f"Méthode '{method_name}' non implémentée."
-                    }, status=500)
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                 response = method(request, *args, **kwargs)
 
