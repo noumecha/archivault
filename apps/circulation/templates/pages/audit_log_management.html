@@ -26,9 +26,11 @@
       </div>
     </div>
 
-    {# Formulaire de recherche et filtres de BaseCRUDView #}
-    <form class="row d-flex mt-3" id="audit-search-form">
-      <div class="col-md-12">
+    {# Formulaire de recherche et filtres optimisés #}
+    <form class="row g-3 mt-2" id="audit-search-form">
+
+      <div class="col-12">
+        <label class="form-label fw-semibold">Recherche globale</label>
         <div class="input-group">
           <span class="input-group-text bg-transparent border-end-0"><i class="ri-search-line"></i></span>
           <input type="text" class="form-control border-start-0" placeholder="Rechercher par libellé cible, adresse IP, utilisateur..." name="search" id="search">
@@ -38,11 +40,11 @@
         </div>
       </div>
 
-      {# Génération dynamique des filtres hérités de ton BaseCRUDView #}
       {% for filter in filters %}
-        <div class="col-md-4 d-flex mt-2 gap-2">
+        <div class="col-md-4">
+          <label for="id_{{ filter.name }}" class="form-label fw-semibold">{{ filter.label|capfirst }}</label>
           <select name="{{ filter.name }}" class="form-select" id="id_{{ filter.name }}">
-            <option value="">-- {{ filter.label|capfirst }} --</option>
+            <option value="">-- Tous --</option>
             {% for item in filter.items %}
               {% if item.value %}
                 <option value="{{ item.value }}">{{ item.label }}</option>
@@ -53,6 +55,31 @@
           </select>
         </div>
       {% endfor %}
+
+      <div class="col-md-3">
+        <label for="id_date_debut" class="form-label fw-semibold">Date de début</label>
+        <input type="date" name="date_debut" id="id_date_debut" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+        <label for="id_date_fin" class="form-label fw-semibold">Date de fin</label>
+        <input type="date" name="date_fin" id="id_date_fin" class="form-control">
+      </div>
+
+      <div class="col-md-4">
+        <label for="id_content_type" class="form-label fw-semibold">Module / Ressource</label>
+        <select name="content_type" id="id_content_type" class="form-select">
+          <option value="">-- Tous les modules --</option>
+          {% for ct in modules_audit %}
+            <option value="{{ ct.id }}">{{ ct.model|capfirst }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label for="id_object_id" class="form-label fw-semibold">ID Élément</label>
+        <input type="number" name="object_id" id="id_object_id" class="form-control" placeholder="Ex: 45" min="1">
+      </div>
     </form>
 
     <div class="alert alert-success col-12 text-center mt-2" style="display:none;" id="message-show-success"></div>

@@ -16,6 +16,7 @@ from config.mixins.permissions import RoleRequiredMixin
 from config.roles import RoleUtilisateur, is_admin, is_superadmin, is_superviseur
 from apps.administration.models import Cellule
 from web_project import TemplateLayout
+from django.contrib.contenttypes.models import ContentType
 from apps.circulation.models import CirculationDocument, StatutCirculation, EtapeCirculation
 
 """
@@ -299,12 +300,13 @@ class AuditLogManagementView(RoleRequiredMixin, BaseCRUDView):
 
         # Récupération de la liste des utilisateurs pour alimenter le filtre de recherche
         context['utilisateurs'] = Utilisateur.objects.all().order_by('username')
+        used_ct_ids = AuditLog.objects.values_list('content_type_id', flat=True).distinct()
+        context['modules_audit'] = ContentType.objects.filter(id__in=used_ct_ids).order_by('model')
 
         # Injection dynamique des items dans la structure de filtrage de BaseCRUDView
         for f in context.get('filters', []):
             if f['name'] == 'utilisateur':
                 f['items'] = context['utilisateurs']
-
         return context
 
 class AuditLogDetailView(RoleRequiredMixin, TemplateView):

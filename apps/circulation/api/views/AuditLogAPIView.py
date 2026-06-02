@@ -1,5 +1,7 @@
 # apps/circulation/api/views/AuditLogAPIView.py
-from datetime import timezone
+from datetime import datetime
+from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from rest_framework.response import Response
 from rest_framework import status
 from config.mixins.drf_permissions import DRFRoleRequiredMixin
@@ -36,7 +38,7 @@ class AuditLogAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     # ── Filtrage et recherche avancée ────────────────────────────────────────
     # Permet de filtrer par type d'action, par IP ou par succès/échec
-    filter_fields = ['action', 'statut', 'ip_address', 'utilisateur']
+    filter_fields = ['action', 'statut', 'ip_address', 'utilisateur', 'content_type', 'object_id']
     search_fields = ['objet_label', 'user_agent', 'utilisateur__username', 'utilisateur__first_name', 'utilisateur__last_name']
 
     def get_queryset(self):
@@ -46,7 +48,39 @@ class AuditLogAPIView(DRFRoleRequiredMixin, BaseAPIView):
         """
         qs = AuditLog.objects.select_related('utilisateur', 'content_type')
 
-        # Exemple de filtre custom par plage de date si passé en paramètre d'URL (?jours=7)
+        # ── 1. Filtre dynamique par plage de dates précises
+        date_debut = self.request.GET.get('date_debut')
+        date_fin = self.request.GET.get('date_fin')
+
+        if date_debut:
+            try:
+                # Analyse de la date (YYYY-MM-DD) et conversion en début de journée consciente du fuseau horaire
+                parsed_debut = datetime.strptime(date_debut, "%Y-%m-%d")
+                dt_debut = timezone.make_aware(datetime.combine(parsed_debut, datetime.min.time()))
+                qs = qs.filter(timestamp__gte=dt_debut)
+            except ValueError:
+                pass
+
+        if date_fin:
+            try:
+                # Analyse de la date (YYYY-MM-DD) et conversion en fin de journée (23:59:59)
+                parsed_fin = datetime.strptime(date_fin, "%Y-%m-%d")
+                dt_fin = timezone.make_aware(datetime.combine(parsed_fin, datetime.max.time()))
+                qs = qs.filter(timestamp__lte=dt_fin)
+            except ValueError:
+                pass
+
+        # ── 2. Filtre par ContentType (Module Applicatif)
+        content_type_id = self.request.GET.get('content_type')
+        if content_type_id and content_type_id.isdigit():
+            qs = qs.filter(content_type_id=int(content_type_id))
+
+        # ── 3. Filtre par ID de la cible
+        object_id = self.request.GET.get('object_id')
+        if object_id and object_id.isdigit():
+            qs = qs.filter(object_id=int(object_id))
+
+        # Rétention historique héritée de ton ancien code (?jours=X)
         jours = self.request.GET.get('jours')
         if jours and jours.isdigit():
             date_limite = timezone.now() - timedelta(days=int(jours))

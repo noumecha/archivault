@@ -28,5 +28,5 @@ urlpatterns = [
     # ─── Audit API ───────────────────────────
     path('audit/', AuditLogAPIView.as_view(), name='api_audit_list', kwargs={'action': 'list'}),
     path('audit/<int:pk>/', AuditLogAPIView.as_view(), name='api_audit_detail', kwargs={'action': 'retrieve'}),
-    path('audit/purger/', AuditLogAPIView.as_view(), name='api_audit_purger', kwargs={'action': 'purger_logs'}),
+    path('audit/purge/', AuditLogAPIView.as_view(), name='api_audit_purger', kwargs={'action': 'purger_logs'}),
 ]
