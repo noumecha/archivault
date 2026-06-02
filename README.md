@@ -65,29 +65,31 @@ L'application adopte une séparation stricte des responsabilités (SOC) via une 
 
 ## 📂 Structure du Projet (Aperçu)
 
+```plaintext
 archivault/
 │
 ├── apps/
-│ ├── users/ # Gestion des comptes, rôles et permissions
-│ │ ├── models.py # Utilisateur, RoleUtilisateur
-│ │ └── api/views/ # UserAPIView (Gestion full API unitaire et masse)
-│ │
-│ ├── circulation/ # Moteur des circuits, documents et Audit Log
-│ │ ├── models.py # AuditLog, ActionAudit, StatutAudit
-│ │ ├── services/ # AuditService.py (Enregistrement thread-safe)
-│ │ └── api/views/ # AuditLogAPIView, AuditLogManagementView (Filtres avancés)
-│ │
-│ └── notifications/ # Centre de notifications et alertes
-│ ├── models.py # Notification (Liaison GenericForeignKey vers Tâches/Circulations)
-│ └── api/views/ # NotificationAPIView (Marquage, traçabilité hiérarchique)
+│   ├── users/                 # Gestion des comptes, rôles et permissions
+│   │   ├── models.py          # Utilisateur, RoleUtilisateur
+│   │   └── api/views/         # UserAPIView (Gestion full API unitaire et masse)
+│   │
+│   ├── circulation/           # Moteur des circuits, documents et Audit Log
+│   │   ├── models.py          # AuditLog, ActionAudit, StatutAudit
+│   │   ├── services/          # AuditService.py (Enregistrement thread-safe)
+│   │   └── api/views/         # AuditLogAPIView, AuditLogManagementView (Filtres avancés)
+│   │
+│   └── notifications/         # Centre de notifications et alertes
+│       ├── models.py          # Notification (Liaison GenericForeignKey vers Tâches/Circulations)
+│       └── api/views/         # NotificationAPIView (Marquage, traçabilité hiérarchique)
 │
-├── config/ # Configurations globales et Mixins réutilisables
-│ ├── api/ # BaseAPIView.py
-│ ├── mixins/ # drf_permissions.py
-│ └── settings.py
+├── config/                    # Configurations globales et Mixins réutilisables
+│   ├── api/                   # BaseAPIView.py
+│   ├── mixins/                # drf_permissions.py
+│   └── settings.py
 │
-├── static/js/ # Contrôleurs front-end asynchrones (Architecture modulaire)
-└── templates/ # Interfaces utilisateur HTML5 / Bootstrap
+├── static/js/                 # Contrôleurs front-end asynchrones (Architecture modulaire)
+└── templates/                 # Interfaces utilisateur HTML5 / Bootstrap
+```
 
 ---
 
