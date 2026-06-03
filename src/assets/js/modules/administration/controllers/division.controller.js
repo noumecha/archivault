@@ -2,7 +2,7 @@
 
 import { DivisionService } from '../services/division.service.js';
 import { DivisionUi } from '../ui/division.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const DivisionController = {
   async init() {
@@ -74,7 +74,7 @@ export const DivisionController = {
     $('#refresh-button').on('click', () => {
       this.loadDatas();
       // reset filter forms
-      $('#division-search-form').trigger('reset');
+      resetForm('#division-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -249,7 +249,7 @@ export const DivisionController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-division-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadDatas(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);

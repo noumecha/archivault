@@ -7,8 +7,7 @@ import { CirculationService } from '../circulations/circulations.service.js';
 import { CirculationUi } from '../circulations/circulations.ui.js';
 import { CirculationController } from '../circulations/circulations.controller.js';
 import { TacheUi } from '../circulations/ui/taches.ui.js';
-
-// Importation des nouveaux helpers de structure
+import { resetForm } from '../../helpers/utils.js';
 import { UploadHelper } from './helpers/upload.helper.js';
 import { DragDropHelper } from './helpers/drag-drop.helper.js';
 
@@ -197,7 +196,7 @@ export const DocumentController = {
 
     $('#refresh-button').on('click', () => {
       this.loadDatas();
-      $('#document-search-form').trigger('reset');
+      resetForm('#document-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -373,7 +372,7 @@ export const DocumentController = {
             document.getElementById('create-documentCirculation-modal')
           );
           if (modalInstance) modalInstance.hide();
-          $form[0].reset();
+          resetForm($form);
           enableElement('#document');
         }, 2000);
       } catch (err) {
@@ -460,7 +459,7 @@ export const DocumentController = {
       if (modalInstance) modalInstance.hide();
 
       await this.loadDatas(this.getCurrentParams());
-      $form[0].reset();
+      resetForm($form);
       this.allFiles = new DataTransfer();
       $('#previews').empty();
     }, 2500);

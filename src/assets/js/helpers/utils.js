@@ -14,6 +14,11 @@ if (userRoleEl) {
 /**
  * Gère le rendu universel de la pagination et des informations de compteurs
  * pour les listes interfacées avec DRF.
+ * Affiche les boutons de pagination, les numéros de page, et les informations sur le nombre total d'éléments et la plage affichée.
+ * Permet une expérience utilisateur cohérente et informative lors de la navigation dans les listes paginées.
+ * @param {*} data - { count, page_size, current_page, next, previous }
+ * @param {*} containerSelector - sélecteur du conteneur où les boutons de pagination seront rendus
+ * @param {*} infoSelector - sélecteur du conteneur où les informations de compteurs seront affichées
  */
 function renderPagination(data, containerSelector, infoSelector) {
   const $container = $(containerSelector);
@@ -58,24 +63,19 @@ function renderPagination(data, containerSelector, infoSelector) {
   $container.html(html);
 }
 
-// standard function to reset form via dom or via jquery
+/**
+ * Réinitialise un formulaire en utilisant jQuery et synchronise Select2.
+ * @param {*} formSelector
+ */
 function resetForm(formSelector) {
-  const form = $(formSelector);
-  if (form.length) {
-    form[0].reset();
+  const $form = $(formSelector);
+  if ($form.length) {
+    $form[0].reset();
+    if ($.fn.select2) {
+      $form.find('select.select2-hidden-accessible').val(null).trigger('change.select2');
+    }
   } else {
     console.warn(`Form with selector "${formSelector}" not found.`);
-  }
-}
-
-// function to set select2 on element of type select
-function setSelect2(selector, placeholder, modalId) {
-  if ($(selector).is('select')) {
-    $(selector).select2({
-      placeholder: placeholder,
-      allowClear: true,
-      dropdownParent: $(modalId)
-    });
   }
 }
 
@@ -94,7 +94,14 @@ function setMessage(msg, id) {
   setTimeout(() => msgBlock.fadeOut(), 7000);
 }
 
-// form modal form inside another form
+/**
+ * Permet de gérer l'ouverture d'un modal avec un formulaire chargé dynamiquement à partir d'une URL, et la soumission de ce formulaire via AJAX. Utile pour les modals de création ou d'édition qui doivent être réutilisés avec des contenus différents.
+ * @param {*} modalId - ID du modal à ouvrir
+ * @param {*} formnContainerId - ID du conteneur où le formulaire sera injecté
+ * @param {*} formId - ID du formulaire à soumettre
+ * @param {*} fetchUrl - URL pour charger le formulaire et pour soumettre les données
+ * @param {*} selectItemId - ID d'un élément select à mettre à jour après la soumission (optionnel)
+ */
 function ajaxModal(modalId, formnContainerId, formId, fetchUrl, selectItemId = null) {
   const modal = $(modalId);
   const formContainer = $(formnContainerId);
@@ -144,16 +151,29 @@ function ajaxModal(modalId, formnContainerId, formId, fetchUrl, selectItemId = n
   });
 }
 
-// loader functions
+/**
+ * Permet de montrer un loader en supprimant la classe 'd-none' de l'élément spécifié. Utile pour indiquer le début d'un processus de chargement ou d'une action asynchrone, en affichant un loader visuel pendant le traitement.
+ * @param {*} loaderId
+ */
 function startLoader(loaderId) {
   $(loaderId).removeClass('d-none');
 }
 
+/**
+ * Permet de cacher un loader en ajoutant la classe 'd-none' à l'élément spécifié. Utile pour indiquer la fin d'un processus de chargement ou d'une action asynchrone, en masquant le loader qui était affiché pendant le traitement.
+ * @param {*} loaderId
+ */
 function closeLoader(loaderId) {
   $(loaderId).addClass('d-none');
 }
 
-// function to load modal content
+/**
+ * Permet de charger dynamiquement le contenu d'un modal à partir d'une URL, en fonction de l'action (création ou mise à jour) et des données associées. Gère également la configuration du bouton de sauvegarde et la réinitialisation du champ d'identifiant pour les mises à jour.
+ * Utile pour les modals de formulaire qui doivent être réutilisés pour créer ou éditer des éléments, en assurant que le contenu et les actions sont adaptés à chaque contexte.
+ * @param {*} modalId
+ * @param {*} formContainer
+ * @param {*} baseUrl
+ */
 function loadModal(modalId, formContainer, baseUrl) {
   const formContent = $(formContainer);
   $(document).on('click', `[data-bs-target="${modalId}"]`, function (e) {
@@ -185,7 +205,11 @@ function loadModal(modalId, formContainer, baseUrl) {
   });
 }
 
-// when the modal is closed set id to null
+/**
+ * Permet de réinitialiser les champs d'un formulaire et de vider les messages d'erreur/succès associés à la fermeture d'un modal.
+ * Utile pour s'assurer que le formulaire est propre à chaque ouverture du modal, en évitant que les données précédentes ou les messages d'erreur ne persistent.
+ * @param {*} modalId
+ */
 function closeModal(modalId) {
   $(document).on('hidden.bs.modal', modalId, function () {
     x = $('#update-id').val('');
@@ -193,14 +217,25 @@ function closeModal(modalId) {
   });
 }
 
-// clearing search form
+/**
+ * Permet de réinitialiser le champ de recherche et de déclencher l'événement de changement pour rafraîchir les résultats affichés.
+ * @param {*} clearButton
+ * @param {*} searchInput
+ */
 function clearSearch(clearButton, searchInput) {
   $(clearButton).on('click', function () {
     $(searchInput).val('').trigger('change');
   });
 }
 
-// function for filter actualites dynamically with filters
+/**
+ * Permet de filtrer les données d'une liste en fonction de l'entrée de recherche, avec un délai pour éviter les requêtes à chaque frappe.
+ * Utilise la fonction fetchDatas pour récupérer les données filtrées à partir de l'API et les afficher dans le conteneur spécifié.
+ * @param {*} searchInputSelector
+ * @param {*} url
+ * @param {*} formId
+ * @param {*} containerId
+ */
 function filteringDatas(searchInputSelector, url, formId, containerId) {
   $(searchInputSelector).on('change keyup', function (e) {
     e.preventDefault();
@@ -217,6 +252,12 @@ function refresh(refreshBtn, url, formId, containerId) {
   });
 }
 
+/**
+ * Récupère les données à partir d'une URL et les affiche dans un conteneur spécifié.
+ * @param {*} url
+ * @param {*} formId
+ * @param {*} containerId
+ */
 function fetchDatas(url, formId = null, containerId) {
   const formData = formId ? $(formId).serialize() : '';
   const table_container = $('#data-table');
@@ -246,7 +287,14 @@ function fetchDatas(url, formId = null, containerId) {
   });
 }
 
-// function to handle form submission
+/**
+ * Soumet un formulaire et gère la réponse. Permet de traiter à la fois les formulaires avec des champs de type file (en utilisant FormData) et les formulaires classiques (en utilisant serialize).
+ * Affiche les messages de succès ou d'erreur dans des conteneurs spécifiques, et gère la fermeture du modal si nécessaire.
+ * @param {*} formId
+ * @param {*} baseUrl
+ * @param {*} fetchUrl
+ * @param {*} modalId
+ */
 function submitForm(formId, baseUrl, fetchUrl, modalId = null) {
   $(document).on('submit', formId, function (e) {
     e.preventDefault();
@@ -384,14 +432,26 @@ function showAlertMessage(msg, id, loader = null) {
   }, 5000);
 }
 
-// show message
+/**
+ * Affiche un message dans un conteneur donné. Le message peut être une string ou un tableau de messages.
+ * Le conteneur doit être prévu pour accueillir des messages (ex: div d'alerte dans un modal).
+ * Le message disparaîtra automatiquement après 5 secondes.
+ * @param {*} container
+ */
 function showMessage(container = $('#message-show')) {
   console.log('container ', container);
   container.fadeIn().css('display', 'block');
   setTimeout(() => container.fadeOut(), 5000);
 }
 
-// function to toogle visibility and required attribute of fields in form base on another field value
+/**
+ * Permet de montrer ou cacher dynamiquement un champ de formulaire en fonction de la valeur sélectionnée dans un autre champ (ex: dropdown).
+ * Utile pour les formulaires avec des champs conditionnels.
+ * Le champ cible sera affiché et rendu requis uniquement lorsque la valeur sélectionnée correspond à celle spécifiée, sinon il sera caché et non requis.
+ * @param {*} mainSelector
+ * @param {*} targetSelector
+ * @param {*} valueToShow
+ */
 function setVisible(mainSelector, targetSelector = null, valueToShow = null) {
   // on change
   if (mainSelector) {
@@ -454,6 +514,11 @@ function disabledCSS(el) {
   });
 }
 
+/**
+ * Récupère la valeur d'un cookie par son nom.
+ * @param {*} name
+ * @returns
+ */
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {
@@ -546,6 +611,113 @@ function enableElement(selector) {
   if (element.length) {
     element.css({ 'pointer-events': '', 'background-color': '', cursor: 'default' });
   }
+}
+
+/**
+ * fonction pour définir dynamiquement la valeur d'un champ select2, avec option de créer une nouvelle option si le texte est fourni. Permet de mettre à jour la sélection d'un select2 après une action AJAX, en ajoutant une nouvelle option au besoin et en déclenchant l'événement 'change' pour assurer que l'interface se mette à jour correctement.
+ * Exemple d'utilisation : setSelect2Value('my-select', 'new_value', 'New Option');
+ * @param {*} selectId
+ * @param {*} value
+ * @param {*} text
+ * @returns
+ */
+function setSelect2Value(selectId, value, text = null) {
+  if (!value) return;
+
+  const $select = $(`#${selectId}`);
+  if (!$select.length) return;
+
+  // Si le texte est fourni, créer l'option
+  if (text) {
+    const option = new Option(text, value, true, true);
+    $select.append(option);
+  } else {
+    $select.val(value);
+  }
+
+  $select.trigger('change');
+}
+
+/**
+ * Initialise Select2 sur un élément de type select, avec un placeholder personnalisé et une configuration pour les modals Bootstrap.
+ * Permet d'assurer que les dropdowns de Select2 s'affichent correctement à l'intérieur des modals, en utilisant l'option dropdownParent pour éviter les problèmes de z-index et de positionnement.
+ * Exemple d'utilisation : setSelect2('.my-select', 'Choisissez une option', '#myModal');
+ * @param {*} selector
+ * @param {*} placeholder
+ * @param {*} modalId
+ */
+function setSelect2(selector, placeholder, modalId) {
+  if ($(selector).is('select')) {
+    $(selector).select2({
+      placeholder: placeholder,
+      allowClear: true,
+      dropdownParent: $(modalId)
+    });
+  }
+}
+
+/**
+ * Initialise Select2 sur tous les éléments valides et visibles d'un conteneur
+ * @param {*} container - sélecteur du conteneur dans lequel initialiser les champs Select2 (par défaut 'body' pour tout le document)
+ */
+export function initSelect2Fields(container = 'body') {
+  if ($.fn.select2 && $.fn.select2.amd) {
+    $.fn.select2.defaults.set('language', {
+      noResults: function () {
+        return 'Aucun résultat trouvé';
+      },
+      searching: function () {
+        return 'Recherche en cours…';
+      },
+      removeAllItems: function () {
+        return 'Tout supprimer';
+      }
+    });
+  }
+  $(container)
+    .find('select')
+    .filter(':visible')
+    .not('.select2-hidden-accessible')
+    .each(function () {
+      const $select = $(this);
+      const placeholder = $select.find('option:first').text() || 'Sélectionnez une option';
+      const $parentModal = $select.closest('.modal');
+
+      $select.select2({
+        placeholder: placeholder,
+        allowClear: true,
+        dropdownParent: $parentModal.length ? $parentModal : null,
+        width: '100%'
+      });
+    });
+}
+
+/**
+ * Observe le DOM et les événements de Modals pour initialiser Select2 automatiquement
+ */
+export function watchAndInitSelect2() {
+  initSelect2Fields('body');
+  $(document).on('shown.bs.modal', '.modal', function () {
+    const $modal = $(this);
+    initSelect2Fields($modal);
+  });
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === 1) {
+          const $node = $(node);
+          if ($node.is('select') || $node.find('select').length > 0) {
+            initSelect2Fields($node);
+          }
+        }
+      });
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 }
 
 // export

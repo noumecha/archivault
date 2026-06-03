@@ -1,7 +1,7 @@
 // modules/administration/controllers/directiongenerales.controller.js
 import { DirectionGeneraleService } from '../services/directiongenerale.service.js';
 import { DirectionGeneraleUi } from '../ui/directiongenerale.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const DirectionGeneraleController = {
   async init() {
@@ -72,8 +72,7 @@ export const DirectionGeneraleController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadDatas();
-      // reset filter forms
-      $('#directiongenerale-search-form').trigger('reset');
+      resetForm('#directiongenerale-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -193,7 +192,7 @@ export const DirectionGeneraleController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-directiongenerale-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadDatas(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);

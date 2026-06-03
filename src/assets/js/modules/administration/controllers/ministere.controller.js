@@ -1,7 +1,7 @@
 // modules/administration/controllers/ministere.controller.js
 import { MinistereService } from '../services/ministere.service.js';
 import { MinistereUi } from '../ui/ministere.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const MinistereController = {
   // ─── Initialisation ─────────────────────────────────────────────────────
@@ -73,8 +73,7 @@ export const MinistereController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadDatas();
-      // reset filter forms
-      $('#ministere-search-form').trigger('reset');
+      resetForm('#ministere-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -194,7 +193,7 @@ export const MinistereController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-ministere-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadDatas(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);
