@@ -4,7 +4,12 @@
 
 'use strict';
 import { NotificationController } from './modules/notifications/notifications.controller.js';
+import { watchAndInitSelect2 } from './helpers/utils.js';
 let menu, animate;
+
+$(document).ready(function () {
+  watchAndInitSelect2();
+});
 
 (function () {
   NotificationController.init();

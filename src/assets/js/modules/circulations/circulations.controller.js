@@ -1,7 +1,7 @@
 // src/assets/js/modules/circulations/circulations.controller.js
 import { CirculationService } from './circulations.service.js';
 import { CirculationUi } from './circulations.ui.js';
-import { startLoader, closeLoader, toggleBulkButton, enableElement } from '../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, enableElement, resetForm } from '../../helpers/utils.js';
 
 export const CirculationController = {
   etapeIndex: 0,
@@ -39,7 +39,7 @@ export const CirculationController = {
   bindEvents() {
     $('#modal-initier-circuit').on('hidden.bs.modal', () => {
       const $form = $('#initierCircuitForm');
-      $form[0].reset();
+      resetForm($form);
       $('#etapes-container').empty();
       $('#update-id').val('');
       CirculationUi.etapeIndex = 0;
@@ -132,8 +132,7 @@ export const CirculationController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadCirculations();
-      // reset filter forms
-      $('#circ-search-form').trigger('reset');
+      resetForm('#circ-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -178,9 +177,8 @@ export const CirculationController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await CirculationService.fetchOne(id);
-        // Passe res.data ET le mapping du contrôleur
-        CirculationUi.renderForm(res.data, CirculationController.docCelluleMap);
         new bootstrap.Modal(document.getElementById('modal-initier-circuit')).show();
+        CirculationUi.renderForm(res.data, CirculationController.docCelluleMap);
       } catch (err) {
         console.error('Erreur chargement circulation:', err);
         CirculationUi.showError('Erreur chargement circulation');
@@ -275,7 +273,7 @@ export const CirculationController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modal-initier-circuit'));
           if (modalInstance) modalInstance.hide();
           await this.loadCirculations(this.getCurrentParams());
-          $('#initierCircuitForm')[0].reset();
+          resetForm('#initierCircuitForm');
           enableElement('#doc-select');
           CirculationController.reindexEtapes();
         }, 3000);

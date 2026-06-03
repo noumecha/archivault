@@ -75,7 +75,7 @@ export const CelluleUi = {
       $('#update-id').val(cellule.id);
       $('#nom').val(cellule.nom);
       $('#description_cellule').val(cellule.description_cellule);
-      $('#division').val(cellule.division);
+      $('#division').val(cellule.division).trigger('change');
       $('#accepte_bailleurs').prop('checked', cellule.accepte_bailleurs);
       $('#modal-title').text('Modifier une unité de traitement');
       $('#save-btn-text').text('Mettre à jour');

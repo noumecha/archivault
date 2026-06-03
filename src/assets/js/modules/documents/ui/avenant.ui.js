@@ -41,7 +41,7 @@ export const AvenantUi = {
       $('#update-id').val(item.id);
       $('#libelle').val(item.libelle);
       $('#numero').val(item.numero);
-      $('#bailleur').val(item.bailleur);
+      $('#bailleur').val(item.bailleur).trigger('change');
       $('#modal-title').text("Modifier l'avenant");
     } else {
       resetForm('#avenantForm');

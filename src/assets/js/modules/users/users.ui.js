@@ -100,8 +100,8 @@ export const UserUi = {
       $('#username').val(user.username);
       $('#first_name').val(user.first_name);
       $('#email').val(user.email);
-      $('#cellule').val(user.cellule);
-      $('#role').val(user.role);
+      $('#cellule').val(user.cellule).trigger('change');
+      $('#role').val(user.role).trigger('change');
       $('#is_active').prop('checked', user.is_active);
       $('#modal-title').text('Modifier un utilisateur');
       $('#save-btn-text').text('Mettre à jour');

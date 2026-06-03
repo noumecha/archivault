@@ -1,7 +1,7 @@
 // src/assets/js/modules/circulations/controllers/audit.controller.js
 import { AuditService } from '../services/audit.service.js';
 import { AuditUi } from '../ui/audit.ui.js';
-import { startLoader, closeLoader } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, resetForm } from '../../../helpers/utils.js';
 
 export const AuditController = {
   async init() {
@@ -69,7 +69,7 @@ export const AuditController = {
     // Bouton de rafraîchissement complet
     $('#refresh-button').on('click', () => {
       this.loadAudits();
-      $('#audit-search-form').trigger('reset');
+      resetForm('#audit-search-form');
       $('#clearSearch').trigger('click');
     });
   },

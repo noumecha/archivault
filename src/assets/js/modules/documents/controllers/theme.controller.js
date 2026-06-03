@@ -1,7 +1,7 @@
 // modules/documents/controllers/theme.controller.js
 import { ThemeService } from '../services/theme.service.js';
 import { ThemeUi } from '../ui/theme.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const ThemeController = {
   async init() {
@@ -70,8 +70,7 @@ export const ThemeController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadThemes();
-      // reset filter forms
-      $('#theme-search-form').trigger('reset');
+      resetForm('#theme-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -84,8 +83,8 @@ export const ThemeController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await ThemeService.fetchOne(id);
-        ThemeUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-theme-modal')).show();
+        ThemeUi.renderForm(res.data);
       } catch (err) {
         console.error('Error : ', err);
         ThemeUi.showError('Erreur chargement thème');
@@ -192,7 +191,7 @@ export const ThemeController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-theme-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadThemes(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);

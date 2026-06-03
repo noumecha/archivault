@@ -1,6 +1,6 @@
 import { AvenantService } from '../services/avenant.service.js';
 import { AvenantUi } from '../ui/avenant.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const AvenantController = {
   async init() {
@@ -44,8 +44,7 @@ export const AvenantController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadData();
-      // reset filter forms
-      $('#avenant-search-form').trigger('reset');
+      resetForm('#avenant-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -55,8 +54,8 @@ export const AvenantController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await AvenantService.fetchOne(id);
-        AvenantUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-avenant-modal')).show();
+        AvenantUi.renderForm(res.data);
       } catch (err) {
         AvenantUi.showError('Erreur');
       }

@@ -1,7 +1,7 @@
 // modules/circulations/controllers/taches.controller.js
 import { TacheService } from '../services/taches.services.js';
 import { TacheUi } from '../ui/taches.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const TacheController = {
   docCelluleMap: {},
@@ -154,8 +154,7 @@ export const TacheController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadTaches();
-      // reset filter forms
-      $('#tache-search-form').trigger('reset');
+      resetForm('#tache-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -306,7 +305,7 @@ export const TacheController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-tache-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadTaches(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
           window.location.reload();
         }, 3000);
       } catch (err) {

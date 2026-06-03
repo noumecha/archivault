@@ -1,3 +1,4 @@
+{# apps/documents/templates/pages/document_list.html #}
 {% extends layout_path %}
 
 {% load static %}
@@ -303,6 +304,7 @@
     {% endfor %}
 </select>
 
+{# LISTE DE MAPPING POUR LES LISTES DYNAMIQUES #}
 {# On passe le mapping Doc -> Cellule au JS via un script JSON simple #}
 <script id="doc-cellule-data" type="application/json">
     {
@@ -311,6 +313,43 @@
         {% endfor %}
     }
 </script>
+
+{# Matrice des Types de Documents liée aux Cellules #}
+<script id="type-cellule-matrix" type="application/json">
+    {
+        {% for t in types_documents %}
+            "{{ t.id }}": {
+                "cellule_id": "{{ t.cellule.id|default:'' }}",
+                "libelle": "{{ t.libelle|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
+
+{# Matrice des Sous-Types de Documents liée aux Types #}
+<script id="soustype-type-matrix" type="application/json">
+    {
+        {% for st in sous_types %}
+            "{{ st.id }}": {
+                "type_id": "{{ st.type_document.id }}",
+                "libelle": "{{ st.libelle|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
+
+{# Matrice des Thèmes liée aux Cellules #}
+<script id="theme-cellule-matrix" type="application/json">
+    {
+        {% for th in themes %}
+            "{{ th.id }}": {
+                "cellule_id": "{{ th.cellule.id|default:'' }}",
+                "libelle": "{{ th.libelle|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    }
+</script>
+
 {% endblock %}
 
 {% block extra_js %}

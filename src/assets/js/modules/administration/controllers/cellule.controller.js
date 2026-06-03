@@ -1,7 +1,7 @@
 // modules/administration/controllers/cellule.controller.js
 import { CelluleService } from '../services/cellule.service.js';
 import { CelluleUi } from '../ui/cellule.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const CelluleController = {
   async init() {
@@ -70,8 +70,7 @@ export const CelluleController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadDatas();
-      // reset filter forms
-      $('#cellule-search-form').trigger('reset');
+      resetForm('#cellule-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -84,8 +83,8 @@ export const CelluleController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await CelluleService.fetchOne(id);
-        CelluleUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-cellule-modal')).show();
+        CelluleUi.renderForm(res.data);
       } catch (err) {
         CelluleUi.showError('Erreur chargement unité de traitement');
       }
@@ -246,7 +245,7 @@ export const CelluleController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-cellule-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadDatas(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);

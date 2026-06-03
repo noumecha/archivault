@@ -1,5 +1,6 @@
 // modules/documents/documents.ui.js
 import { showAlertMessage, resetForm, renderPagination, disableElement, enableElement } from '../../helpers/utils.js';
+import { FilterHelper } from './helpers/filter.helper.js';
 export const DocumentUi = {
   currentView: 'table', // 'folder', 'table', ou 'grid'
 
@@ -395,12 +396,12 @@ export const DocumentUi = {
       // Remplissage des données
       $('#titre').val(data.titre);
       $('#type_document').val(data.type_document).trigger('change');
-      $('#sous_type').val(data.sous_type);
-      $('#theme').val(data.theme);
-      $('#cellule').val(data.cellule);
-      $('#niveau_acces').val(data.niveau_acces);
-      $('#profil_document').val(data.profil_document);
-      $('#etat').val(data.etat);
+      $('#sous_type').val(data.sous_type).trigger('change');
+      $('#theme').val(data.theme).trigger('change');
+      $('#cellule').val(data.cellule).trigger('change');
+      $('#niveau_acces').val(data.niveau_acces).trigger('change');
+      $('#profil_document').val(data.profil_document).trigger('change');
+      $('#etat').val(data.etat).trigger('change');
 
       if (data.fichier) {
         $('#current-file-info').html(
@@ -412,13 +413,10 @@ export const DocumentUi = {
       $('#container-titre').addClass('d-none');
       $('#container-fichier-unique').addClass('d-none');
       $('#container-dropzone').removeClass('d-none');
-
+      FilterHelper.resetFilters('#documentForm');
       $('#previews').empty();
       $('#current-file-info').empty();
       $('#file-input').val('');
-
-      // Optionnel : Recharger les options par défaut du DOM initial si nécessaire
-      // ou laisser l'état natif du template Django.
     }
   },
 

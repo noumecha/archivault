@@ -74,7 +74,7 @@ export const DivisionUi = {
       $('#update-id').val(division.id);
       $('#nom').val(division.nom);
       $('#ministere').val(division.ministere);
-      $('#direction_generale').val(division.direction_generale);
+      $('#direction_generale').val(division.direction_generale).trigger('change');
       $('#description_division').val(division.description_division);
       $('#statut').prop('checked', division.statut);
       $('#modal-title').text('Modifier une division');

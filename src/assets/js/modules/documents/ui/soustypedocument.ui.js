@@ -48,7 +48,9 @@ export const SousTypeDocumentUi = {
       $('#update-id').val(item.id);
       $('#libelle').val(item.libelle);
       $('#description_soustypedocument').val(item.description_soustypedocument || '');
-      $('#type_document').val(item.type_document || '');
+      $('#type_document')
+        .val(item.type_document || '')
+        .trigger('change');
       $('#modal-title').text('Modifier le sous-type');
       $('#save-btn-text').text('Mettre à jour');
     } else {

@@ -1,7 +1,7 @@
 // modules/documents/controllers/soustypedocument.controller.js
 import { SousTypeDocumentService } from '../services/soustypedocument.service.js';
 import { SousTypeDocumentUi } from '../ui/soustypedocument.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const SousTypeDocumentController = {
   async init() {
@@ -52,13 +52,12 @@ export const SousTypeDocumentController = {
     $('#refresh-button').on('click', () => {
       this.loadData();
       // reset filter forms
-      $('#soustypedocument-search-form').trigger('reset');
+      resetForm('#soustypedocument-search-form');
       $('#clearSearch').trigger('click');
     });
 
     $('#clearSearch').on('click', () => {
       $('#search').val('');
-      $('#soustypedocument-search-form').trigger('reset');
       this.loadData();
     });
 
@@ -71,8 +70,8 @@ export const SousTypeDocumentController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await SousTypeDocumentService.fetchOne(id);
-        SousTypeDocumentUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-soustypedocument-modal')).show();
+        SousTypeDocumentUi.renderForm(res.data);
       } catch (err) {
         SousTypeDocumentUi.showError('Erreur de chargement');
       }

@@ -1,7 +1,7 @@
 // modules/documents/controllers/bailleur.controller.js
 import { BailleurService } from '../services/bailleur.service.js';
 import { BailleurUi } from '../ui/bailleur.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const BailleurController = {
   async init() {
@@ -57,7 +57,7 @@ export const BailleurController = {
     $('#refresh-button').on('click', () => {
       this.loadData();
       // reset filter forms
-      $('#bailleur-search-form').trigger('reset');
+      resetForm('#bailleur-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -69,8 +69,8 @@ export const BailleurController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await BailleurService.fetchOne(id);
-        BailleurUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-bailleur-modal')).show();
+        BailleurUi.renderForm(res.data);
       } catch (err) {
         BailleurUi.showError('Erreur de chargement du bailleur');
       }

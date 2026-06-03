@@ -1,7 +1,7 @@
 // modules/documents/controllers/typedocument.controller.js
 import { TypeDocumentService } from '../services/typedocument.service.js';
 import { TypeDocumentUi } from '../ui/typedocument.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../../helpers/utils.js';
 
 export const TypeDocumentController = {
   async init() {
@@ -70,8 +70,7 @@ export const TypeDocumentController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadTypes();
-      // reset filter forms
-      $('#typedocument-search-form').trigger('reset');
+      resetForm('#typedocument-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -84,8 +83,8 @@ export const TypeDocumentController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await TypeDocumentService.fetchOne(id);
-        TypeDocumentUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-typedocument-modal')).show();
+        TypeDocumentUi.renderForm(res.data);
       } catch (err) {
         console.error('Error : ', err);
         TypeDocumentUi.showError('Erreur chargement type de document');
@@ -192,7 +191,7 @@ export const TypeDocumentController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-typedocument-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadTypes(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);

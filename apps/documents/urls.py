@@ -21,10 +21,7 @@ urlpatterns = [
     path('document/autocomplete/', DocumentAutocomplete.as_view(), name='document_autocomplete'),
     path('bailleur/autocomplete/', BailleurAutocomplete.as_view(), name='bailleur_autocomplete'),
     path('avenant/autocomplete/', AvenantAutocomplete.as_view(), name='avenant_autocomplete'),
-    #
-    path("soustypes/", getsoustypes, name='getsoustypes'),
-    #
-    path('check-document/', check_document, name='check_document'),
+
     # api views
     path('api/', include('apps.documents.api.urls')),
 ]

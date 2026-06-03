@@ -2,7 +2,7 @@
 
 import { UserService } from './users.services.js';
 import { UserUi } from './users.ui.js';
-import { startLoader, closeLoader, toggleBulkButton } from '../../helpers/utils.js';
+import { startLoader, closeLoader, toggleBulkButton, resetForm } from '../../helpers/utils.js';
 
 export const UserController = {
   async init() {
@@ -73,8 +73,7 @@ export const UserController = {
     // Refresh
     $('#refresh-button').on('click', () => {
       this.loadUsers();
-      // reset filter forms
-      $('#utilisateur-search-form').trigger('reset');
+      resetForm('#utilisateur-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -87,8 +86,8 @@ export const UserController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await UserService.fetchOne(id);
-        UserUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-utilisateur-modal')).show();
+        UserUi.renderForm(res.data);
       } catch (err) {
         UserUi.showError('Erreur chargement utilisateur');
       }
@@ -262,7 +261,7 @@ export const UserController = {
           const modalInstance = bootstrap.Modal.getInstance(document.getElementById('create-utilisateur-modal'));
           if (modalInstance) modalInstance.hide();
           await this.loadUsers(this.getCurrentParams());
-          $form[0].reset();
+          resetForm($form);
         }, 3000);
       } catch (err) {
         console.error('Erreur capturée:', err);
