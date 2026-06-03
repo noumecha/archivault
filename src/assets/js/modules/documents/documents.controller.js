@@ -10,6 +10,7 @@ import { TacheUi } from '../circulations/ui/taches.ui.js';
 import { resetForm } from '../../helpers/utils.js';
 import { UploadHelper } from './helpers/upload.helper.js';
 import { DragDropHelper } from './helpers/drag-drop.helper.js';
+import { FilterHelper } from './helpers/filter.helper.js';
 
 import {
   startLoader,
@@ -34,6 +35,7 @@ export const DocumentController = {
     if (mapData) {
       this.docCelluleMap = JSON.parse(mapData.textContent);
     }
+    FilterHelper.init();
     const savedView = localStorage.getItem('document_view_mode') || 'folder';
     this.switchView(savedView);
     await this.loadDatas();
@@ -41,6 +43,7 @@ export const DocumentController = {
     this.bindFolderEvents();
     this.bindTacheEvents();
     this.bindCirculationEvents();
+    this.bindCascadedFilterEvents();
 
     $('#view-folder-btn').on('click', () => this.switchView('folder'));
     $('#view-table-btn').on('click', () => this.switchView('table'));
@@ -197,6 +200,7 @@ export const DocumentController = {
     $('#refresh-button').on('click', () => {
       this.loadDatas();
       resetForm('#document-search-form');
+      FilterHelper.resetFilters('#document-search-form');
       $('#clearSearch').trigger('click');
     });
 
@@ -425,6 +429,37 @@ export const DocumentController = {
       } finally {
         $saveBtn.prop('disabled', false);
       }
+    });
+  },
+
+  bindCascadedFilterEvents() {
+    // ── 1. GESTION DU FORMULAIRE DE RECHERCHE (LISTE) ───────────────────────
+
+    // Changement de cellule dans les filtres
+    // Ton template génère les IDs sous la forme #id_nomdufiltre (ex: #id_cellule, #id_type_document)
+    $(document).on('change', '#id_cellule', function () {
+      const celluleId = $(this).val();
+      FilterHelper.filterByCellule(celluleId, '#id_type_document', '#id_theme');
+    });
+
+    // Changement de type de document dans les filtres
+    $(document).on('change', '#id_type_document', function () {
+      const typeId = $(this).val();
+      FilterHelper.filterBySpecification(typeId, '#id_sous_type');
+    });
+
+    // ── 2. GESTION DU FORMULAIRE DE CRÉATION / ÉDITION (MODAL) ──────────────
+
+    // Changement de cellule dans le formulaire du modal (#cellule)
+    $(document).on('change', '#create-document-modal #cellule', function () {
+      const celluleId = $(this).val();
+      FilterHelper.filterByCellule(celluleId, '#create-document-modal #type_document', '#create-document-modal #theme');
+    });
+
+    // Changement de type dans le formulaire du modal (#type_document)
+    $(document).on('change', '#create-document-modal #type_document', function () {
+      const typeId = $(this).val();
+      FilterHelper.filterBySpecification(typeId, '#create-document-modal #sous_type');
     });
   },
 

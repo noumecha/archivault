@@ -1,5 +1,6 @@
 // modules/documents/documents.ui.js
 import { showAlertMessage, resetForm, renderPagination, disableElement, enableElement } from '../../helpers/utils.js';
+import { FilterHelper } from './helpers/filter.helper.js';
 export const DocumentUi = {
   currentView: 'table', // 'folder', 'table', ou 'grid'
 
@@ -412,13 +413,10 @@ export const DocumentUi = {
       $('#container-titre').addClass('d-none');
       $('#container-fichier-unique').addClass('d-none');
       $('#container-dropzone').removeClass('d-none');
-
+      FilterHelper.resetFilters('#documentForm');
       $('#previews').empty();
       $('#current-file-info').empty();
       $('#file-input').val('');
-
-      // Optionnel : Recharger les options par défaut du DOM initial si nécessaire
-      // ou laisser l'état natif du template Django.
     }
   },
 

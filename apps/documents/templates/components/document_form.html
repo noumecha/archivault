@@ -37,48 +37,6 @@
     <div id="current-file-info" class="mt-2 small text-primary fw-bold"></div>
   </div>
 
-  <!-- Type & Sous-Type -->
-  <div class="col-md-6 form-group mb-4">
-    <div class="input-group input-group-merge">
-      <div class="form-floating form-floating-outline">
-        <select class="form-select" id="type_document" name="type_document" required>
-          <option value="">-- Sélectionner --</option>
-          {% for t in types_documents %}
-            <option value="{{ t.id }}">{{ t.libelle }}</option>
-          {% endfor %}
-        </select>
-        <label for="type_document">Type de document</label>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-6 form-group mb-4">
-    <div class="input-group input-group-merge">
-      <div class="form-floating form-floating-outline">
-        <select class="form-select" id="sous_type" name="sous_type">
-          <option value="">-- Sélectionner --</option>
-          {% for st in sous_types %}
-            <option value="{{ st.id }}">{{ st.libelle }}</option>
-          {% endfor %}
-        </select>
-        <label for="sous_type">Sous-type</label>
-      </div>
-    </div>
-  </div>
-
-  <!-- Thème & Cellule -->
-  <div class="col-md-6 form-group mb-4">
-    <div class="input-group input-group-merge">
-      <div class="form-floating form-floating-outline">
-        <select class="form-select" id="theme" name="theme">
-          <option value="">-- Sélectionner --</option>
-          {% for th in themes %}
-            <option value="{{ th.id }}">{{ th.libelle }}</option>
-          {% endfor %}
-        </select>
-        <label for="theme">Thème</label>
-      </div>
-    </div>
-  </div>
   <div class="col-md-6 form-group mb-4">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
@@ -93,7 +51,48 @@
     </div>
   </div>
 
-  <!-- Niveau d'accès & Profil -->
+  <div class="col-md-6 form-group mb-4">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="type_document" name="type_document" required>
+          <option value="">-- Sélectionner --</option>
+          {% for t in types_documents %}
+            <option value="{{ t.id }}">{{ t.libelle }}</option>
+          {% endfor %}
+        </select>
+        <label for="type_document">Type de document</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 form-group mb-4">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="sous_type" name="sous_type">
+          <option value="">-- Sélectionner --</option>
+          {% for st in sous_types %}
+            <option value="{{ st.id }}">{{ st.libelle }}</option>
+          {% endfor %}
+        </select>
+        <label for="sous_type">Sous-type</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 form-group mb-4">
+    <div class="input-group input-group-merge">
+      <div class="form-floating form-floating-outline">
+        <select class="form-select" id="theme" name="theme">
+          <option value="">-- Sélectionner --</option>
+          {% for th in themes %}
+            <option value="{{ th.id }}">{{ th.libelle }}</option>
+          {% endfor %}
+        </select>
+        <label for="theme">Thème</label>
+      </div>
+    </div>
+  </div>
+
   <div class="col-md-6 form-group mb-4">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
@@ -122,7 +121,6 @@
     </div>
   </div>
 
-  <!-- État & Créé par -->
   <div class="col-md-6 form-group mb-4">
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
