@@ -86,8 +86,8 @@ export const MinistereController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await MinistereService.fetchOne(id);
-        MinistereUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-ministere-modal')).show();
+        MinistereUi.renderForm(res.data);
       } catch (err) {
         MinistereUi.showError('Erreur chargement ministere');
       }

@@ -83,8 +83,8 @@ export const ThemeController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await ThemeService.fetchOne(id);
-        ThemeUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-theme-modal')).show();
+        ThemeUi.renderForm(res.data);
       } catch (err) {
         console.error('Error : ', err);
         ThemeUi.showError('Erreur chargement thème');

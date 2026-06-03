@@ -250,10 +250,10 @@ export const TacheUi = {
     $form.find('[name="titre"]').val(tache.titre);
     $form.find('[name="description"]').val(tache.description);
     $form.find('[name="document"]').val(tache.document).trigger('change');
-    $form.find('[name="assignee_a"]').val(tache.assignee_a);
-    $form.find('[name="priorite"]').val(tache.priorite);
+    $form.find('[name="assignee_a"]').val(tache.assignee_a).trigger('change');
+    $form.find('[name="priorite"]').val(tache.priorite).trigger('change');
     $form.find('[name="date_echeance"]').val(tache.date_echeance);
-    $form.find('[name="statut"]').val(tache.statut);
+    $form.find('[name="statut"]').val(tache.statut).trigger('change');
 
     // Injection et sélection du document
     const $documentSelect = $form.find('[name="document"]');

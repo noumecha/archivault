@@ -87,8 +87,8 @@ export const DivisionController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await DivisionService.fetchOne(id);
-        DivisionUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-division-modal')).show();
+        DivisionUi.renderForm(res.data);
       } catch (err) {
         DivisionUi.showError('Erreur chargement division');
       }

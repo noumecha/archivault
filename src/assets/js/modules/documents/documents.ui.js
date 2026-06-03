@@ -395,12 +395,12 @@ export const DocumentUi = {
       // Remplissage des données
       $('#titre').val(data.titre);
       $('#type_document').val(data.type_document).trigger('change');
-      $('#sous_type').val(data.sous_type);
-      $('#theme').val(data.theme);
-      $('#cellule').val(data.cellule);
-      $('#niveau_acces').val(data.niveau_acces);
-      $('#profil_document').val(data.profil_document);
-      $('#etat').val(data.etat);
+      $('#sous_type').val(data.sous_type).trigger('change');
+      $('#theme').val(data.theme).trigger('change');
+      $('#cellule').val(data.cellule).trigger('change');
+      $('#niveau_acces').val(data.niveau_acces).trigger('change');
+      $('#profil_document').val(data.profil_document).trigger('change');
+      $('#etat').val(data.etat).trigger('change');
 
       if (data.fichier) {
         $('#current-file-info').html(

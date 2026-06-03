@@ -83,8 +83,8 @@ export const CelluleController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await CelluleService.fetchOne(id);
-        CelluleUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-cellule-modal')).show();
+        CelluleUi.renderForm(res.data);
       } catch (err) {
         CelluleUi.showError('Erreur chargement unité de traitement');
       }

@@ -177,9 +177,8 @@ export const CirculationController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await CirculationService.fetchOne(id);
-        // Passe res.data ET le mapping du contrôleur
-        CirculationUi.renderForm(res.data, CirculationController.docCelluleMap);
         new bootstrap.Modal(document.getElementById('modal-initier-circuit')).show();
+        CirculationUi.renderForm(res.data, CirculationController.docCelluleMap);
       } catch (err) {
         console.error('Erreur chargement circulation:', err);
         CirculationUi.showError('Erreur chargement circulation');

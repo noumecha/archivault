@@ -53,8 +53,12 @@ export const TypeDocumentUi = {
       $('#update-id').val(type.id);
       $('#libelle').val(type.libelle);
       $('#description_typedocument').val(type.description_typedocument || '');
-      $('#cellule').val(type.cellule || '');
-      $('#parent_type').val(type.parent_type || '');
+      $('#cellule')
+        .val(type.cellule || '')
+        .trigger('change');
+      $('#parent_type')
+        .val(type.parent_type || '')
+        .trigger('change');
       $('#modal-title').text('Modifier le type');
       $('#save-btn-text').text('Mettre à jour');
     } else {

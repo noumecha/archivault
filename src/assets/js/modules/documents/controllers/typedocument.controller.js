@@ -83,8 +83,8 @@ export const TypeDocumentController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await TypeDocumentService.fetchOne(id);
-        TypeDocumentUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-typedocument-modal')).show();
+        TypeDocumentUi.renderForm(res.data);
       } catch (err) {
         console.error('Error : ', err);
         TypeDocumentUi.showError('Erreur chargement type de document');

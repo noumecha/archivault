@@ -54,7 +54,9 @@ export const BailleurUi = {
       $('#libelle').val(item.libelle);
       $('#abrevation').val(item.abrevation);
       $('#description').val(item.description || '');
-      $('#cellule').val(item.cellule || '');
+      $('#cellule')
+        .val(item.cellule || '')
+        .trigger('change');
       $('#modal-title').text('Modifier le bailleur');
       $('#save-btn-text').text('Mettre à jour');
     } else {

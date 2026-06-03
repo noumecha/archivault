@@ -69,8 +69,8 @@ export const BailleurController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await BailleurService.fetchOne(id);
-        BailleurUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-bailleur-modal')).show();
+        BailleurUi.renderForm(res.data);
       } catch (err) {
         BailleurUi.showError('Erreur de chargement du bailleur');
       }

@@ -65,7 +65,9 @@ export const ThemeUi = {
       $('#update-id').val(theme.id);
       $('#libelle').val(theme.libelle);
       $('#description_theme').val(theme.description_theme || '');
-      $('#cellule').val(theme.cellule || '');
+      $('#cellule')
+        .val(theme.cellule || '')
+        .trigger('change');
       $('#modal-title').text('Modifier un thème');
       $('#save-btn-text').text('Mettre à jour');
     } else {

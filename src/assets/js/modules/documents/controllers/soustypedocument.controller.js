@@ -70,8 +70,8 @@ export const SousTypeDocumentController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await SousTypeDocumentService.fetchOne(id);
-        SousTypeDocumentUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-soustypedocument-modal')).show();
+        SousTypeDocumentUi.renderForm(res.data);
       } catch (err) {
         SousTypeDocumentUi.showError('Erreur de chargement');
       }

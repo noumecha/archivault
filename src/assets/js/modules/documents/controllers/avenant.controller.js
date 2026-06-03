@@ -54,8 +54,8 @@ export const AvenantController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await AvenantService.fetchOne(id);
-        AvenantUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-avenant-modal')).show();
+        AvenantUi.renderForm(res.data);
       } catch (err) {
         AvenantUi.showError('Erreur');
       }

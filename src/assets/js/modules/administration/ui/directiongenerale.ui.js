@@ -69,7 +69,7 @@ export const DirectionGeneraleUi = {
       $('#update-id').val(directiongenerale.id);
       $('#nom').val(directiongenerale.nom);
       $('#description_direction_generale').val(directiongenerale.description_direction_generale);
-      $('#ministere').val(directiongenerale.ministere);
+      $('#ministere').val(directiongenerale.ministere).trigger('change');
       $('#modal-title').text('Modifier une direction générale');
       $('#save-btn-text').text('Mettre à jour');
     } else {

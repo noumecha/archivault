@@ -86,8 +86,8 @@ export const UserController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await UserService.fetchOne(id);
-        UserUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-utilisateur-modal')).show();
+        UserUi.renderForm(res.data);
       } catch (err) {
         UserUi.showError('Erreur chargement utilisateur');
       }

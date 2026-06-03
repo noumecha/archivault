@@ -85,8 +85,8 @@ export const DirectionGeneraleController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await DirectionGeneraleService.fetchOne(id);
-        DirectionGeneraleUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-directiongenerale-modal')).show();
+        DirectionGeneraleUi.renderForm(res.data);
       } catch (err) {
         DirectionGeneraleUi.showError('Erreur chargement de la direction générale');
       }

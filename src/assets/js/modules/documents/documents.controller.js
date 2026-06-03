@@ -213,8 +213,8 @@ export const DocumentController = {
       const id = $(e.currentTarget).data('id');
       try {
         const res = await DocumentService.fetchOne(id);
-        DocumentUi.renderForm(res.data);
         new bootstrap.Modal(document.getElementById('create-document-modal')).show();
+        DocumentUi.renderForm(res.data);
       } catch (err) {
         DocumentUi.showError('Erreur chargement document');
       }
