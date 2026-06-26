@@ -73,6 +73,7 @@ export const TacheController = {
         TacheUi.setupDynamicForm(tache, currentUserId, currentUserRole, formSelector);
         const docId = tache.document;
         const celluleId = this.docCelluleMap[docId] || null;
+        console.log('document ID :', docId);
         console.log('Cellule ID pour le document:', celluleId);
         console.log('user role : ', currentUserRole);
         TacheUi.filterAssigneeList(celluleId, currentUserRole);
@@ -158,7 +159,6 @@ export const TacheController = {
       $('#clearSearch').trigger('click');
     });
 
-    // Ajouter
     // Ajouter une nouvelle tâche
     $('#add-button').on('click', () => {
       this.openTacheForm(null);

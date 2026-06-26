@@ -185,3 +185,7 @@ L'interface de supervision d'audit embarque un système de filtrage de pointe : 
 
 - 🧠 **Intégration d'Intelligence Artificielle :** Analyse prédictive des documents, suggestions automatiques de métadonnées et de tags lors du téléversement, et résumé de texte automatisé des circuits de circulation denses.
 - 🌍 **Support Multilingue Étendu :** Traduction complète de l'interface vers d'autres langues régionales et internationales.
+
+## run redis on local
+
+- docker run -d --name local-redis -p 6379:6379 redis:7-alpine

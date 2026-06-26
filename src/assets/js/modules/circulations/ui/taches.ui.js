@@ -17,12 +17,13 @@ export const TacheUi = {
   },
 
   statusColors: {
-    a_faire: 'bg-secondary',
-    en_attente: 'bg-warning',
+    a_faire: 'bg-light',
+    en_attente: 'bg-info',
     'en cours': 'bg-primary',
     terminee: 'bg-success',
     cloturee: 'bg-success',
-    annulee: 'bg-danger'
+    annulee: 'bg-danger',
+    'en retard': 'bg-danger'
   },
 
   /**
@@ -71,7 +72,7 @@ export const TacheUi = {
     const taches = response.results || response;
 
     if (!taches || taches.length === 0) {
-      tbody.html('<tr><td colspan="8" class="text-center">Aucune tâche trouvée</td></tr>');
+      tbody.html('<tr><td colspan="20" class="text-center">Aucune tâche trouvée</td></tr>');
       this.renderPagination(0);
       return;
     }
@@ -257,6 +258,7 @@ export const TacheUi = {
 
     // Injection et sélection du document
     const $documentSelect = $form.find('[name="document"]');
+    console.log('document : ', tache.document);
     $documentSelect.val(tache.document).trigger('change');
     disableElement($documentSelect);
 

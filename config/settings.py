@@ -15,6 +15,7 @@ from pathlib import Path
 from datetime import timedelta
 from django.contrib.messages import constants as messages
 from .template import  THEME_LAYOUT_DIR, THEME_VARIABLES
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -69,6 +70,7 @@ INSTALLED_APPS = [
     'dal',
     'dal_select2',
     'django_select2',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
@@ -240,3 +242,25 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 1073741824  # 1 GB
 
 # allow same origin for file preview
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+# ── CONFIGURATION CELERY ─────────────────────────────────────────────────────
+# En local classique : "redis://127.0.0.1:6379/0"
+# Avec Docker, on utilise le nom du service docker 'redis' configuré plus bas
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# Utiliser la base de données Django pour gérer le calendrier (permet les modifications via l'admin)
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Planification fixe par défaut (si tu ne veux pas passer par l'admin Django)
+CELERY_BEAT_SCHEDULE = {
+    'verifier-echeances-taches-chaque-heure': {
+        'task': 'apps.circulation.tasks.executer_verification_echeances',
+        'schedule': crontab(minute=0), # S'exécute au début de chaque heure (ex: 13:00, 14:00)
+    },
+}

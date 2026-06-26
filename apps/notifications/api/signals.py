@@ -4,18 +4,8 @@ from django.dispatch import receiver
 from apps.circulation.models import *
 from ..models import Notification
 
-@receiver(post_save, sender=Tache)
-def notify_tache_assignee(sender, instance, created, **kwargs):
-    if created and instance.assignee_a:
-        Notification.objects.create(
-            destinataire=instance.assignee_a,
-            titre="Nouvelle tâche assignée",
-            message=f"Vous avez été assigné à la tâche : {instance.titre}",
-            categorie=Notification.Category.TACHE,
-            content_object=instance,
-            url_action=f"/taches/detail/{instance.id}/"
-        )
-
+# -- CIRCULATION --
+""" Lors de la creation d'une étape de circulation pour un utilisateur, une notification est envoyée """
 @receiver(post_save, sender=EtapeCirculation)
 def notify_etape_destinataire(sender, instance, created, **kwargs):
     """
@@ -32,6 +22,7 @@ def notify_etape_destinataire(sender, instance, created, **kwargs):
             url_action=f"/circulations/detail/{instance.circulation.id}/"
         )
 
+""" Notification du prermier destinataire lors de la créationd de la circulation """
 @receiver(post_save, sender=CirculationDocument)
 def notify_circulation_init(sender, instance, created, **kwargs):
     if created:
@@ -47,6 +38,7 @@ def notify_circulation_init(sender, instance, created, **kwargs):
                 url_action=f"/circulations/detail/{instance.id}/"
             )
 
+""" lorsque la premiè_ve étape est validé dans la circulation, on notifie l'utilisateur suivant """
 @receiver(post_save, sender=EtapeCirculation)
 def notify_next_step(sender, instance, created, **kwargs):
     # Si l'étape actuelle vient d'être validée
@@ -67,37 +59,18 @@ def notify_next_step(sender, instance, created, **kwargs):
                 url_action=f"/circulations/detail/{instance.circulation.id}/"
             )
 
+""" On notifie le créateur de la circulation lorsque la circulation est terminée """
 @receiver(post_save, sender=CirculationDocument)
 def notify_circulation_end(sender, instance, created, **kwargs):
     if not created: # On surveille la modification
         if instance.statut == 'termine':
             Notification.objects.create(
-                destinataire=instance.createur, # Assure-toi d'avoir un champ createur
+                destinataire=instance.initie_par,
                 titre="Circulation terminée",
                 message=f"Le circuit pour {instance.document.titre} est complet.",
                 categorie=Notification.Category.SYSTEME,
                 priorite=Notification.Priority.HIGH
             )
-
-@receiver(post_save, sender=Tache)
-def notify_tache_status_changes(sender, instance, created, **kwargs):
-    """
-    Gère les notifications liées aux changements de statut d'une tâche.
-    - Quand la tâche est terminée/traitée -> Notifie l'initiateur (assignee_par).
-    """
-    if not created:
-        # 1. Lorsqu'une tâche est traitée / terminée
-        if instance.statut == StatutTache.TERMINEE:
-            # Vérifier si l'initiateur est différent de celui qui l'a faite pour éviter de s'auto-notifier
-            if instance.assignee_par and instance.assignee_par != instance.assignee_a:
-                Notification.objects.create(
-                    destinataire=instance.assignee_par,
-                    titre="Tâche complétée",
-                    message=f"La tâche '{instance.titre}' a été traitée par {instance.assignee_a.get_full_name() or instance.assignee_a.username}.",
-                    categorie=Notification.Category.TACHE,
-                    content_object=instance,
-                    url_action=f"/taches/detail/{instance.id}/"
-                )
 
 @receiver(post_save, sender=EtapeCirculation)
 def notify_etape_traitee(sender, instance, created, **kwargs):
@@ -143,3 +116,73 @@ def notify_circulation_global_end(sender, instance, created, **kwargs):
                     priorite=Notification.Priority.HIGH,
                     url_action=f"/circulations/detail/{instance.id}/"
                 )
+
+# -- TACHE --
+@receiver(post_save, sender=Tache)
+def notify_tache_assignee(sender, instance, created, **kwargs):
+    """Notification à la création de la tâche."""
+    if created and instance.assignee_a:
+        Notification.objects.create(
+            destinataire=instance.assignee_a,
+            titre="Nouvelle tâche assignée",
+            message=f"Vous avez été assigné à la tâche : {instance.titre}",
+            categorie=Notification.Category.TACHE,
+            content_object=instance,
+            url_action=f"/taches/detail/{instance.id}/"
+        )
+
+@receiver(post_save, sender=Tache)
+def notify_tache_status_changes(sender, instance, created, **kwargs):
+    """Gère les notifications liées aux changements de statut d'une tâche."""
+    if created:
+        return
+
+    # On récupère l'état d'origine mémorisé par l'astuce du __init__
+    ancien_statut = getattr(instance, '_Tache__original_statut', None)
+
+    # Si le statut n'a pas bougé, on ne fait rien
+    if ancien_statut == instance.statut:
+        return
+
+    # Préparation des paramètres de notification communs
+    destinataire = None
+    titre = ""
+    message = ""
+
+    nom_assigne = instance.assignee_a.get_full_name() or instance.assignee_a.username if instance.assignee_a else "Un utilisateur"
+
+    if instance.statut == StatutTache.EN_COURS:
+        if instance.assignee_par and instance.assignee_par != instance.assignee_a:
+            destinataire = instance.assignee_par
+            titre = "Tâche commencée"
+            message = f"La tâche '{instance.titre}' a été commencée par {nom_assigne}."
+
+    elif instance.statut == StatutTache.EN_REVISION:
+        if instance.assignee_par and instance.assignee_par != instance.assignee_a:
+            destinataire = instance.assignee_par
+            titre = "Tâche en révision"
+            message = f"La tâche '{instance.titre}' est désormais en révision par {nom_assigne}."
+
+    elif instance.statut == StatutTache.TERMINEE:
+        if instance.assignee_par and instance.assignee_par != instance.assignee_a:
+            destinataire = instance.assignee_par
+            titre = "Tâche complétée 🎉"
+            message = f"La tâche '{instance.titre}' a été traitée avec succès par {nom_assigne}."
+
+    elif instance.statut == StatutTache.ANNULEE:
+        # En cas d'annulation par un manager, c'est l'assigné qui doit être prévenu
+        if instance.assignee_a and instance.assignee_par == instance.cree_par:
+            destinataire = instance.assignee_a
+            titre = "Tâche annulée"
+            message = f"La tâche '{instance.titre}' à laquelle vous étiez assigné a été annulée."
+
+    # Envoi de la notification si un scénario est validé
+    if destinataire:
+        Notification.objects.create(
+            destinataire=destinataire,
+            titre=titre,
+            message=message,
+            categorie=Notification.Category.TACHE,
+            content_object=instance,
+            url_action=f"/taches/detail/{instance.id}/"
+        )
