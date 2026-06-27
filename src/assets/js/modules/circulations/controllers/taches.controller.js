@@ -73,10 +73,7 @@ export const TacheController = {
         TacheUi.setupDynamicForm(tache, currentUserId, currentUserRole, formSelector);
         const docId = tache.document;
         const celluleId = this.docCelluleMap[docId] || null;
-        console.log('document ID :', docId);
-        console.log('Cellule ID pour le document:', celluleId);
-        console.log('user role : ', currentUserRole);
-        TacheUi.filterAssigneeList(celluleId, currentUserRole);
+        TacheUi.filterAssigneeList(celluleId, currentUserRole, tache.assignee_a);
         modalInstance.show();
       } catch (err) {
         console.error(err);
@@ -350,11 +347,11 @@ export const TacheController = {
         $saveBtn.prop('disabled', true);
         startLoader('#form-loader');
         const res = await TacheService.update(taskId, formData);
-        TacheUi.showSuccess(res.message || 'Tâche mise à jour avec succès');
+        TacheUi.showSuccess(res.message || 'Tâche mise à jour avec succès', '#form-success');
         setTimeout(() => window.location.reload(), 1000);
       } catch (err) {
         const errorData = err.data?.errors || err.data?.message || 'Erreur de mise à jour';
-        TacheUi.showError(errorData, '#edit-task-error');
+        TacheUi.showError(errorData, '#form-error');
       } finally {
         $saveBtn.prop('disabled', false);
         closeLoader('#form-loader');

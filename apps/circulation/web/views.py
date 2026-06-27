@@ -1,3 +1,4 @@
+# apps/circulation/web/views.py
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, ListView
 from django.contrib.auth.decorators import login_required
@@ -19,24 +20,68 @@ from web_project import TemplateLayout
 from django.contrib.contenttypes.models import ContentType
 from apps.circulation.models import CirculationDocument, StatutCirculation, EtapeCirculation
 
-"""
-    Fonctions utilitaires pour la récupération des utilisateurs et des documents selon le rôle
-"""
+# Fonctions utilitaires pour la récupération des utilisateurs et des documents selon le rôle
 def get_documents_for_user(user):
-    """Retourne la liste des documents accessibles pour les formulaires selon le rôle."""
+    """
+    Retourne les documents accessibles pour les listes et formulaires.
+    Un document apparaît si :
+    - L'utilisateur est admin/superadmin (Visibilité totale).
+    - Le document appartient à la cellule de l'utilisateur.
+    - L'utilisateur est le créateur (cree_par) ou le responsable attitré (responsable_document).
+    - L'utilisateur a reçu une permission spécifique (M2M permissions).
+    - L'utilisateur est l'exécutant (assignee_a) ou l'initiateur (assignee_par) d'une tâche sur ce document.
+    """
     if is_admin(user) or is_superadmin(user):
         return Document.objects.all()
-    elif is_superviseur(user) or hasattr(user, 'cellule'):
-        return Document.objects.filter(cellule=user.cellule)
-    return Document.objects.none()
+    condition = Q()
+    # 1. Filtrage par cellule
+    if hasattr(user, 'cellule') and user.cellule:
+        condition |= Q(cellule=user.cellule)
+    # 2. Liaison directe sur le modèle Document
+    condition |= Q(cree_par=user) | Q(responsable_document=user)
+    # 3. Permissions spécifiques octroyées via la table intermédiaire
+    condition |= Q(permissions=user)
+    # 4. Implication dans une tâche liée au document
+    condition |= Q(taches__assignee_a=user) | Q(taches__assignee_par=user)
+    # .distinct() est crucial ici pour éviter les doublons dus aux jointures (M2M et FK inversées)
+    return Document.objects.filter(condition).distinct()
 
-def get_utilisateurs_for_user(user):
-    """Retourne la liste des utilisateurs assignables selon le rôle."""
+def get_utilisateurs_for_user(user, tache=None):
+    """
+    Retourne la liste des utilisateurs assignables.
+    Inclut systématiquement l'utilisateur actuellement assigné à la tâche
+    pour éviter que le champ apparaisse vide lors d'une consultation inter-cellule.
+    """
+    condition = Q(is_active=True)
+
+    if is_admin(user) or is_superadmin(user):
+        return Utilisateur.objects.filter(condition)
+
+    elif is_superviseur(user) and hasattr(user, 'cellule') and user.cellule:
+        # Les membres de sa cellule
+        condition_role = Q(cellule=user.cellule)
+        # + L'assigné actuel s'il existe
+        if tache and tache.assignee_a:
+            condition_role |= Q(id=tache.assignee_a.id)
+        return Utilisateur.objects.filter(condition & condition_role).distinct()
+
+    else:
+        # Utilisateur basique : lui-même + l'assigné actuel du ticket (s'il consulte un ticket reçu)
+        condition_role = Q(id=user.id)
+        if tache and tache.assignee_a:
+            condition_role |= Q(id=tache.assignee_a.id)
+        return Utilisateur.objects.filter(condition & condition_role).distinct()
+
+"""def get_utilisateurs_for_user(user):
+    #Retourne la liste des utilisateurs assignables selon le rôle.
+    #- Les admins voient tout le monde.
+    #- Les responsables/superviseurs voient les membres de leur cellule.
+    #- Les autres utilisateurs ne voient qu'eux-mêmes.
     if is_admin(user) or is_superadmin(user):
         return Utilisateur.objects.all()
-    elif is_superviseur(user) and hasattr(user, 'cellule'):
+    elif is_superviseur(user) and hasattr(user, 'cellule') and user.cellule:
         return Utilisateur.objects.filter(cellule=user.cellule)
-    return [user]
+    return Utilisateur.objects.filter(id=user.id)"""
 
 # ─────────────────────────────────────────────
 # MIXINS CUSTOM
@@ -53,7 +98,7 @@ class CanAssignTaskMixin(UserPassesTestMixin):
 class CanViewAllTasksMixin(UserPassesTestMixin):
     """Mixin pour vérifier si l'utilisateur peut voir toutes les tâches."""
     def test_func(self):
-        return PermissionService.peut_voir_toutes_taches(self.request.user)
+        return PermissionService.can_view_tasks(self.request.user)
 
     def handle_no_permission(self):
         return redirect('tache_list')
@@ -190,10 +235,14 @@ class TacheDetailView(LoginRequiredMixin, TemplateView):
         context['priorites'] = PrioriteTache.choices
         context['tache'] = tache
         context['commentaires'] = commentaires
-        context['can_validate'] = PermissionService.peut_valider_tache(self.request.user, tache)
+        context['can_validate'] = PermissionService.can_validate_task(self.request.user, tache)
 
+        # affichage des resultats de documents et utilisateurs pour la console
         context['documents'] = get_documents_for_user(user)
-        context['utilisateurs'] = get_utilisateurs_for_user(user)
+        print("==== utilisateurs ====")
+        print("utilisateurs : ", get_utilisateurs_for_user(user, tache=tache))
+        context['utilisateurs'] = get_utilisateurs_for_user(user, tache=tache)
+        #context['utilisateurs'] = get_utilisateurs_for_user(user)
 
         return context
 

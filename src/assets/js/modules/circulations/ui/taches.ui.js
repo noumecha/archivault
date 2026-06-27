@@ -143,57 +143,66 @@ export const TacheUi = {
   /**
    * Filtrage des destinataires avec contrainte de rôle :
    * - Admin / Superadmin : Mode transversal (Accès à tous, marquage visuel)
-   * - Autres rôles : Mode cloisonné (Masquage et désactivation des utilisateurs hors cellule)
+   * - Autres rôles : Mode cloisonné (Masquage et désactivation des utilisateurs hors cellule, SAUF l'assigné actuel)
+   * @param {string|null} celluleId
+   * @param {string} userRole
+   * @param {string|number|null} currentAssigneeId - L'ID de l'utilisateur actuellement assigné à la tâche
    */
-  filterAssigneeList(celluleId, userRole) {
+  filterAssigneeList(celluleId, userRole, currentAssigneeId = null) {
     const $assigneeSelect = $('#assignee_a');
     const $options = $assigneeSelect.find('option');
 
-    // Vérification du niveau de privilège
     const isAdmin = userRole === 'administrateur' || userRole === 'superadmin';
-
-    // Icône stylisée pour remplacer l'étoile standard
     const icon = '👤 ';
 
-    // Cas où aucun document n'est sélectionné
+    // Convertir en String pour éviter les conflits de type (ex: 17 vs "17")
+    const targetAssigneeId = currentAssigneeId ? String(currentAssigneeId) : null;
+
+    // Cas où aucun document n'est sélectionné (Mode création pure sans doc par exemple)
     if (!celluleId) {
       $options.each(function () {
         const $option = $(this);
-        if ($option.val() !== '') {
-          // Sauvegarde et nettoyage du nom d'origine au tout premier passage
+        const optVal = $option.val();
+        if (optVal !== '') {
           if (!$option.data('original-text')) {
             $option.data('original-text', $option.text().trim());
           }
           const originalText = $option.data('original-text');
 
-          if (isAdmin) {
+          // On garde visible si Admin OU si c'est l'assigné actuel
+          if (isAdmin || (targetAssigneeId && String(optVal) === targetAssigneeId)) {
             $option.show().prop('disabled', false).text(originalText);
           } else {
             $option.hide().prop('disabled', true);
           }
         }
       });
-      if (!isAdmin) $assigneeSelect.val('');
+
+      // Si l'utilisateur actuel n'est ni admin ni l'assigné, on reset
+      if (!isAdmin && $assigneeSelect.val() !== targetAssigneeId) {
+        $assigneeSelect.val('');
+      }
       return;
     }
 
-    // Parcours et filtrage dynamique
+    // Parcours et filtrage dynamique avec cellule
     $options.each(function () {
       const $option = $(this);
+      const optVal = $option.val();
       const userCellule = $option.data('cellule');
 
-      if ($option.val() === '') return; // Placeholder
+      if (optVal === '') return; // Placeholder
 
-      // 🟢 Sauvegarde du texte d'origine nettoyé de tout espace inutile ou ancien badge
       if (!$option.data('original-text')) {
-        // Supprime les résidus si le HTML initial contenait déjà des suffixes
         let textRaw = $option.text().replace('(Hors UNITE)', '').replace('⭐ (Même UNITE)', '').trim();
         $option.data('original-text', textRaw);
       }
 
       const originalText = $option.data('original-text');
+      const isCurrentAssignee = targetAssigneeId && String(optVal) === targetAssigneeId;
 
       if (String(userCellule) === String(celluleId)) {
+        // Même unité : visible pour tout le monde
         $option.show().prop('disabled', false);
         if (isAdmin) {
           $option.text(`${icon} (Même UNITE) ${originalText}`).addClass('meme-unite').removeClass('hors-unite');
@@ -201,7 +210,8 @@ export const TacheUi = {
           $option.text(originalText).removeClass('meme-unite hors-unite');
         }
       } else {
-        if (isAdmin) {
+        // Hors unité : visible si Admin OU si c'est l'assigné actuel de la tâche !
+        if (isAdmin || isCurrentAssignee) {
           $option.show().prop('disabled', false);
           $option.text(`${originalText} (Hors UNITE)`).addClass('hors-unite').removeClass('meme-unite');
         } else {
@@ -210,10 +220,13 @@ export const TacheUi = {
       }
     });
 
-    // Si l'utilisateur actuel (non-admin) avait déjà sélectionné quelqu'un qui se retrouve masqué, on reset
+    // Sécurité finale : On ne reset le select QUE si la valeur choisie n'est ni de la bonne cellule, ni l'assigné actuel
     if (!isAdmin && $assigneeSelect.val() !== '') {
-      const selectedOptionCellule = $assigneeSelect.find('option:selected').data('cellule');
-      if (String(selectedOptionCellule) !== String(celluleId)) {
+      const $selectedOpt = $assigneeSelect.find('option:selected');
+      const selectedOptionCellule = $selectedOpt.data('cellule');
+      const selectedValue = $selectedOpt.val();
+
+      if (String(selectedOptionCellule) !== String(celluleId) && String(selectedValue) !== targetAssigneeId) {
         $assigneeSelect.val('');
       }
     }
@@ -250,17 +263,17 @@ export const TacheUi = {
     $('#update-id').val(tache.id);
     $form.find('[name="titre"]').val(tache.titre);
     $form.find('[name="description"]').val(tache.description);
-    $form.find('[name="document"]').val(tache.document).trigger('change');
-    $form.find('[name="assignee_a"]').val(tache.assignee_a).trigger('change');
     $form.find('[name="priorite"]').val(tache.priorite).trigger('change');
     $form.find('[name="date_echeance"]').val(tache.date_echeance);
     $form.find('[name="statut"]').val(tache.statut).trigger('change');
 
-    // Injection et sélection du document
     const $documentSelect = $form.find('[name="document"]');
-    console.log('document : ', tache.document);
     $documentSelect.val(tache.document).trigger('change');
     disableElement($documentSelect);
+
+    const $assigneeSelect = $form.find('[name="assignee_a"]');
+    $assigneeSelect.val(tache.assignee_a).trigger('change');
+    disableElement($assigneeSelect);
 
     // Détermination des rôles sur le ticket
     const isManager =
@@ -271,20 +284,19 @@ export const TacheUi = {
     if (isManager && tache.statut !== 'terminee') {
       $form.find('.meta-field').prop('disabled', false);
     } else {
-      $form.find('.meta-field').prop('disabled', true); // Lecture seule pour l’assigné
+      $form.find('.meta-field').prop('disabled', true);
     }
 
     // 🟢 REGLE 2 : Zone de traitement et de versioning pour l'assigné
     if (isAssignee && tache.statut !== 'terminee') {
       $form.find('#zone-traitement-assigne').removeClass('d-none');
       $form.find('#zone-versioning-document').removeClass('d-none');
-      $form.find('[name="statut"]').prop('disabled', false); // L'assigné peut changer le statut (ex: En révision)
+      $form.find('[name="statut"]').prop('disabled', false);
     } else {
       $form.find('#zone-traitement-assigne').addClass('d-none');
       $form.find('#zone-versioning-document').addClass('d-none');
     }
 
-    // 📜 REGLE 3 : Affichage de l'historique des traitements passés (Timeline)
     if (tache.commentaires && tache.commentaires.length > 0) {
       this.renderTimeline(tache.commentaires);
     } else {

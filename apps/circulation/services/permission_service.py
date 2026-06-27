@@ -7,7 +7,7 @@ class PermissionService:
     """
 
     # Rôles autorisés à assigner des tâches
-    ROLES_ASSIGNER_TACHE = [
+    ROLES_ASSIGN_TASK = [
         RoleUtilisateur.SUPERADMIN,
         RoleUtilisateur.ADMIN,
         RoleUtilisateur.SUPERVISEUR,
@@ -15,7 +15,7 @@ class PermissionService:
     ]
 
     # Rôles autorisés à voir toutes les tâches
-    ROLES_VOIR_TOUTES_TACHES = [
+    ROLES_VIEW_TASK = [
         RoleUtilisateur.SUPERADMIN,
         RoleUtilisateur.ADMIN,
         RoleUtilisateur.SUPERVISEUR,
@@ -23,23 +23,14 @@ class PermissionService:
     ]
 
     # Rôles autorisés à créer des circulations
-    ROLES_CREER_CIRCULATION = [
+    ROLES_CREATE_CIRCULATION = [
         RoleUtilisateur.SUPERADMIN,
         RoleUtilisateur.ADMIN,
         RoleUtilisateur.SUPERVISEUR,
         RoleUtilisateur.GESTIONNAIRE,
     ]
 
-    @staticmethod
-    def peut_assigner_tache(user):
-        """Vérifier si l'utilisateur peut assigner des tâches."""
-        return user.role in PermissionService.ROLES_ASSIGNER_TACHE
-
-    @staticmethod
-    def peut_voir_toutes_taches(user):
-        """Vérifier si l'utilisateur peut voir toutes les tâches."""
-        return user.role in PermissionService.ROLES_VOIR_TOUTES_TACHES
-
+    """ Circulations """
     @staticmethod
     def peut_creer_circulation(user):
         """Vérifier si l'utilisateur peut créer une circulation."""
@@ -65,8 +56,27 @@ class PermissionService:
             user.role in [RoleUtilisateur.SUPERVISEUR] and user.cellule == circulation.document.cellule
         )
 
+    """ Tâches """
     @staticmethod
-    def peut_valider_tache(user, tache):
+    def can_assign_task(user):
+        """Vérifier si l'utilisateur peut assigner des tâches."""
+        return user.role in PermissionService.ROLES_ASSIGN_TASK
+
+    @staticmethod
+    def can_view_tasks(user):
+        """Vérifier si l'utilisateur peut voir toutes les tâches."""
+        return user.role in PermissionService.ROLES_VIEW_TASK
+
+    @staticmethod
+    def can_edit_task(user, tache):
+        """ Seul le créateur ou un superviseur peut éditer une tâche """
+        return (
+            user == tache.assignee_par or
+            user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN, RoleUtilisateur.SUPERVISEUR]
+        )
+
+    @staticmethod
+    def can_validate_task(user, tache):
         """Vérifier si l'utilisateur peut valider une tâche."""
         # Le créateur ou un superviseur peut valider
         # ou celui à qui on a assigner la tache
@@ -77,7 +87,7 @@ class PermissionService:
         )
 
     @staticmethod
-    def peut_supprimer_tache(user, tache):
+    def can_delete_task(user, tache):
         """Vérifier si l'utilisateur peut supprimer une tâche."""
         # Le créateur ou un superviseur peut supprimer
         return (
@@ -86,7 +96,7 @@ class PermissionService:
         )
 
     @staticmethod
-    def peut_voir_tache(user, tache):
+    def can_view_task(user, tache):
         """ Peut voir une taches spécifique."""
         # Le créateur ou un superviseur peut voir
         # ou celui à qui on assigner la tache

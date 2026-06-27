@@ -188,4 +188,11 @@ L'interface de supervision d'audit embarque un système de filtrage de pointe : 
 
 ## run redis on local
 
+# installation
+
 - docker run -d --name local-redis -p 6379:6379 redis:7-alpine
+
+# runinng the worker and the broker (2 other terminals)
+
+- celery -A config beat --loglevel=info --pidfile=
+- celery -A config worker --loglevel=info -P solo

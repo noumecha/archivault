@@ -150,6 +150,7 @@ class TacheAPIView(DRFRoleRequiredMixin, BaseAPIView):
                 # On laisse le sérialiseur traiter le reste des champs (titre, assignation, statut...)
                 serializer = self.serializer_class(tache, data=data, partial=True, context={'request': request})
                 if serializer.is_valid():
+                    tache._modifier_par = request.user
                     tache_mise_a_jour = serializer.save()
 
                     # Gestion de la date de clôture automatique

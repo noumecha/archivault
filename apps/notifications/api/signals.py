@@ -133,56 +133,106 @@ def notify_tache_assignee(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Tache)
 def notify_tache_status_changes(sender, instance, created, **kwargs):
-    """Gère les notifications liées aux changements de statut d'une tâche."""
+    """
+    Gère les notifications de changement de statut d'une tâche.
+    S'adapte dynamiquement selon que l'action vient de l'assigné ou d'un manager.
+    """
     if created:
         return
 
-    # On récupère l'état d'origine mémorisé par l'astuce du __init__
+    # Récupération du statut d'origine (mémorisé dans le __init__ du modèle)
     ancien_statut = getattr(instance, '_Tache__original_statut', None)
 
-    # Si le statut n'a pas bougé, on ne fait rien
+    # Récupération de l'auteur de la modification (injecté depuis l'API)
+    auteur_action = getattr(instance, '_modifier_par', None)
+
+    # Si aucun changement de statut n'a eu lieu, on s'arrête
     if ancien_statut == instance.statut:
         return
 
-    # Préparation des paramètres de notification communs
-    destinataire = None
+    # Acteurs clés du flux
+    assigne = instance.assignee_a
+    assignateur = instance.assignee_par
+    document = instance.document
+
+    # Le créateur du document lié peut aussi être notifié en cas d'annulation/clôture
+    createur_doc = document.cree_par if document else None
+
+    destinataires = set()
     titre = ""
     message = ""
 
-    nom_assigne = instance.assignee_a.get_full_name() or instance.assignee_a.username if instance.assignee_a else "Un utilisateur"
+    # Formatage du nom du modificateur
+    if auteur_action:
+        nom_auteur = auteur_action.get_full_name() or auteur_action.username
+    else:
+        nom_auteur = "Un gestionnaire"
+
+    # ─── MATRICE LOGIQUE DES STATUTS ───
 
     if instance.statut == StatutTache.EN_COURS:
-        if instance.assignee_par and instance.assignee_par != instance.assignee_a:
-            destinataire = instance.assignee_par
-            titre = "Tâche commencée"
-            message = f"La tâche '{instance.titre}' a été commencée par {nom_assigne}."
+        titre = "Tâche commencée 🚀"
+        message = f"La tâche '{instance.titre}' sur le document '{document.titre}' a été passée 'En cours' par {nom_auteur}."
+
+        if auteur_action == assigne:
+            if assignateur: destinataires.add(assignateur)
+        else:
+            if assigne: destinataires.add(assigne)
 
     elif instance.statut == StatutTache.EN_REVISION:
-        if instance.assignee_par and instance.assignee_par != instance.assignee_a:
-            destinataire = instance.assignee_par
-            titre = "Tâche en révision"
-            message = f"La tâche '{instance.titre}' est désormais en révision par {nom_assigne}."
+        titre = "Tâche en révision 🔍"
+        message = f"La tâche '{instance.titre}' a été soumise pour vérification par {nom_auteur}."
+
+        if auteur_action == assigne:
+            if assignateur: destinataires.add(assignateur)
+        else:
+            if assigne: destinataires.add(assigne)
 
     elif instance.statut == StatutTache.TERMINEE:
-        if instance.assignee_par and instance.assignee_par != instance.assignee_a:
-            destinataire = instance.assignee_par
-            titre = "Tâche complétée 🎉"
-            message = f"La tâche '{instance.titre}' a été traitée avec succès par {nom_assigne}."
+        titre = "Tâche complétée 🎉"
+        message = f"La tâche '{instance.titre}' a été validée et clôturée par {nom_auteur}."
+
+        if auteur_action == assigne:
+            # Clôture autonome par l'exécutant
+            if assignateur: destinataires.add(assignateur)
+        else:
+            # Clôture / Validation par un Admin, Superviseur ou Responsable
+            if assigne: destinataires.add(assigne)
+            if assignateur: destinataires.add(assignateur)
 
     elif instance.statut == StatutTache.ANNULEE:
-        # En cas d'annulation par un manager, c'est l'assigné qui doit être prévenu
-        if instance.assignee_a and instance.assignee_par == instance.cree_par:
-            destinataire = instance.assignee_a
-            titre = "Tâche annulée"
-            message = f"La tâche '{instance.titre}' à laquelle vous étiez assigné a été annulée."
+        titre = "Tâche annulée 🛑"
+        message = f"La tâche '{instance.titre}' a été annulée par {nom_auteur}."
 
-    # Envoi de la notification si un scénario est validé
-    if destinataire:
-        Notification.objects.create(
-            destinataire=destinataire,
-            titre=titre,
-            message=message,
-            categorie=Notification.Category.TACHE,
-            content_object=instance,
-            url_action=f"/taches/detail/{instance.id}/"
-        )
+        # Tout le monde est prévenu en cas d'annulation définitive
+        if assigne: destinataires.add(assigne)
+        if assignateur: destinataires.add(assignateur)
+
+    elif instance.statut == StatutTache.A_FAIRE:
+        # Cas critique : Une tâche en révision est rejetée et repasse à l'état initial
+        if ancien_statut == StatutTache.EN_REVISION:
+            titre = "Correction demandée ↩️"
+            message = f"Le travail sur la tâche '{instance.titre}' a été refusé par {nom_auteur}. Des corrections sont nécessaires."
+        else:
+            titre = "Tâche réinitialisée 📋"
+            message = f"La tâche '{instance.titre}' a été remise à l'état 'À faire' par {nom_auteur}."
+
+        if assigne: destinataires.add(assigne)
+
+    # ─── SÉCURITÉ ET NETTOYAGE CRUCIAL ───
+
+    # 1. L'auteur du changement ne doit JAMAIS recevoir sa propre notification
+    if auteur_action in destinataires:
+        destinataires.remove(auteur_action)
+
+    # 2. Envoi final uniquement aux utilisateurs actifs du système
+    for destinataire in destinataires:
+        if destinataire and destinataire.is_active:
+            Notification.objects.create(
+                destinataire=destinataire,
+                titre=titre,
+                message=message,
+                categorie=Notification.Category.TACHE,
+                content_object=instance,
+                url_action=f"/taches/detail/{instance.id}/"
+            )

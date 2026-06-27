@@ -20,9 +20,9 @@
             </nav>
         </div>
         <div class="d-flex align-content-center flex-wrap gap-2 mt-2 mt-md-0">
-            <a href="{% url 'document_list' %}" class="btn btn-label-secondary text-white">
-                <i class="ri-arrow-left-line"></i> Retour
-            </a>
+            <button class="btn btn-outline-info" onclick="history.back()">
+                <i class="ri-arrow-left-line me-1"></i> Retour
+            </button>
             <a href="{{ document.fichier.url }}" target="_blank" download class="btn btn-primary shadow-sm">
                 <i class="ri-download-2-line me-1"></i> Télécharger le fichier
             </a>
@@ -65,7 +65,7 @@
                                 <span>{{ document.theme.libelle|default:"—" }}</span>
                             </li>
                             <li class="mb-3 d-flex justify-content-between">
-                                <span class="fw-bold text-heading">Cellule:</span>
+                                <span class="fw-bold text-heading">Unité de traitement :</span>
                                 <span class="badge bg-label-secondary">{{ document.cellule.nom|default:"Direction Générale" }}</span>
                             </li>
                             <li class="mb-3 d-flex justify-content-between">
