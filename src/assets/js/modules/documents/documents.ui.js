@@ -405,7 +405,7 @@ export const DocumentUi = {
 
       if (data.fichier) {
         $('#current-file-info').html(
-          `<i class="ri-link"></i> Fichier actuel : <a href="${data.fichier}" target="_blank" class="text-decoration-underline text-primary">Consulter</a>`
+          `<i class="ri-link"></i> Fichier actuel : <a href="#" data-action="view" data-id="${data.id}" target="_blank" class="text-decoration-underline text-primary">Consulter</a>`
         );
       }
     } else {

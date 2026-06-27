@@ -196,9 +196,10 @@ class TacheSerializer(serializers.ModelSerializer):
     def get_tache_actions(self, obj):
         user = self.context['request'].user
         return {
-            'can_edit': PermissionService.peut_valider_tache(user, obj),
-            'can_delete': PermissionService.peut_supprimer_tache(user, obj),
-            'can_view': PermissionService.peut_voir_tache(user, obj),
+            'can_edit': PermissionService.can_edit_task(user, obj),
+            'can_validate': PermissionService.can_validate_task(user, obj),
+            'can_delete': PermissionService.can_delete_task(user, obj),
+            'can_view': PermissionService.can_view_task(user, obj),
         }
 
     def validate_date_echeance(self, value):

@@ -129,6 +129,7 @@ class StatutTache(models.TextChoices):
     EN_REVISION = 'en_revision', 'En révision'
     TERMINEE    = 'terminee',    'Terminée'
     ANNULEE     = 'annulee',     'Annulée'
+    EN_RETARD   = 'en retard',   'En retard'
 
 
 class Tache(models.Model):
@@ -157,6 +158,14 @@ class Tache(models.Model):
 
     def __str__(self):
         return f"[{self.priorite.upper()}] {self.titre} → {self.assignee_a}"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__original_statut = self.statut
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.__original_statut = self.statut
 
     @property
     def statut_color(self):

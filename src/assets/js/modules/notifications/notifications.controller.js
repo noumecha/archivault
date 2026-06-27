@@ -55,6 +55,21 @@ export const NotificationController = {
   // ─── Événements ────────────────────────────────────────────────────────
 
   bindEvents() {
+    // lorsqu'on clique sur détails, marqué la notification comme lu
+    $(document).on('click', '[data-action="view"]', async function (e) {
+      e.preventDefault();
+
+      const $btn = $(this);
+      const notifId = $btn.data('id');
+      const targetUrl = $btn.attr('href') || $btn.closest('a').attr('href');
+
+      try {
+        await NotificationService.markAsRead(notifId);
+      } catch (err) {
+        console.warn("Échec de l'enregistrement de l'accusé de réception :", err);
+      }
+    });
+
     //Gestion de la sélection multiple
     $(document).on('change', '#check-all-notifications', function () {
       const isChecked = $(this).is(':checked');
@@ -218,9 +233,9 @@ export const NotificationController = {
           }
 
           // PHASE C : Rafraîchissement UI des notifications (en tâche de fond ou rapide)
-          await this.refreshNavbar();
+          await NotificationController.refreshNavbar();
           if ($('#notifications-tbody').length) {
-            await this.loadNotifications(this.getCurrentParams());
+            await NotificationController.loadNotifications(NotificationController.getCurrentParams());
           }
         } catch (err) {
           console.error('Erreur lors du traitement de la notification ou du tracking:', err);
@@ -242,9 +257,9 @@ export const NotificationController = {
           res.message || 'Toutes les notifications ont été marquées comme lues',
           '#message-show-success'
         );
-        await this.refreshNavbar();
+        await NotificationController.refreshNavbar();
         if ($('#notifications-tbody').length) {
-          await this.loadNotifications();
+          await NotificationController.loadNotifications(NotificationController.getCurrentParams());
         }
       } catch (err) {
         const errorData = err.data?.errors || err.data?.message || err.data?.error || 'Erreur inconnue';
