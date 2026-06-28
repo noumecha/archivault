@@ -67,6 +67,9 @@ class DocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
         date_debut = params.get('date_debut')
         date_fin = params.get('date_fin')
         extension = params.get('ext')
+        type_document = params.get('type_document')
+        if type_document:
+            qs = qs.filter(type_document__id=type_document)
         if date_debut:
             qs = qs.filter(Date_creation__date__gte=date_debut)
         if date_fin:
