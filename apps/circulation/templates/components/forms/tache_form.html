@@ -42,7 +42,8 @@
         <select class="form-select meta-field" id="assignee_a" name="assignee_a" required>
           <option value="">-- Sélectionner --</option>
           {% for user in utilisateurs %}
-            <option value="{{ user.id }}" data-cellule="{{ user.cellule.id|default:'' }}">
+            <option value="{{ user.id }}" data-cellule="{{ user.cellule.id|default:'' }}"
+              data-cellule-nom="{{ user.cellule.nom|default:'Sans Unité' }}">
                 {{ user.get_full_name|default:user.username }}
             </option>
           {% endfor %}

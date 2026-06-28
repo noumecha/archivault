@@ -141,86 +141,84 @@ export const TacheUi = {
   },
 
   /**
-   * Filtrage des destinataires avec contrainte de rôle :
-   * - Admin / Superadmin : Mode transversal (Accès à tous, marquage visuel)
-   * - Autres rôles : Mode cloisonné (Masquage et désactivation des utilisateurs hors cellule, SAUF l'assigné actuel)
-   * @param {string|null} celluleId
-   * @param {string} userRole
-   * @param {string|number|null} currentAssigneeId - L'ID de l'utilisateur actuellement assigné à la tâche
+   * Filtrage des destinataires avec affichage dynamique du nom de l'unité :
+   * Format appliqué : (Nom Unité) - Nom utilisateur
+   * * @param {string|null} celluleId - L'ID de la cellule cible liée au document
+   * @param {string} userRole - Le rôle de l'utilisateur connecté
+   * @param {string|number|null} currentAssigneeId - L'ID de l'utilisateur assigné à la tâche
    */
   filterAssigneeList(celluleId, userRole, currentAssigneeId = null) {
     const $assigneeSelect = $('#assignee_a');
     const $options = $assigneeSelect.find('option');
 
     const isAdmin = userRole === 'administrateur' || userRole === 'superadmin';
-    const icon = '👤 ';
-
-    // Convertir en String pour éviter les conflits de type (ex: 17 vs "17")
     const targetAssigneeId = currentAssigneeId ? String(currentAssigneeId) : null;
 
-    // Cas où aucun document n'est sélectionné (Mode création pure sans doc par exemple)
+    // Regex pour nettoyer les anciens formats de texte si la fonction est réappelée
+    const cleanTextRegex = /^\(.*?\)\s*-\s*/;
+
+    // ─── CAS 1 : AUCUN DOCUMENT SÉLECTIONNÉ (Création pure) ─────────────────
     if (!celluleId) {
       $options.each(function () {
         const $option = $(this);
         const optVal = $option.val();
+
         if (optVal !== '') {
           if (!$option.data('original-text')) {
-            $option.data('original-text', $option.text().trim());
+            $option.data('original-text', $option.text().replace(cleanTextRegex, '').trim());
           }
-          const originalText = $option.data('original-text');
 
-          // On garde visible si Admin OU si c'est l'assigné actuel
+          const originalText = $option.data('original-text');
+          const celluleNom = $option.data('cellule-nom') || 'Sans Unité';
+
+          // En mode transversal (Admin) ou si c'est l'assigné actuel, on affiche au format demandé
           if (isAdmin || (targetAssigneeId && String(optVal) === targetAssigneeId)) {
-            $option.show().prop('disabled', false).text(originalText);
+            $option.show().prop('disabled', false).text(`(${celluleNom}) - ${originalText}`);
           } else {
             $option.hide().prop('disabled', true);
           }
         }
       });
 
-      // Si l'utilisateur actuel n'est ni admin ni l'assigné, on reset
       if (!isAdmin && $assigneeSelect.val() !== targetAssigneeId) {
         $assigneeSelect.val('');
       }
       return;
     }
 
-    // Parcours et filtrage dynamique avec cellule
+    // ─── CAS 2 : PARCOURS ET FILTRAGE DYNAMIQUE AVEC CELLULE ────────────────
     $options.each(function () {
       const $option = $(this);
       const optVal = $option.val();
       const userCellule = $option.data('cellule');
 
-      if (optVal === '') return; // Placeholder
+      if (optVal === '') return; // On ignore le placeholder
 
+      // Sauvegarde et nettoyage du texte initial
       if (!$option.data('original-text')) {
-        let textRaw = $option.text().replace('(Hors UNITE)', '').replace('⭐ (Même UNITE)', '').trim();
-        $option.data('original-text', textRaw);
+        $option.data('original-text', $option.text().replace(cleanTextRegex, '').trim());
       }
 
       const originalText = $option.data('original-text');
+      const celluleNom = $option.data('cellule-nom') || 'Sans Unité';
       const isCurrentAssignee = targetAssigneeId && String(optVal) === targetAssigneeId;
 
       if (String(userCellule) === String(celluleId)) {
-        // Même unité : visible pour tout le monde
+        // Même unité : visible par tout le monde
         $option.show().prop('disabled', false);
-        if (isAdmin) {
-          $option.text(`${icon} (Même UNITE) ${originalText}`).addClass('meme-unite').removeClass('hors-unite');
-        } else {
-          $option.text(originalText).removeClass('meme-unite hors-unite');
-        }
+        $option.text(`(${celluleNom}) - ${originalText}`).addClass('meme-unite').removeClass('hors-unite');
       } else {
-        // Hors unité : visible si Admin OU si c'est l'assigné actuel de la tâche !
+        // Hors unité : visible uniquement si Admin OU si c'est l'assigné actuel
         if (isAdmin || isCurrentAssignee) {
           $option.show().prop('disabled', false);
-          $option.text(`${originalText} (Hors UNITE)`).addClass('hors-unite').removeClass('meme-unite');
+          $option.text(`(${celluleNom}) - ${originalText}`).addClass('hors-unite').removeClass('meme-unite');
         } else {
           $option.hide().prop('disabled', true);
         }
       }
     });
 
-    // Sécurité finale : On ne reset le select QUE si la valeur choisie n'est ni de la bonne cellule, ni l'assigné actuel
+    // ─── SÉCURITÉ FINALE : REZÉRO SI LA VALEUR DEVIENT INACCESSIBLE ─────────
     if (!isAdmin && $assigneeSelect.val() !== '') {
       const $selectedOpt = $assigneeSelect.find('option:selected');
       const selectedOptionCellule = $selectedOpt.data('cellule');

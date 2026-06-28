@@ -396,7 +396,9 @@ export const DocumentController = {
       const currentUserRole = window.CURRENT_USER_ROLE;
       const docId = e.target.value;
       const celluleId = this.docCelluleMap[docId] || null;
-      TacheUi.filterAssigneeList(celluleId, currentUserRole);
+      const currentAssigneeId = $('#assignee_a').val();
+      TacheUi.filterAssigneeList(celluleId, currentUserRole, currentAssigneeId);
+      //TacheUi.filterAssigneeList(celluleId, currentUserRole);
     });
 
     $(document).on('click', '[data-action="add-tache"]', function (e) {

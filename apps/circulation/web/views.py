@@ -239,10 +239,7 @@ class TacheDetailView(LoginRequiredMixin, TemplateView):
 
         # affichage des resultats de documents et utilisateurs pour la console
         context['documents'] = get_documents_for_user(user)
-        print("==== utilisateurs ====")
-        print("utilisateurs : ", get_utilisateurs_for_user(user, tache=tache))
         context['utilisateurs'] = get_utilisateurs_for_user(user, tache=tache)
-        #context['utilisateurs'] = get_utilisateurs_for_user(user)
 
         return context
 
