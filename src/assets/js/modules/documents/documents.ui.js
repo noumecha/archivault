@@ -15,14 +15,8 @@ export const DocumentUi = {
 
     if (this.currentView === 'folder') {
       // 1. Rendu graphique des répertoires virtuels et du fil d'Ariane
-      this.renderFolders();
+      this.renderFolders(documents);
       $('#document-folder-view').removeClass('d-none');
-
-      // 2. Si on a sélectionné un sous-type (niveau terminal), on affiche la table de fichiers sous le dossier
-      if (this.currentType && this.currentSubtype) {
-        this.renderTable(documents);
-        $('#document-table-view').removeClass('d-none');
-      }
     } else if (this.currentView === 'table') {
       this.renderTable(documents);
       $('#document-table-view').removeClass('d-none');
@@ -34,10 +28,15 @@ export const DocumentUi = {
     this.renderPagination(response);
   },
 
-  // 🟢 CONSTRUIT LA GRILLE DE DOSSIERS EN FONCTION DE LA POSITION SUR L'ARBRE
-  renderFolders() {
+  /**
+   * Rendu de la grille de dossiers (fil d'Ariane et navigation par type/sous-type)
+   * @param {Array} documents - La liste des documents à afficher
+   */
+  renderFolders(documents = []) {
     const $foldersGrid = $('#folders-grid');
     $foldersGrid.empty();
+
+    const searchTerm = $('#search').val()?.toLowerCase().trim() || '';
 
     // NIVEAU 1 : Racine -> On liste tous les types de documents présents dans le select du filtre
     if (!this.currentType && !this.currentSubtype) {
@@ -48,9 +47,16 @@ export const DocumentUi = {
         }
       });
 
-      if (typesList.length > 0) {
-        const html = typesList.map(t => this.createFolderHtml(t.id, t.label, 'type')).join('');
+      // Filtrage local "Search-as-you-type" des types de dossiers
+      const filteredTypes = typesList.filter(t => t.label.toLowerCase().includes(searchTerm));
+
+      if (filteredTypes.length > 0) {
+        const html = filteredTypes.map(t => this.createFolderHtml(t.id, t.label, 'type')).join('');
         $foldersGrid.html(html);
+      } else {
+        $foldersGrid.html(
+          '<div class="col-lg-12 text-center text-muted small italic ps-2">Aucun dossier ne correspond à la recherche.</div>'
+        );
       }
     }
     // NIVEAU 2 : Dans un Type -> On extrait et liste ses sous-types associés
@@ -63,19 +69,73 @@ export const DocumentUi = {
         }
       });
 
-      if (subTypesList.length > 0) {
-        const html = subTypesList.map(st => this.createFolderHtml(st.id, st.label, 'subtype')).join('');
-        $foldersGrid.html(html);
-      } else {
-        $foldersGrid.html('<div class="col-12 text-muted small italic ps-2">Aucun sous-répertoire associé.</div>');
+      // Filtrage local des sous-types
+      const filteredSubtypes = subTypesList.filter(st => st.label.toLowerCase().includes(searchTerm));
+      let finalHtml = '';
+
+      if (filteredSubtypes.length > 0) {
+        finalHtml += filteredSubtypes.map(st => this.createFolderHtml(st.id, st.label, 'subtype')).join('');
       }
+
+      // ─── CRUCIAL : Injection des Documents Orphelins de sous-type au même niveau ───
+      if (documents && documents.length > 0) {
+        finalHtml += documents.map(doc => this.createFileInlineHtml(doc)).join('');
+      }
+
+      if (filteredSubtypes.length === 0 && (!documents || documents.length === 0)) {
+        finalHtml =
+          '<div class="col-lg-12 text-center text-muted small italic ps-2">Au élément ne correspond à la recherche.</div>';
+      }
+
+      $foldersGrid.html(finalHtml);
     }
     // NIVEAU 3 : Dans un sous-type terminal -> La grille de dossier s'efface (la table s'affiche en dessous)
     else {
-      $foldersGrid.empty();
+      if (documents && documents.length > 0) {
+        const html = documents.map(doc => this.createFileInlineHtml(doc)).join('');
+        $foldersGrid.html(html);
+      } else {
+        $foldersGrid.html(
+          '<div class="col-lg-12 text-center text-muted small italic ps-2">Aucun document dans ce sous-dossier.</div>'
+        );
+      }
     }
 
     this.updateBreadcrumb();
+  },
+
+  // 🟢 AJOUT : Rendu d'un fichier au look "Explorateur OS"
+  createFileInlineHtml(doc) {
+    const fileExt = doc.extension || 'unknown';
+    const isPdf = fileExt === 'pdf';
+    const isWord = ['doc', 'docx'].includes(fileExt);
+    const isExcel = ['xls', 'xlsx'].includes(fileExt);
+
+    const iconClass = isPdf
+      ? 'ri-file-pdf-fill text-danger'
+      : isWord
+        ? 'ri-file-word-fill text-primary'
+        : isExcel
+          ? 'ri-file-excel-fill text-success'
+          : 'ri-file-text-fill text-secondary';
+
+    return `
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-3">
+        <div class="card h-100 border p-2 d-flex flex-row align-items-center file-item-click shadow-none"
+            style="cursor: pointer; border-radius: 12px; transition: background 0.2s;"
+            onmouseover="this.style.backgroundColor='#f8f9fa'"
+            onmouseout="this.style.backgroundColor='transparent'"
+            data-id="${doc.id}" data-action="view">
+          <div class="me-3" style="font-size: 2.2rem;">
+            <i class="${iconClass}"></i>
+          </div>
+          <div class="overflow-hidden flex-grow-1">
+            <h6 class="mb-0 text-truncate font-weight-bold text-dark" style="font-size: 0.85rem;" title="${doc.titre}">${doc.titre}</h6>
+            <small class="text-muted text-uppercase" style="font-size: 0.7rem;">${fileExt} • ${new Date(doc.Date_creation).toLocaleDateString()}</small>
+          </div>
+        </div>
+      </div>
+    `;
   },
 
   createFolderHtml(id, label, level) {
@@ -353,6 +413,12 @@ export const DocumentUi = {
 
   // Rendu de la pagination
   renderPagination(data) {
+    if (this.currentView === 'folder') {
+      $('#documents-pagination, #pagination-info').addClass('d-none').empty();
+      return;
+    }
+
+    $('#documents-pagination, #pagination-info').removeClass('d-none');
     renderPagination(data, '#documents-pagination', '#pagination-info');
   },
 

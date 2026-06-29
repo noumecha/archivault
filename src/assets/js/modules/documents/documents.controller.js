@@ -64,11 +64,12 @@ export const DocumentController = {
   async loadDatas(params = {}) {
     try {
       startLoader('#table-loader');
-      const res = await DocumentService.fetchAll(params);
-      res.current_page = parseInt(params.page) || 1;
+      // Si aucun paramètre n'est fourni, récupérer l'état actuel des filtres
+      const queryParams = Object.keys(params).length ? params : this.getCurrentParams();
+      const res = await DocumentService.fetchAll(queryParams);
+      res.current_page = parseInt(queryParams.page) || 1;
       DocumentUi.render(res);
     } catch (err) {
-      console.error('Erreur:', err);
       DocumentUi.showError(err.data?.message || 'Erreur serveur');
     } finally {
       closeLoader('#table-loader');
@@ -98,30 +99,38 @@ export const DocumentController = {
         $('#id_type_document').val(id).trigger('change');
       } else if (level === 'subtype') {
         DocumentUi.currentSubtype = id;
-        $('#id_sous_type').val(id);
+        $('#id_sous_type').val(id).trigger('change');
       }
-
-      self.handleSearch();
+      self.loadDatas(self.getCurrentParams());
+      //self.handleSearch();
     });
 
-    // 2. Gestion des retours arrière via le Fil d'Ariane
-    $(document).on('click', '#directory-breadcrumb .breadcrumb-item', function () {
-      const $item = $(this);
-      const level = $item.data('level');
+    // Clic sur les éléments du fil d'Ariane (Breadcrumb) pour remonter
+    $(document)
+      .off('click', '#directory-breadcrumb .breadcrumb-item')
+      .on('click', '#directory-breadcrumb .breadcrumb-item', function () {
+        const level = $(this).data('level');
 
-      if ($item.hasClass('active') && level !== 'root') return;
+        if (level === 'root') {
+          DocumentUi.currentType = null;
+          DocumentUi.currentSubtype = null;
+          $('#id_type_document').val('').trigger('change');
+          $('#id_sous_type').val('').trigger('change');
+        } else if (level === 'type') {
+          DocumentUi.currentSubtype = null;
+          $('#id_sous_type').val('').trigger('change');
+        } else {
+          return; // Niveau terminal
+        }
 
-      if (level === 'root') {
-        DocumentUi.currentType = null;
-        DocumentUi.currentSubtype = null;
-        $('#id_type_document').val('').trigger('change');
-        $('#id_sous_type').val('');
-      } else if (level === 'type') {
-        DocumentUi.currentSubtype = null;
-        $('#id_sous_type').val('');
-      }
+        self.loadDatas(self.getCurrentParams());
+      });
 
-      self.handleSearch();
+    // Capture des clics sur les fichiers affichés à l'intérieur du mode dossier
+    $(document).on('click', '.file-item-click', function (e) {
+      e.preventDefault();
+      const docId = $(this).data('id');
+      window.location.href = `/document/details/${docId}/`;
     });
 
     // 3. Sécurité de synchronisation bidirectionnelle : si l'utilisateur change les select natifs
@@ -250,7 +259,6 @@ export const DocumentController = {
             modalInstance.hide();
             await DocumentController.loadDatas(DocumentController.getCurrentParams());
           } catch (err) {
-            console.error(err);
             DocumentUi.showError(
               err.data?.message || 'Erreur lors de la suppression groupée',
               '#bulk-delete-form-error'
@@ -282,7 +290,6 @@ export const DocumentController = {
             DocumentUi.showSuccess('Document supprimé avec succès');
             await this.loadDatas(this.getCurrentParams());
           } catch (err) {
-            console.error(err);
             DocumentUi.showError(err.data?.message || 'Impossible de supprimer ce document', '#delete-form-error');
           } finally {
             $btn.prop('disabled', false);
@@ -380,7 +387,6 @@ export const DocumentController = {
           enableElement('#document');
         }, 2000);
       } catch (err) {
-        console.error(err);
         DocumentUi.showError(
           err.data?.errors || err.data?.message || 'Une erreur est survenue',
           '#circulation-form-error'
@@ -426,7 +432,6 @@ export const DocumentController = {
           enableElement('#document');
         }, 2000);
       } catch (err) {
-        console.error(err);
         DocumentUi.showError(err.data?.errors || err.data?.message || 'Une erreur est survenue', '#tache-form-error');
       } finally {
         $saveBtn.prop('disabled', false);
@@ -503,21 +508,32 @@ export const DocumentController = {
   },
 
   handleError(err) {
-    console.error('Erreur:', err);
     DocumentUi.showError(err.data?.errors || err.data?.message || err.data?.error || 'Erreur inconnue', '#form-error');
   },
 
   handleSearch() {
-    this.loadDatas(this.getCurrentParams());
+    // Si on est en mode folder, la recherche filtre les dossiers visuels instantanément via renderFolders
+    if (DocumentUi.currentView === 'folder') {
+      // On recharge les données de l'API (pour actualiser les fichiers du dossier selon le pattern de recherche)
+      this.loadDatas(this.getCurrentParams());
+    } else {
+      this.loadDatas(this.getCurrentParams());
+    }
   },
 
   getCurrentParams(formId = '#document-search-form') {
-    return Object.fromEntries(
+    const params = Object.fromEntries(
       $(formId)
         .serializeArray()
         .filter(({ value }) => value)
         .map(({ name, value }) => [name, value])
     );
+    // Si on est en mode folder, on surcharge les paramètres d'envoi API avec la navigation UI
+    if (DocumentUi.currentView === 'folder') {
+      if (DocumentUi.currentType) params.type_document = DocumentUi.currentType;
+      if (DocumentUi.currentSubtype) params.sous_type = DocumentUi.currentSubtype;
+    }
+    return params;
   }
 };
 
