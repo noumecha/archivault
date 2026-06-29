@@ -28,7 +28,10 @@ export const DocumentUi = {
     this.renderPagination(response);
   },
 
-  // 🟢 CONSTRUIT LA GRILLE DE DOSSIERS EN FONCTION DE LA POSITION SUR L'ARBRE
+  /**
+   * Rendu de la grille de dossiers (fil d'Ariane et navigation par type/sous-type)
+   * @param {Array} documents - La liste des documents à afficher
+   */
   renderFolders(documents = []) {
     const $foldersGrid = $('#folders-grid');
     $foldersGrid.empty();
@@ -410,6 +413,12 @@ export const DocumentUi = {
 
   // Rendu de la pagination
   renderPagination(data) {
+    if (this.currentView === 'folder') {
+      $('#documents-pagination, #pagination-info').addClass('d-none').empty();
+      return;
+    }
+
+    $('#documents-pagination, #pagination-info').removeClass('d-none');
     renderPagination(data, '#documents-pagination', '#pagination-info');
   },
 
