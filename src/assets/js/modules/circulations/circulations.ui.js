@@ -13,12 +13,22 @@ export const CirculationUi = {
     clos: 'bg-info'
   },
 
+  /**
+   * Rendu d'un badge de statut
+   * @param {*} statut - Le code du statut (ex: 'en_attente', 'valide')
+   * @param {*} display - Le texte à afficher (optionnel, sinon utilise le statut)
+   * @returns {string} HTML du badge
+   */
   getStatusBadge(statut, display) {
     const colorClass = this.statusColors[statut] || 'bg-secondary';
     return `<span class="badge rounded-pill ${colorClass}">${display || statut}</span>`;
   },
 
-  // ─── Rendu de la table principale ────────────────────────────────────────
+  /**
+   * Rendu de la table principale des circulations
+   * @param {*} response - Données de réponse contenant la liste des circulations
+   * @returns {void}
+   */
   renderTable(response) {
     const tbody = $('#circulations-tbody');
     tbody.empty();
@@ -37,6 +47,11 @@ export const CirculationUi = {
     this.renderPagination(response);
   },
 
+  /**
+   * Rendu d'une ligne de circulation dans la table principale
+   * @param {*} circ - Objet circulation à afficher
+   * @returns {string} HTML de la ligne
+   */
   createCirculationRow(circ) {
     const statusBadge = this.getStatusBadge(circ.statut, circ.statut_display);
     const dateDebut = new Date(circ.date_debut).toLocaleDateString();
@@ -97,12 +112,9 @@ export const CirculationUi = {
   },
 
   /**
-   * methode pour l'affichange de la timeline dans un modal
-   * @param {*} circulation
-   * @returns
-   */
-  /**
    * Méthode pour l'affichage de la timeline dans un modal avec en-tête récapitulatif
+   * @param {*} circulation - Objet circulation contenant les étapes à afficher
+   * @returns {void}
    */
   renderTimeline(circulation) {
     const container = $('#timeline-container');
@@ -195,17 +207,20 @@ export const CirculationUi = {
   },
 
   /**
-   * filtrer les utilisateurs en foncton de la cellule pour garder la cohérence dans la création des circulation
-   * @param {*} celluleId - ID de la cellule à filtrer. Si null, désactive le filtrage et affiche un message d'erreur.
-   * @returns
+   * filtrer les utilisateurs en fonction de la cellule (sauf pour les admins)
+   * @param {string|null} celluleId - ID de la cellule liée au document
+   * @returns {void}
    */
   filterUserSelects(celluleId) {
     const userSelects = document.querySelectorAll('.user-select');
     const btnAdd = $('#btn-add-etape');
 
-    // Problème 3 : Si pas de document ou document sans cellule
+    // Vérification du rôle de l'utilisateur connecté
+    const userRole = window.CURRENT_USER_ROLE;
+    const isAdmin = userRole === 'administrateur' || userRole === 'superadmin';
+
     if (!celluleId) {
-      btnAdd.addClass('disabled'); // Empêcher l'ajout d'étapes
+      btnAdd.addClass('disabled');
       userSelects.forEach(select => {
         $(select).html('<option value="">Veuillez d\'abord choisir un document valide</option>');
       });
@@ -214,7 +229,6 @@ export const CirculationUi = {
 
     btnAdd.removeClass('disabled');
 
-    // Filtrer les selects existants
     userSelects.forEach(select => {
       const currentValue = select.value;
       const options = select.querySelectorAll('option');
@@ -222,17 +236,27 @@ export const CirculationUi = {
       options.forEach(opt => {
         if (opt.value === '') return;
         const userCellule = opt.getAttribute('data-cellule');
+        const celluleNom = opt.getAttribute('data-cellule-nom') || 'Sans unité';
 
-        if (userCellule === celluleId) {
+        // Sauvegarde du texte initial sans préfixe
+        if (!$(opt).data('original-text')) {
+          $(opt).data('original-text', opt.textContent.trim());
+        }
+        const originalText = $(opt).data('original-text');
+
+        // 🟢 LOGIQUE TRANSVERSALE : Si Admin -> Accès complet, sinon -> Même cellule uniquement
+        if (isAdmin || userCellule === String(celluleId)) {
           opt.style.display = 'block';
           opt.disabled = false;
+          // Met en avant le nom de l'unité pour l'administrateur
+          opt.textContent = `(${celluleNom}) - ${originalText}`;
         } else {
           opt.style.display = 'none';
           opt.disabled = true;
         }
       });
 
-      // Reset si la sélection n'est plus valide
+      // Reset si la sélection n'est plus autorisée
       const selectedOption = select.querySelector(`option[value="${currentValue}"]`);
       if (selectedOption && selectedOption.disabled) {
         select.value = '';
@@ -245,19 +269,26 @@ export const CirculationUi = {
    * @param {*} index
    * @param {*} activeCelluleId
    * @param {*} isLocked - Si true, désactive les champs pour rendre la ligne non éditable (ex: lors de l'affichage d'une circulation)
-   * @returns
+   * @returns {string} HTML de la ligne d'étape
    */
   renderEtapeRow(index, activeCelluleId = null, isLocked = false) {
     const sourceHtml = document.getElementById('user-source-list').innerHTML;
+    const userRole = window.CURRENT_USER_ROLE;
+    const isAdmin = userRole === 'administrateur' || userRole === 'superadmin';
 
-    // On crée un élément temporaire pour filtrer les options avant injection
     const tempSelect = document.createElement('select');
     tempSelect.innerHTML = sourceHtml;
 
-    // Si on a une cellule, on filtre. Si on n'en a pas, on vide tout sauf le placeholder.
     tempSelect.querySelectorAll('option').forEach(opt => {
       if (opt.value !== '') {
-        if (!activeCelluleId || opt.getAttribute('data-cellule') !== activeCelluleId) {
+        const userCellule = opt.getAttribute('data-cellule');
+        const celluleNom = opt.getAttribute('data-cellule-nom') || 'Sans unité';
+        const originalText = opt.textContent.trim();
+
+        // 🟢 LOGIQUE TRANSVERSALE AU RENDU : Si l'utilisateur n'est ni Admin ni de la cellule, on supprime l'option
+        if (isAdmin || (activeCelluleId && String(userCellule) === String(activeCelluleId))) {
+          opt.textContent = `(${celluleNom}) - ${originalText}`;
+        } else {
           opt.remove();
         }
       }
@@ -267,32 +298,32 @@ export const CirculationUi = {
     const disabledAttr = isLocked ? 'disabled' : '';
 
     return `
-      <div class="row etape-item mb-3 align-items-end" data-index="${index}">
-        <input type="hidden" name="etapes[${index}][id]" class="etape-id">
-        <div class="col-md-1 text-center fw-bold pb-2 mb-3">#${index + 1}</div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Titre de l'étape</label>
-          <input type="text" class="form-control" name="etapes[${index}][titre_etape]" placeholder="Ex: Validation Chef" required ${disabledAttr}>
-        </div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Destinataire</label>
-          <select id="etape-user-select" class="form-select user-select" name="etapes[${index}][destinataire]" required ${disabledAttr}>
-            ${optionsFinales}
-          </select>
-        </div>
-        <div class="col-md-3 mb-3">
-          <label class="form-label">Échéance</label>
-          <input type="date" class="form-control" name="etapes[${index}][date_echeance]" required ${disabledAttr}>
-        </div>
-        <div class="col-md-12 text-end">
-            <button type="button" title="supprimer l'étape" class="btn btn-label-danger btn-icon remove-etape">
-                <i class="ri-delete-bin-line"></i>
-            </button>
-        </div>
-      </div>`;
+    <div class="row etape-item mb-3 align-items-end" data-index="${index}">
+      <input type="hidden" name="etapes[${index}][id]" class="etape-id">
+      <div class="col-md-1 text-center fw-bold pb-2 mb-3">#${index + 1}</div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Titre de l'étape</label>
+        <input type="text" class="form-control" name="etapes[${index}][titre_etape]" placeholder="Ex: Validation Direction" required ${disabledAttr}>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Destinataire</label>
+        <select id="etape-user-select" class="form-select user-select" name="etapes[${index}][destinataire]" required ${disabledAttr}>
+          ${optionsFinales}
+        </select>
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Échéance</label>
+        <input type="date" class="form-control" name="etapes[${index}][date_echeance]" required ${disabledAttr}>
+      </div>
+      <div class="col-md-12 text-end">
+          <button type="button" title="supprimer l'étape" class="btn btn-label-danger btn-icon remove-etape" ${disabledAttr}>
+              <i class="ri-delete-bin-line"></i>
+          </button>
+      </div>
+    </div>`;
   },
 
-  /***
+  /**
    * Remplissage du formulaire pour édition
    * @param {Object} Circulation - Les données de la circulation à éditer. Si null, le formulaire est réinitialisé pour une nouvelle création.
    * @param {Object} docCelluleMap - Mapping des documents aux cellules pour le filtrage des destinataires dans les étapes
@@ -336,15 +367,32 @@ export const CirculationUi = {
     }
   },
 
-  // ─── Utilitaires standards ──────────────────────────────────────────────
+  /**
+   * Rendu de la pagination
+   * @param {*} data
+   */
   renderPagination(data) {
     renderPagination(data, '#circulations-pagination', '#pagination-info');
   },
 
+  /**
+   * Affichage d'un message d'erreur
+   * @param {*} message - Le texte du message d'erreur
+   * @param {*} id - L'ID de l'élément HTML pour afficher le message (optionnel)
+   * @param {*} loader - L'élément jQuery du loader à masquer (optionnel)
+   * @returns {void}
+   */
   showError(message, id = '#message-show-error', loader = $('#form-loader')) {
     showAlertMessage(message, id, loader);
   },
 
+  /**
+   * Affichage d'un message de succès
+   * @param {*} message - Le texte du message de succès
+   * @param {*} id - L'ID de l'élément HTML pour afficher le message (optionnel)
+   * @param {*} loader - L'élément jQuery du loader à masquer (optionnel)
+   * @returns {void}
+   */
   showSuccess(message, id = '#message-show-success', loader = $('#form-loader')) {
     showAlertMessage(message, id, loader);
   }

@@ -7,6 +7,10 @@ export const DocumentUi = {
   currentType: null,
   currentSubtype: null,
 
+  /**
+   * Rendu de la vue des documents
+   * @param {*} response - La réponse de l'API contenant les documents à afficher
+   */
   render(response) {
     const documents = response.results || response;
 

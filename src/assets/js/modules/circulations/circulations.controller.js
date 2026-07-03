@@ -235,8 +235,12 @@ export const CirculationController = {
       const currentDocId = $('#doc-select').val();
       const activeCelluleId = this.docCelluleMap[currentDocId] || null;
 
-      if (!activeCelluleId) {
-        CirculationUi.showSuccess('Veuillez sélectionner un document lié à une cellule.', '#form-error', null);
+      const userRole = window.CURRENT_USER_ROLE;
+      const isAdmin = userRole === 'administrateur' || userRole === 'superadmin';
+
+      // 🟢 AJOUT : Si l'utilisateur n'est pas admin ET qu'il n'y a pas de cellule valide, on bloque.
+      if (!isAdmin && !activeCelluleId) {
+        CirculationUi.showError('Veuillez sélectionner un document lié à votre cellule.', '#form-error', null);
         return;
       }
 

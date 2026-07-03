@@ -187,7 +187,8 @@
 <select id="user-source-list" class="d-none">
     <option value="">Sélectionner un utilisateur...</option>
     {% for user in utilisateurs %}
-        <option value="{{ user.id }}" data-cellule="{{ user.cellule.id }}">
+        <option value="{{ user.id }}" data-cellule="{{ user.cellule.id }}"
+        data-cellule-nom="{{ user.cellule.nom|default:'Sans unité' }}">
             {{ user.get_full_name|default:user.username }}
         </option>
     {% endfor %}
