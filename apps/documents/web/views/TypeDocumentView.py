@@ -1,4 +1,6 @@
 # apps/documents/web/views/TypeDocumentView.py
+from apps.documents.services.visibility_service import VisibilityService
+
 from ...forms import *
 from config.views import BaseCRUDView
 from web_project import TemplateLayout
@@ -26,20 +28,24 @@ class TypeDocumentView(RoleRequiredMixin, BaseCRUDView):
         ('cellule', Cellule, 'Unité de traitement'),
         ('parent_type', TypeDocument, 'Type parent'),
     ]
+
+    def get_queryset(self, search_query=None):
+        qs = super().get_queryset(search_query)
+        # Filtrer le tableau principal pour l'utilisateur
+        return VisibilityService.filter_by_cellule_or_generic(qs, self.request.user)
+
     def get_context_data(self, **kwargs):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
         user = self.request.user
+
         if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
             filtered_cellules = Cellule.objects.all()
         else:
             filtered_cellules = Cellule.objects.filter(id=user.cellule_id) if user.cellule else Cellule.objects.none()
-
         context['cellules'] = filtered_cellules
-        # Ajouter les types pour le parent_type
-        if user.role in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
-            context['parent_types'] = TypeDocument.objects.filter(parent_type__isnull=True)
-        else:
-            context['parent_types'] = TypeDocument.objects.filter(cellule_id=user.cellule_id, parent_type__isnull=True)
+
+        parent_qs = TypeDocument.objects.filter(parent_type__isnull=True)
+        context['parent_types'] = VisibilityService.filter_by_cellule_or_generic(parent_qs, user)
 
         for f in context.get('filters', []):
             if f['name'] == 'cellule':

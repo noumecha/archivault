@@ -42,7 +42,7 @@ class TypeDocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     def get_queryset(self):
         queryset = TypeDocument.objects.select_related('cellule', 'parent_type').all()
-        qs = VisibilityService.filter_by_cellule(queryset, self.request.user)
+        qs = VisibilityService.filter_by_cellule_or_generic(queryset, self.request.user)
         return super().get_queryset(qs)
 
     def retrieve_action(self, request, pk=None, *args, **kwargs):
@@ -68,6 +68,9 @@ class TypeDocumentAPIView(DRFRoleRequiredMixin, BaseAPIView):
 
     def create_action(self, request, *args, **kwargs):
         self.check_role_permission(request)
+        if request.user.role not in [RoleUtilisateur.SUPERADMIN, RoleUtilisateur.ADMIN]:
+            request.data['cellule'] = request.user.cellule_id
+
         response = super().create_action(request, *args, **kwargs)
 
         if response.status_code == status.HTTP_201_CREATED:

@@ -28,7 +28,9 @@
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
         <select class="form-select" id="cellule" name="cellule" aria-describedby="cellule">
-          {% if cellules|length > 1 %}
+          {% if request.user.role == 'superadmin' or request.user.role == 'admin' %}
+            <option value="" selected>🌐 Thème Générique (Toutes les unités)</option>
+          {% elif cellules|length > 1 %}
             <option value="">-- Sélectionner une unité de traitement --</option>
           {% endif %}
           {% for cellule in cellules %}
