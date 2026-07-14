@@ -53,7 +53,7 @@ services:
     build:
       context: .
       dockerfile: docker/django/Dockerfile
-    container_name: archivault_web_prod
+    container_name: archivault_web
     ports:
       - '8000:8000'
     env_file:
