@@ -50,7 +50,9 @@ services:
       - archivault_network
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
     container_name: archivault_web_prod
     ports:
       - '8000:8000'
@@ -71,7 +73,9 @@ services:
     restart: always
 
   celery_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
     container_name: archivault_celery_worker
     command: celery -A config worker --loglevel=info
     env_file:
@@ -89,7 +93,9 @@ services:
     restart: always
 
   celery_beat:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
     container_name: archivault_celery_beat
     command: celery -A config beat --loglevel=info
     env_file:
