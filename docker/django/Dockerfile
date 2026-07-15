@@ -1,4 +1,4 @@
-# archivault/docker/Dockerfile
+# archivault/docker/django/Dockerfile
 ##################################
 # 1️⃣ STAGE FRONTEND (Node)
 ##################################

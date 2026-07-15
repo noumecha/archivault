@@ -176,12 +176,30 @@ class DocumentView(RoleRequiredMixin, BaseCRUDView):
             filtered_utilisateurs = Utilisateur.objects.all()
             filtered_documents = Document.objects.all()
         else:
-            filtered_documents = Document.objects.filter(cellule_id=user.cellule_id) if user.cellule else Document.objects.none()
-            filtered_utilisateurs = Utilisateur.objects.filter(cellule_id=user.cellule_id) if user.cellule else Utilisateur.objects.none()
-            filtered_cellules = Cellule.objects.filter(id=user.cellule_id) if user.cellule else Cellule.objects.none()
-            filtered_types = TypeDocument.objects.filter(cellule_id=user.cellule_id) if user.cellule else TypeDocument.objects.none()
-            filtered_themes = Theme.objects.filter(cellule_id=user.cellule_id) if user.cellule else Theme.objects.none()
-            filtered_soustypes = SousTypeDocument.objects.filter(type_document__cellule_id=user.cellule_id) if user.cellule else SousTypeDocument.objects.none()
+            if user.cellule:
+                # 🟢 Inclus la cellule de l'utilisateur ET les éléments Génériques (cellule=null)
+                cellule_or_generic = Q(cellule_id=user.cellule_id) | Q(cellule__isnull=True)
+
+                filtered_documents = Document.objects.filter(cellule_id=user.cellule_id)
+                filtered_utilisateurs = Utilisateur.objects.filter(cellule_id=user.cellule_id)
+                filtered_cellules = Cellule.objects.filter(id=user.cellule_id)
+
+                # Types et Thèmes : Spécifiques + Génériques
+                filtered_types = TypeDocument.objects.filter(cellule_or_generic)
+                filtered_themes = Theme.objects.filter(cellule_or_generic)
+
+                # Sous-types associés aux types accessibles
+                filtered_soustypes = SousTypeDocument.objects.filter(
+                    Q(type_document__cellule_id=user.cellule_id) | Q(type_document__cellule__isnull=True)
+                )
+            else:
+                filtered_documents = Document.objects.none()
+                filtered_utilisateurs = Utilisateur.objects.none()
+                filtered_cellules = Cellule.objects.none()
+                # Même sans cellule, l'utilisateur a accès aux types/thèmes génériques système
+                filtered_types = TypeDocument.objects.filter(cellule__isnull=True)
+                filtered_themes = Theme.objects.filter(cellule__isnull=True)
+                filtered_soustypes = SousTypeDocument.objects.filter(type_document__cellule__isnull=True)
 
         context['cellules'] = filtered_cellules
         context['types_documents'] = filtered_types

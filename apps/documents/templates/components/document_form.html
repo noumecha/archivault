@@ -57,7 +57,9 @@
         <select class="form-select" id="type_document" name="type_document" required>
           <option value="">-- Sélectionner --</option>
           {% for t in types_documents %}
-            <option value="{{ t.id }}">{{ t.libelle }}</option>
+            <option value="{{ t.id }}">
+              {{ t.libelle }} {% if not t.cellule %}(🌐 Générique){% endif %}
+            </option>
           {% endfor %}
         </select>
         <label for="type_document">Type de document</label>
@@ -85,8 +87,10 @@
         <select class="form-select" id="theme" name="theme">
           <option value="">-- Sélectionner --</option>
           {% for th in themes %}
-            <option value="{{ th.id }}">{{ th.libelle }}</option>
-          {% endfor %}
+          <option value="{{ th.id }}">
+            {{ th.libelle }} {% if not th.cellule %}(🌐 Générique){% endif %}
+          </option>
+        {% endfor %}
         </select>
         <label for="theme">Thème</label>
       </div>

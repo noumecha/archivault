@@ -25,6 +25,10 @@ export const ThemeUi = {
 
   // Rendu d'une ligne thème
   createThemeRow(theme) {
+    // 🟢 Badge visuel pour différencier Générique vs Unité spécifique
+    const celluleBadge = theme.cellule_info?.nom
+      ? `<span class="badge bg-label-secondary">${theme.cellule_info.nom}</span>`
+      : `<span class="badge bg-label-info"><i class="ri-global-line me-1"></i>Générique</span>`;
     return `
       <tr data-theme-id="${theme.id}">
         <th style="width: 40px;">
@@ -35,6 +39,7 @@ export const ThemeUi = {
         <td>${theme.libelle}</td>
         <td>${theme.description_theme || '-'}</td>
         <td>${theme.cellule_info?.nom || '-'}</td>
+        <td>${celluleBadge}</td>
         <td>
           <div class="dropdown">
             <button class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -65,9 +70,11 @@ export const ThemeUi = {
       $('#update-id').val(theme.id);
       $('#libelle').val(theme.libelle);
       $('#description_theme').val(theme.description_theme || '');
-      $('#cellule')
-        .val(theme.cellule || '')
-        .trigger('change');
+      // 🟢 Extraction robuste de la valeur cellule
+      const celluleVal =
+        typeof theme.cellule === 'object' && theme.cellule !== null ? theme.cellule.id : theme.cellule || '';
+
+      $('#cellule').val(celluleVal).trigger('change');
       $('#modal-title').text('Modifier un thème');
       $('#save-btn-text').text('Mettre à jour');
     } else {

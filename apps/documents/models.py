@@ -6,7 +6,7 @@ from apps.users.models import Utilisateur, RoleUtilisateur
 
 # Create your models here.
 class Theme(models.Model):
-    libelle = models.CharField(max_length=255, unique=True)
+    libelle = models.CharField(max_length=255)
     description = models.TextField(blank=True, name='description_theme')
     # a them belongs to a cellule
     cellule = models.ForeignKey(Cellule, on_delete=models.CASCADE, null=True, blank=True)
@@ -14,11 +14,23 @@ class Theme(models.Model):
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            # Garantit qu'un libellé est unique au sein d'une même cellule (ou parmi les génériques)
+            models.UniqueConstraint(fields=['libelle', 'cellule'], name='unique_libelle_cellule_theme'),
+            models.UniqueConstraint(fields=['libelle'], condition=models.Q(cellule__isnull=True), name='unique_libelle_generique_theme')
+        ]
+
+    @property
+    def is_generique(self):
+        return self.cellule_id is None
+
     def __str__(self):
-        return self.libelle
+        prefix = "[Générique]" if self.is_generique else f"[{self.cellule.nom}]"
+        return f"{prefix} {self.libelle}"
 
 class TypeDocument(models.Model):
-    libelle = models.CharField(max_length=255, unique=True)
+    libelle = models.CharField(max_length=255)
     description = models.TextField(blank=True, name='description_typedocument')
     # a typeDocument belongs to a Cellule
     cellule = models.ForeignKey(Cellule, on_delete=models.CASCADE, null=True, blank=True)
@@ -33,8 +45,19 @@ class TypeDocument(models.Model):
     Date_creation = models.DateTimeField(auto_now_add=True)
     Date_miseajour = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['libelle', 'cellule'], name='unique_libelle_cellule_typedoc'),
+            models.UniqueConstraint(fields=['libelle'], condition=models.Q(cellule__isnull=True), name='unique_libelle_generique_typedoc')
+        ]
+
+    @property
+    def is_generique(self):
+        return self.cellule_id is None
+
     def __str__(self):
-        return f"(Type de document) : {self.libelle}"
+        prefix = "[Générique]" if self.is_generique else f"[{self.cellule.nom}]"
+        return f"{prefix} {self.libelle}"
 
 class SousTypeDocument(models.Model):
     libelle = models.CharField(max_length=255, unique=True)

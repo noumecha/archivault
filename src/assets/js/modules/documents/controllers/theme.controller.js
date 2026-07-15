@@ -177,6 +177,7 @@ export const ThemeController = {
 
       const formData = new FormData($form[0]);
       const rawData = Object.fromEntries(formData.entries());
+      if (rawData.cellule === '') rawData.cellule = null;
       try {
         const id = $('#update-id').val();
         await ThemeService.validate(rawData);

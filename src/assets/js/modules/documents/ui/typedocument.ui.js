@@ -21,6 +21,10 @@ export const TypeDocumentUi = {
   },
 
   createTypeRow(type) {
+    // 🟢 Distinction visuelle : Cellule vs Générique
+    const celluleBadge = type.cellule_info?.nom
+      ? `<span class="badge bg-label-secondary">${type.cellule_info.nom}</span>`
+      : `<span class="badge bg-label-info"><i class="ri-global-line me-1"></i>Générique</span>`;
     return `
       <tr data-type-id="${type.id}">
         <th style="width: 40px;">
@@ -31,6 +35,7 @@ export const TypeDocumentUi = {
         <td><span class="fw-medium">${type.libelle}</span></td>
         <td>${type.description_typedocument || '-'}</td>
         <td>${type.parent_type_display || '<span class="badge rounded-pill bg-label-primary">Principal</span>'}</td>
+        <td>${celluleBadge}</td>
         <td>${type.cellule_info?.nom || '-'}</td>
         <td>
           <div class="dropdown">
@@ -53,12 +58,17 @@ export const TypeDocumentUi = {
       $('#update-id').val(type.id);
       $('#libelle').val(type.libelle);
       $('#description_typedocument').val(type.description_typedocument || '');
-      $('#cellule')
-        .val(type.cellule || '')
-        .trigger('change');
-      $('#parent_type')
-        .val(type.parent_type || '')
-        .trigger('change');
+      // 🟢 Récupération correcte de l'ID de la cellule (ou "" si null / générique)
+      const celluleVal =
+        typeof type.cellule === 'object' && type.cellule !== null ? type.cellule.id : type.cellule || '';
+
+      const parentTypeVal =
+        typeof type.parent_type === 'object' && type.parent_type !== null
+          ? type.parent_type.id
+          : type.parent_type || '';
+
+      $('#cellule').val(celluleVal).trigger('change');
+      $('#parent_type').val(parentTypeVal).trigger('change');
       $('#modal-title').text('Modifier le type');
       $('#save-btn-text').text('Mettre à jour');
     } else {

@@ -4,14 +4,19 @@ services:
     image: redis:7-alpine
     container_name: archivault_redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     restart: always
+    networks:
+      - archivault_network
+    volumes:
+      - redis_data:/data
+
   db:
-    env_file:
-      - .env
     image: mysql:8.0
     container_name: archivault_db_prod
     restart: always
+    env_file:
+      - .env
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
@@ -34,7 +39,6 @@ services:
       PMA_HOST: db
       PMA_PORT: 3306
       PMA_ARBITRARY: 1
-      # Augmenter les limites d'upload et d'exécution
       UPLOAD_LIMIT: 512M
       MEMORY_LIMIT: 2048M
       MAX_EXECUTION_TIME: 600
@@ -46,46 +50,73 @@ services:
       - archivault_network
 
   web:
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
+    container_name: archivault_web
     ports:
       - '8000:8000'
+    env_file:
+      - .env
     environment:
-      DJANGO_ENVIRONMENT: production
-      DEBUG: 'False'
-    environment:
+      - DJANGO_ENVIRONMENT=production
+      - DEBUG=False
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     depends_on:
+      - db
       - redis
     volumes:
       - /home/archivault/media:/app/media
+    networks:
+      - archivault_network
+    restart: always
+
   celery_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
     container_name: archivault_celery_worker
     command: celery -A config worker --loglevel=info
-    volumes:
-      - .:/app
+    env_file:
+      - .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
     depends_on:
       - redis
+      - db
+    networks:
+      - archivault_network
     restart: always
+
   celery_beat:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/django/Dockerfile
     container_name: archivault_celery_beat
     command: celery -A config beat --loglevel=info
-    volumes:
-      - .:/app
+    env_file:
+      - .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
     depends_on:
       - redis
+      - db
+    networks:
+      - archivault_network
     restart: always
+
 networks:
   archivault_network:
     driver: bridge
 
 volumes:
   mysql_data_prod:
+  redis_data:
   media_volume:

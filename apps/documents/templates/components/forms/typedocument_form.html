@@ -22,7 +22,11 @@
     <div class="input-group input-group-merge">
       <div class="form-floating form-floating-outline">
         <select class="form-select" id="cellule" name="cellule">
-          {% if cellules|length > 1 %}<option value="">-- Sélectionner une unité de traitement --</option>{% endif %}
+          {% if request.user.role == 'superadmin' or request.user.role == 'admin' %}
+            <option value="" selected>🌐 Type Générique (Toutes les unités)</option>
+          {% elif cellules|length > 1 %}
+            <option value="">-- Sélectionner une unité de traitement --</option>
+          {% endif %}
           {% for cellule in cellules %}
             <option value="{{ cellule.id }}" {% if cellules|length == 1 %}selected{% endif %}>{{ cellule }}</option>
           {% endfor %}
