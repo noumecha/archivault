@@ -28,7 +28,6 @@ def est_superieur_hierarchique(user_courant, user_precedent):
         RoleUtilisateur.SUPERADMIN: 5,
     }
 
-    # Récupération du rôle principal (ajustez selon votre implémentation réelle de récupération du rôle)
     role_courant = getattr(user_courant, 'role', None)
     role_precedent = getattr(user_precedent, 'role', None)
 
@@ -318,8 +317,8 @@ class CirculationAPIView(DRFRoleRequiredMixin, BaseAPIView):
                                 nouvelle_date_limite = timezone.now() + timedelta(hours=int(delai_heures_soumis))
                             else:
                                 nouvelle_date_limite = timezone.now() + timedelta(days=2)
-                            if circulation.date_echeance and nouvelle_date_limite > circulation.date_echeance:
-                                nouvelle_date_limite = circulation.date_echeance
+                            if circulation.date_fin and nouvelle_date_limite > circulation.date_fin:
+                                nouvelle_date_limite = circulation.date_fin
                         else:
                             pass
                         self._activer_etape(etape_precedente, nouvelle_date_limite=nouvelle_date_limite)

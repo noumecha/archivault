@@ -543,7 +543,7 @@ function toggleBulkButton(selectCounterSelector, bulkActionsContainerSelector) {
   const selectedCount = $(selectCounterSelector).length;
   if (selectedCount > 0) {
     $(bulkActionsContainerSelector).removeClass('d-none');
-    $('#selected-count').text(selectedCount);
+    $('.selected-count').text(selectedCount);
   } else {
     $(bulkActionsContainerSelector).addClass('d-none');
   }

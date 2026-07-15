@@ -297,16 +297,23 @@ export const CirculationController = {
       if (decision === 'valide') {
         $('#document-modifie-section').slideDown();
         $('#delai-retour-section').slideUp();
+        $('#delai_retour_heures').removeAttr('required');
 
         // Rétablir l'affichage de l'upload si 'Oui' était déjà coché
         if ($('input[name="is_document_modifie"]:checked').val() === 'oui') {
           $('#version-upload-section').slideDown();
         }
-      } else {
-        // Si 'rejete' ou 'retourne'
+      } else if (decision === 'retourne') {
         $('#document-modifie-section').slideUp();
         $('#version-upload-section').slideUp();
         $('#delai-retour-section').slideDown();
+        $('#delai_retour_heures').attr('required', 'required');
+      } else {
+        // Si 'rejete'
+        $('#document-modifie-section').slideUp();
+        $('#version-upload-section').slideUp();
+        $('#delai-retour-section').slideDown();
+        $('#delai_retour_heures').removeAttr('required');
       }
     });
 
@@ -374,7 +381,7 @@ export const CirculationController = {
             formData.append('fichier', fileInput.files[0]);
           }
         }
-      } else if (decision === 'retourne') {
+      } else if (decision === 'rejete' || decision === 'retourne') {
         const delaiHeures = $('#delai_retour_heures').val();
         if (delaiHeures) {
           formData.append('delai_retour_heures', delaiHeures);
