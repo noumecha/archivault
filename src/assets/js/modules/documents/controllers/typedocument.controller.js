@@ -15,6 +15,8 @@ export const TypeDocumentController = {
       const res = await TypeDocumentService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       TypeDocumentUi.renderTable(res);
+      $('.type-checkbox').prop('checked', false);
+      toggleBulkButton('.type-checkbox:checked', '#bulk-actions-container', '#check-all-types');
     } catch (err) {
       console.error('Erreur:', err);
       TypeDocumentUi.showError(err.data?.message || 'Erreur serveur');
@@ -30,11 +32,11 @@ export const TypeDocumentController = {
     $(document).on('change', '#check-all-types', function () {
       const isChecked = $(this).is(':checked');
       $('.type-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.type-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.type-checkbox:checked', '#bulk-actions-container', '#check-all-types');
     });
 
     $(document).on('change', '.type-checkbox', function () {
-      toggleBulkButton('.type-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.type-checkbox:checked', '#bulk-actions-container', '#check-all-types');
     });
 
     // Gestion des clics de pagination
@@ -120,6 +122,9 @@ export const TypeDocumentController = {
             const res = await TypeDocumentService.bulkDelete(ids);
             TypeDocumentUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.type-checkbox').prop('checked', false);
+            toggleBulkButton('.type-checkbox:checked', '#bulk-actions-container', '#check-all-types');
             const currentParams = TypeDocumentController.getCurrentParams();
             await TypeDocumentController.loadTypes(currentParams);
           } catch (err) {

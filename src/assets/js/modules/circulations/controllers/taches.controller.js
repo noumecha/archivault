@@ -44,6 +44,8 @@ export const TacheController = {
       const res = await TacheService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       TacheUi.renderTable(res);
+      $('.tache-checkbox').prop('checked', false);
+      toggleBulkButton('.tache-checkbox:checked', '#bulk-actions-container', '#check-all-taches');
     } catch (err) {
       console.error('Erreur:', err);
       TacheUi.showError(err.data?.message || 'Erreur serveur');
@@ -114,11 +116,11 @@ export const TacheController = {
     $(document).on('change', '#check-all-taches', function () {
       const isChecked = $(this).is(':checked');
       $('.tache-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.tache-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.tache-checkbox:checked', '#bulk-actions-container', '#check-all-taches');
     });
 
     $(document).on('change', '.tache-checkbox', function () {
-      toggleBulkButton('.tache-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.tache-checkbox:checked', '#bulk-actions-container', '#check-all-taches');
     });
 
     // Gestion des clics de pagination
@@ -216,6 +218,10 @@ export const TacheController = {
             const res = await TacheService.bulkDelete(ids);
             TacheUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.tache-checkbox').prop('checked', false);
+            toggleBulkButton('.tache-checkbox:checked', '#bulk-actions-container', '#check-all-taches');
+
             const currentParams = TacheController.getCurrentParams();
             await TacheController.loadTaches(currentParams);
           } catch (err) {

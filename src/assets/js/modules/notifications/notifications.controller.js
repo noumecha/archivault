@@ -29,6 +29,8 @@ export const NotificationController = {
       const res = await NotificationService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       NotificationUi.renderTable(res);
+      $('#check-all-notifications').prop('checked', false);
+      toggleBulkButton('.notification-checkbox:checked', '#bulk-actions-container', '#check-all-notifications');
     } catch (err) {
       console.error('Erreur chargement notifications:', err);
       NotificationUi.showError('Erreur lors du chargement de la liste');
@@ -70,15 +72,15 @@ export const NotificationController = {
       }
     });
 
-    //Gestion de la sélection multiple
+    // Gestion de la sélection multiple
     $(document).on('change', '#check-all-notifications', function () {
       const isChecked = $(this).is(':checked');
       $('.notification-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.notification-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.notification-checkbox:checked', '#bulk-actions-container', '#check-all-notifications');
     });
 
     $(document).on('change', '.notification-checkbox', function () {
-      toggleBulkButton('.notification-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.notification-checkbox:checked', '#bulk-actions-container', '#check-all-notifications');
     });
 
     // Gestion des clics de pagination
@@ -149,6 +151,10 @@ export const NotificationController = {
             const res = await NotificationService.bulkDelete(ids);
             NotificationUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('#check-all-notifications').prop('checked', false);
+            toggleBulkButton('.notification-checkbox:checked', '#bulk-actions-container', '#check-all-notifications');
+
             const currentParams = NotificationController.getCurrentParams();
             await NotificationController.loadNotifications(currentParams);
           } catch (err) {
@@ -258,6 +264,8 @@ export const NotificationController = {
           '#message-show-success'
         );
         await NotificationController.refreshNavbar();
+        $('#check-all-notifications').prop('checked', false);
+        toggleBulkButton('.notification-checkbox:checked', '#bulk-actions-container', '#check-all-notifications');
         if ($('#notifications-tbody').length) {
           await NotificationController.loadNotifications(NotificationController.getCurrentParams());
         }

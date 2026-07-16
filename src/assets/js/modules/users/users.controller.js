@@ -18,6 +18,8 @@ export const UserController = {
       const res = await UserService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       UserUi.renderTable(res);
+      $('.user-checkbox').prop('checked', false);
+      toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container', '#check-all-users');
     } catch (err) {
       console.error('Erreur:', err);
       UserUi.showError(err.data?.message || 'Erreur serveur');
@@ -33,11 +35,11 @@ export const UserController = {
     $(document).on('change', '#check-all-users', function () {
       const isChecked = $(this).is(':checked');
       $('.user-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container', '#check-all-users');
     });
 
     $(document).on('change', '.user-checkbox', function () {
-      toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container', '#check-all-users');
     });
 
     // Gestion des clics de pagination
@@ -122,6 +124,9 @@ export const UserController = {
             const res = await UserService.bulkToggleStatus(ids);
             UserUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.user-checkbox').prop('checked', false);
+            toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container', '#check-all-users');
             const currentParams = UserController.getCurrentParams();
             await UserController.loadUsers(currentParams);
           } catch (err) {
@@ -164,6 +169,9 @@ export const UserController = {
             const res = await UserService.bulkDelete(ids);
             UserUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.user-checkbox').prop('checked', false);
+            toggleBulkButton('.user-checkbox:checked', '#bulk-actions-container', '#check-all-users');
             const currentParams = UserController.getCurrentParams();
             await UserController.loadUsers(currentParams);
           } catch (err) {

@@ -536,16 +536,31 @@ function getCookie(name) {
 }
 
 /**
- * Fonction reutilisatble pour le toogle check
- * @params selectCounterSelector, bulkActionsContainerSelector
+ * Fonction réutilisable pour le toggle check et la synchronisation du master checkbox
+ * @param {string} itemCheckboxSelector - Sélecteur des checkboxes enfants cochés (ex: '.notification-checkbox:checked')
+ * @param {string} bulkActionsContainerSelector - Conteneur du bouton d'action de masse
+ * @param {string} [masterCheckboxSelector] - (Optionnel) Sélecteur du checkbox "Select All" (ex: '#check-all-notifications')
  */
-function toggleBulkButton(selectCounterSelector, bulkActionsContainerSelector) {
-  const selectedCount = $(selectCounterSelector).length;
+function toggleBulkButton(itemCheckboxSelector, bulkActionsContainerSelector, masterCheckboxSelector = null) {
+  const selectedCount = $(itemCheckboxSelector).length;
+
+  // 1. Mise à jour du bouton d'actions de masse
   if (selectedCount > 0) {
     $(bulkActionsContainerSelector).removeClass('d-none');
     $('.selected-count').text(selectedCount);
   } else {
     $(bulkActionsContainerSelector).addClass('d-none');
+  }
+
+  // 2. Synchronisation automatique de la case "Select All" si fournie
+  if (masterCheckboxSelector) {
+    // Extrait le sélecteur de base sans le suffixe :checked (ex: '.notification-checkbox')
+    const baseSelector = itemCheckboxSelector.replace(':checked', '');
+    const totalItems = $(baseSelector).length;
+
+    // Décoche si au moins un élément est décoché (ou si totalItems est 0)
+    const isAllChecked = totalItems > 0 && totalItems === selectedCount;
+    $(masterCheckboxSelector).prop('checked', isAllChecked);
   }
 }
 

@@ -15,6 +15,8 @@ export const BailleurController = {
       const res = await BailleurService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       BailleurUi.renderTable(res);
+      $('.item-checkbox').prop('checked', false);
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-bailleurs');
     } catch (err) {
       BailleurUi.showError('Erreur lors du chargement des bailleurs');
     } finally {
@@ -26,11 +28,11 @@ export const BailleurController = {
     // Sélection multiple
     $(document).on('change', '#check-all-bailleurs', function () {
       $('.item-checkbox').prop('checked', $(this).is(':checked'));
-      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-bailleurs');
     });
 
     $(document).on('change', '.item-checkbox', () =>
-      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container')
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-bailleurs')
     );
 
     // Pagination
@@ -95,6 +97,10 @@ export const BailleurController = {
             startLoader('#bulk-delete-loader');
             await BailleurService.bulkDelete(ids);
             modal.hide();
+
+            $('.item-checkbox').prop('checked', false);
+            toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-bailleurs');
+
             this.loadData();
             BailleurUi.showSuccess('Bailleurs supprimés avec succès');
           } catch (err) {

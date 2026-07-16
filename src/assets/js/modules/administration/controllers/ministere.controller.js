@@ -18,6 +18,9 @@ export const MinistereController = {
       const res = await MinistereService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       MinistereUi.renderTable(res);
+
+      $('.ministere-checkbox').prop('checked', false);
+      toggleBulkButton('.ministere-checkbox:checked', '#bulk-actions-container', '#check-all-ministeres');
     } catch (err) {
       console.error('Erreur:', err);
       MinistereUi.showError(err.data?.message || 'Erreur serveur');
@@ -33,11 +36,11 @@ export const MinistereController = {
     $(document).on('change', '#check-all-ministeres', function () {
       const isChecked = $(this).is(':checked');
       $('.ministere-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.ministere-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.ministere-checkbox:checked', '#bulk-actions-container', '#check-all-ministeres');
     });
 
     $(document).on('change', '.ministere-checkbox', function () {
-      toggleBulkButton('.ministeres-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.ministeres-checkbox:checked', '#bulk-actions-container', '#check-all-ministeres');
     });
 
     // Gestion des clics de pagination
@@ -122,6 +125,10 @@ export const MinistereController = {
             const res = await MinistereService.bulkDelete(ids);
             MinistereUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.ministere-checkbox').prop('checked', false);
+            toggleBulkButton('.ministere-checkbox:checked', '#bulk-actions-container', '#check-all-ministeres');
+
             const currentParams = MinistereController.getCurrentParams();
             await MinistereController.loadDatas(currentParams);
           } catch (err) {

@@ -27,6 +27,9 @@ export const CirculationController = {
       const res = await CirculationService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       CirculationUi.renderTable(res);
+
+      $('#check-all-circulations').prop('checked', false);
+      toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container', '#check-all-circulations');
     } catch (err) {
       console.error('Erreur:', err);
       CirculationUi.showError('Erreur lors du chargement des circuits');
@@ -68,7 +71,7 @@ export const CirculationController = {
     $(document).on('change', '#check-all-circulations', function () {
       const isChecked = $(this).is(':checked');
       $('.circulation-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container', '#check-all-circulations');
     });
 
     // suppression groupée
@@ -100,6 +103,10 @@ export const CirculationController = {
             const res = await CirculationService.bulkDelete(ids);
             CirculationUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('#check-all-circulations').prop('checked', false);
+            toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container', '#check-all-circulations');
+
             const currentParams = CirculationController.getCurrentParams();
             await CirculationController.loadCirculations(currentParams);
           } catch (err) {

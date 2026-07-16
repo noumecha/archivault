@@ -15,6 +15,8 @@ export const SousTypeDocumentController = {
       const res = await SousTypeDocumentService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       SousTypeDocumentUi.renderTable(res);
+      $('.item-checkbox').prop('checked', false);
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-soustypes');
     } catch (err) {
       SousTypeDocumentUi.showError('Erreur chargement des données');
     } finally {
@@ -27,11 +29,11 @@ export const SousTypeDocumentController = {
     $(document).on('change', '#check-all-soustypes', function () {
       const isChecked = $(this).is(':checked');
       $('.item-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-soustypes');
     });
 
     $(document).on('change', '.item-checkbox', () =>
-      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container')
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-soustypes')
     );
 
     // Pagination
@@ -96,6 +98,9 @@ export const SousTypeDocumentController = {
             startLoader('#bulk-delete-loader');
             await SousTypeDocumentService.bulkDelete(ids);
             modal.hide();
+
+            $('.item-checkbox').prop('checked', false);
+            toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-soustypes');
             this.loadData();
             SousTypeDocumentUi.showSuccess('Sous-types supprimés');
           } catch (err) {

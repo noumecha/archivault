@@ -69,6 +69,13 @@ export const DocumentController = {
       const res = await DocumentService.fetchAll(queryParams);
       res.current_page = parseInt(queryParams.page) || 1;
       DocumentUi.render(res);
+
+      $('.document-checkbox').prop('checked', false);
+      toggleBulkButton(
+        '.document-checkbox:checked',
+        '#bulk-actions-container',
+        '#check-all-documents, #check-all-documents-grid'
+      );
     } catch (err) {
       DocumentUi.showError(err.data?.message || 'Erreur serveur');
     } finally {
@@ -170,11 +177,19 @@ export const DocumentController = {
     $(document).on('change', '#check-all-documents, #check-all-documents-grid', function () {
       const isChecked = $(this).is(':checked');
       $('.document-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.document-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton(
+        '.document-checkbox:checked',
+        '#bulk-actions-container',
+        '#check-all-documents, #check-all-documents-grid'
+      );
     });
 
     $(document).on('change', '.document-checkbox', function () {
-      toggleBulkButton('.document-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton(
+        '.document-checkbox:checked',
+        '#bulk-actions-container',
+        '#check-all-documents, #check-all-documents-grid'
+      );
       const totalCheckboxes = $('.document-checkbox').length;
       const checkedCheckboxes = $('.document-checkbox:checked').length;
       const allChecked = totalCheckboxes === checkedCheckboxes;
@@ -257,6 +272,12 @@ export const DocumentController = {
             const res = await DocumentService.bulkDelete(ids);
             DocumentUi.showSuccess(res.message);
             modalInstance.hide();
+            $('.document-checkbox').prop('checked', false);
+            toggleBulkButton(
+              '.document-checkbox:checked',
+              '#bulk-actions-container',
+              '#check-all-documents, #check-all-documents-grid'
+            );
             await DocumentController.loadDatas(DocumentController.getCurrentParams());
           } catch (err) {
             DocumentUi.showError(
