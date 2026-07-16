@@ -1,3 +1,4 @@
+# archivault/.github/workflows/deploy.yml
 name: Deploy Archivault to Production
 
 on:
@@ -21,5 +22,8 @@ jobs:
           script: |
             cd /home/archivault/projects/archivault
             git pull origin main
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-            docker image prune -f  # Nettoie les anciennes images pour gagner de l'espace
+            sleep 5
+            docker image prune -f
+            echo "✅ Déploiement terminé avec succès"
