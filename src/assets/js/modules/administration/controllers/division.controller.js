@@ -18,6 +18,9 @@ export const DivisionController = {
       const res = await DivisionService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       DivisionUi.renderTable(res);
+
+      $('.division-checkbox').prop('checked', false);
+      toggleBulkButton('.division-checkbox:checked', '#bulk-actions-container', '#check-all-divisions');
     } catch (err) {
       console.error('Erreur:', err);
       DivisionUi.showError(err.data?.message || 'Erreur serveur');
@@ -33,11 +36,11 @@ export const DivisionController = {
     $(document).on('change', '#check-all-divisions', function () {
       const isChecked = $(this).is(':checked');
       $('.division-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.division-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.division-checkbox:checked', '#bulk-actions-container', '#check-all-divisions');
     });
 
     $(document).on('change', '.division-checkbox', function () {
-      toggleBulkButton('.division-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.division-checkbox:checked', '#bulk-actions-container', '#check-all-divisions');
     });
 
     // Gestion des clics de pagination
@@ -123,6 +126,10 @@ export const DivisionController = {
             const res = await DivisionService.bulkToggleStatus(ids);
             DivisionUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.division-checkbox').prop('checked', false);
+            toggleBulkButton('.division-checkbox:checked', '#bulk-actions-container', '#check-all-divisions');
+
             const currentParams = DivisionController.getCurrentParams();
             await DivisionController.loadDatas(currentParams);
           } catch (err) {
@@ -165,6 +172,10 @@ export const DivisionController = {
             const res = await DivisionService.bulkDelete(ids);
             DivisionUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.division-checkbox').prop('checked', false);
+            toggleBulkButton('.division-checkbox:checked', '#bulk-actions-container', '#check-all-divisions');
+
             const currentParams = DivisionController.getCurrentParams();
             await DivisionController.loadDatas(currentParams);
           } catch (err) {

@@ -17,6 +17,13 @@ export const DirectionGeneraleController = {
       const res = await DirectionGeneraleService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       DirectionGeneraleUi.renderTable(res);
+
+      $('.directiongenerale-checkbox').prop('checked', false);
+      toggleBulkButton(
+        '.directiongenerale-checkbox:checked',
+        '#bulk-actions-container',
+        '#check-all-directiongenerales'
+      );
     } catch (err) {
       console.error('Erreur:', err);
       DirectionGeneraleUi.showError(err.data?.message || 'Erreur serveur');
@@ -32,11 +39,19 @@ export const DirectionGeneraleController = {
     $(document).on('change', '#check-all-directiongenerales', function () {
       const isChecked = $(this).is(':checked');
       $('.directiongenerale-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.directiongenerale-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton(
+        '.directiongenerale-checkbox:checked',
+        '#bulk-actions-container',
+        '#check-all-directiongenerales'
+      );
     });
 
     $(document).on('change', '.directiongenerale-checkbox', function () {
-      toggleBulkButton('.directiongenerale-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton(
+        '.directiongenerale-checkbox:checked',
+        '#bulk-actions-container',
+        '#check-all-directiongenerales'
+      );
     });
 
     // Gestion des clics de pagination
@@ -121,6 +136,14 @@ export const DirectionGeneraleController = {
             const res = await DirectionGeneraleService.bulkDelete(ids);
             DirectionGeneraleUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.directiongenerale-checkbox').prop('checked', false);
+            toggleBulkButton(
+              '.directiongenerale-checkbox:checked',
+              '#bulk-actions-container',
+              '#check-all-directiongenerales'
+            );
+
             const currentParams = DirectionGeneraleController.getCurrentParams();
             await DirectionGeneraleController.loadDatas(currentParams);
           } catch (err) {

@@ -191,6 +191,14 @@ export const CirculationService = {
       }
     }
 
+    // 2b. Validation du délai de retour pour 'retourne'
+    if (decision === 'rejete' || decision === 'retourne') {
+      const delaiRetourHeures = isFormData ? data.get('delai_retour_heures') : data.delai_retour_heures;
+      if (!delaiRetourHeures || delaiRetourHeures.trim().length === 0) {
+        errors.delai_retour_heures = ['Veuillez spécifier le délai de retour en heures.'];
+      }
+    }
+
     // 3. Validation spécifique à la validation ('valide')
     if (decision === 'valide') {
       // Vérifier si le choix Oui/Non a été fait

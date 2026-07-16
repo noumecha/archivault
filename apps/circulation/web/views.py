@@ -72,17 +72,6 @@ def get_utilisateurs_for_user(user, tache=None):
             condition_role |= Q(id=tache.assignee_a.id)
         return Utilisateur.objects.filter(condition & condition_role).distinct()
 
-"""def get_utilisateurs_for_user(user):
-    #Retourne la liste des utilisateurs assignables selon le rôle.
-    #- Les admins voient tout le monde.
-    #- Les responsables/superviseurs voient les membres de leur cellule.
-    #- Les autres utilisateurs ne voient qu'eux-mêmes.
-    if is_admin(user) or is_superadmin(user):
-        return Utilisateur.objects.all()
-    elif is_superviseur(user) and hasattr(user, 'cellule') and user.cellule:
-        return Utilisateur.objects.filter(cellule=user.cellule)
-    return Utilisateur.objects.filter(id=user.id)"""
-
 # ─────────────────────────────────────────────
 # MIXINS CUSTOM
 # ─────────────────────────────────────────────

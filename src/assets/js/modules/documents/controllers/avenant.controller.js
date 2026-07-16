@@ -13,6 +13,8 @@ export const AvenantController = {
       const res = await AvenantService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       AvenantUi.renderTable(res);
+      $('.item-checkbox').prop('checked', false);
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-avenants');
     } catch (err) {
       AvenantUi.showError('Erreur chargement');
     } finally {
@@ -22,10 +24,10 @@ export const AvenantController = {
   bindEvents() {
     $(document).on('change', '#check-all-avenants', function () {
       $('.item-checkbox').prop('checked', $(this).is(':checked'));
-      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-avenants');
     });
     $(document).on('change', '.item-checkbox', () =>
-      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container')
+      toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-avenants')
     );
 
     // Recherche & filtres
@@ -124,6 +126,10 @@ export const AvenantController = {
             const res = await AvenantService.bulkDelete(ids);
             AvenantUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.item-checkbox').prop('checked', false);
+            toggleBulkButton('.item-checkbox:checked', '#bulk-actions-container', '#check-all-avenants');
+
             const currentParams = AvenantController.getCurrentParams();
             await AvenantController.loadData(currentParams);
           } catch (err) {

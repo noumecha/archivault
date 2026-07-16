@@ -27,6 +27,9 @@ export const CirculationController = {
       const res = await CirculationService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       CirculationUi.renderTable(res);
+
+      $('#check-all-circulations').prop('checked', false);
+      toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container', '#check-all-circulations');
     } catch (err) {
       console.error('Erreur:', err);
       CirculationUi.showError('Erreur lors du chargement des circuits');
@@ -68,7 +71,7 @@ export const CirculationController = {
     $(document).on('change', '#check-all-circulations', function () {
       const isChecked = $(this).is(':checked');
       $('.circulation-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container', '#check-all-circulations');
     });
 
     // suppression groupée
@@ -100,6 +103,10 @@ export const CirculationController = {
             const res = await CirculationService.bulkDelete(ids);
             CirculationUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('#check-all-circulations').prop('checked', false);
+            toggleBulkButton('.circulation-checkbox:checked', '#bulk-actions-container', '#check-all-circulations');
+
             const currentParams = CirculationController.getCurrentParams();
             await CirculationController.loadCirculations(currentParams);
           } catch (err) {
@@ -235,8 +242,12 @@ export const CirculationController = {
       const currentDocId = $('#doc-select').val();
       const activeCelluleId = this.docCelluleMap[currentDocId] || null;
 
-      if (!activeCelluleId) {
-        CirculationUi.showSuccess('Veuillez sélectionner un document lié à une cellule.', '#form-error', null);
+      const userRole = window.CURRENT_USER_ROLE;
+      const isAdmin = userRole === 'administrateur' || userRole === 'superadmin';
+
+      // 🟢 AJOUT : Si l'utilisateur n'est pas admin ET qu'il n'y a pas de cellule valide, on bloque.
+      if (!isAdmin && !activeCelluleId) {
+        CirculationUi.showError('Veuillez sélectionner un document lié à votre cellule.', '#form-error', null);
         return;
       }
 
@@ -293,16 +304,23 @@ export const CirculationController = {
       if (decision === 'valide') {
         $('#document-modifie-section').slideDown();
         $('#delai-retour-section').slideUp();
+        $('#delai_retour_heures').removeAttr('required');
 
         // Rétablir l'affichage de l'upload si 'Oui' était déjà coché
         if ($('input[name="is_document_modifie"]:checked').val() === 'oui') {
           $('#version-upload-section').slideDown();
         }
-      } else {
-        // Si 'rejete' ou 'retourne'
+      } else if (decision === 'retourne') {
         $('#document-modifie-section').slideUp();
         $('#version-upload-section').slideUp();
         $('#delai-retour-section').slideDown();
+        $('#delai_retour_heures').attr('required', 'required');
+      } else {
+        // Si 'rejete'
+        $('#document-modifie-section').slideUp();
+        $('#version-upload-section').slideUp();
+        $('#delai-retour-section').slideDown();
+        $('#delai_retour_heures').removeAttr('required');
       }
     });
 
@@ -370,7 +388,7 @@ export const CirculationController = {
             formData.append('fichier', fileInput.files[0]);
           }
         }
-      } else if (decision === 'retourne') {
+      } else if (decision === 'rejete' || decision === 'retourne') {
         const delaiHeures = $('#delai_retour_heures').val();
         if (delaiHeures) {
           formData.append('delai_retour_heures', delaiHeures);

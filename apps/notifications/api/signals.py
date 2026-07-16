@@ -1,121 +1,116 @@
-# apps/nofications/api/signals.py
+# apps/notifications/api/signals.py
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from apps.circulation.models import *
 from ..models import Notification
 
-# -- CIRCULATION --
-""" Lors de la creation d'une étape de circulation pour un utilisateur, une notification est envoyée """
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. NOTIFICATIONS LIÉES AUX ÉTAPES (EtapeCirculation)
+# ─────────────────────────────────────────────────────────────────────────────
+
 @receiver(post_save, sender=EtapeCirculation)
-def notify_etape_destinataire(sender, instance, created, **kwargs):
+def notify_etape_events(sender, instance, created, **kwargs):
     """
-    On notifie le destinataire quand une étape est créée
-    OU quand une étape existante devient 'active'.
+    Gère toutes les notifications liées au changement d'état d'une étape :
+    - Notification du destinataire de la NOUVELLE étape active (Validation, Rejet/Retour arrière)
+    - Notification de l'INITIATEUR quand une étape est traitée
     """
-    if created and instance.ordre == 1 and instance.destinataire:
-        Notification.objects.create(
-            destinataire=instance.destinataire,
-            titre="Nouvelle circulation",
-            message=f"Une circulation a été initiée pour le document : {instance.circulation.document.titre}",
-            categorie=Notification.Category.CIRCULATION,
-            content_object=instance.circulation,
-            url_action=f"/circulations/detail/{instance.circulation.id}/"
-        )
+    # CAS A : L'étape vient d'être activée (Soit création Étape 1, soit passage au suivant/précédent)
+    # On vérifie 'est_actuelle' pour être sûr que c'est le destinataire courant
+    if instance.est_actuelle and instance.destinataire:
+        # On évite de double-notifier si l'étape est marquée comme traitée au même moment
+        if instance.statut in [StatutCirculation.EN_COURS, StatutCirculation.RETOURNE]:
 
-""" Notification du prermier destinataire lors de la créationd de la circulation """
-@receiver(post_save, sender=CirculationDocument)
-def notify_circulation_init(sender, instance, created, **kwargs):
-    if created:
-        # Notifier par exemple le premier destinataire de l'étape 1
-        premiere_etape = instance.etapes.filter(ordre=1).first()
-        if premiere_etape and premiere_etape.destinataire:
+            # Ajustement du message selon qu'il s'agisse d'un retour ou d'un flux normal
+            if instance.statut == StatutCirculation.RETOURNE:
+                titre_notif = "Document retourné à corriger"
+                message_notif = f"Le document '{instance.circulation.document.titre}' vous a été retourné pour révision/correction."
+            else:
+                titre_notif = "Document à traiter"
+                message_notif = f"C'est à votre tour de traiter le document : {instance.circulation.document.titre}"
+
             Notification.objects.create(
-                destinataire=premiere_etape.destinataire,
-                titre="Nouvelle circulation",
-                message=f"Une circulation a été initiée pour : {instance.document.titre}",
-                categorie=Notification.Category.CIRCULATION,
-                content_object=instance,
-                url_action=f"/circulations/detail/{instance.id}/"
-            )
-
-""" lorsque la premiè_ve étape est validé dans la circulation, on notifie l'utilisateur suivant """
-@receiver(post_save, sender=EtapeCirculation)
-def notify_next_step(sender, instance, created, **kwargs):
-    # Si l'étape actuelle vient d'être validée
-    if not created and instance.statut == 'valide':
-        # On cherche l'étape suivante (ordre + 1) dans la même circulation
-        next_step = EtapeCirculation.objects.filter(
-            circulation=instance.circulation,
-            ordre=instance.ordre + 1
-        ).first()
-
-        if next_step and next_step.destinataire:
-            Notification.objects.create(
-                destinataire=next_step.destinataire,
-                titre="Document à traiter",
-                message=f"C'est à votre tour de traiter : {instance.circulation.document.titre}",
+                destinataire=instance.destinataire,
+                titre=titre_notif,
+                message=message_notif,
                 categorie=Notification.Category.CIRCULATION,
                 content_object=instance.circulation,
                 url_action=f"/circulations/detail/{instance.circulation.id}/"
             )
 
-""" On notifie le créateur de la circulation lorsque la circulation est terminée """
-@receiver(post_save, sender=CirculationDocument)
-def notify_circulation_end(sender, instance, created, **kwargs):
-    if not created: # On surveille la modification
-        if instance.statut == 'termine':
-            Notification.objects.create(
-                destinataire=instance.initie_par,
-                titre="Circulation terminée",
-                message=f"Le circuit pour {instance.document.titre} est complet.",
-                categorie=Notification.Category.SYSTEME,
-                priorite=Notification.Priority.HIGH
-            )
-
-@receiver(post_save, sender=EtapeCirculation)
-def notify_etape_traitee(sender, instance, created, **kwargs):
-    """
-    Lorsqu'une étape d'une circulation est traitée, on notifie l'initiateur de la circulation.
-    """
+    # CAS B : L'étape a été TRAITÉE (Validation, Rejet ou Retour)
+    # On informe l'initiateur du traitement effectué
     if not created and instance.statut in [StatutCirculation.VALIDE, StatutCirculation.REJETE, StatutCirculation.RETOURNE]:
         circulation = instance.circulation
-        # On s'assure de ne pas notifier l'initiateur si c'est lui-même qui a traité l'étape
+
+        # On notifie l'initiateur (seulement si ce n'est pas lui qui vient de traiter l'étape)
         if circulation.initie_par and circulation.initie_par != instance.traite_par:
-            statut_label = "validée" if instance.statut == StatutCirculation.VALIDE else "rejetée/retournée"
+
+            statut_map = {
+                StatutCirculation.VALIDE: "validée",
+                StatutCirculation.REJETE: "rejetée",
+                StatutCirculation.RETOURNE: "retournée"
+            }
+            libelle_statut = statut_map.get(instance.statut, str(instance.statut))
+            acteur_name = instance.traite_par.get_full_name() or instance.traite_par.username if instance.traite_par else "Un utilisateur"
+
             Notification.objects.create(
                 destinataire=circulation.initie_par,
-                titre=f"Étape de circulation {statut_label}",
-                message=f"{instance.traite_par.username} a marqué l'étape '{instance.ordre} : {instance.titre_etape}' comme [{instance.statut}] pour le document : {circulation.document.titre}.",
+                titre=f"Étape {libelle_statut}",
+                message=f"{acteur_name} a marqué l'étape {instance.ordre} ('{instance.titre_etape}') comme [{libelle_statut}] pour : {circulation.document.titre}.",
                 categorie=Notification.Category.CIRCULATION,
                 content_object=circulation,
                 url_action=f"/circulations/detail/{circulation.id}/"
             )
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. NOTIFICATIONS LIÉES À LA CIRCULATION GLOBALE (CirculationDocument)
+# ─────────────────────────────────────────────────────────────────────────────
+
 @receiver(post_save, sender=CirculationDocument)
-def notify_circulation_global_end(sender, instance, created, **kwargs):
+def notify_circulation_events(sender, instance, created, **kwargs):
     """
-    Lorsqu'une circulation globale se termine (Validée/Close ou Rejetée définitivement),
-    on notifie l'initiateur de la circulation.
+    Gère l'initialisation et la clôture globale d'un circuit.
     """
-    if not created:
-        if instance.statut in [StatutCirculation.CLOS, StatutCirculation.REJETE]:
-            titre_notif = "Circulation terminée avec succès" if instance.statut == StatutCirculation.CLOS else "Circulation rejetée"
+    # CAS A : Création initiale de la circulation
+    if created:
+        # L'étape 1 est gérée automatiquement par 'notify_etape_events' lorsque
+        # les objets EtapeCirculation sont créés dans la transaction atomic.
+        pass
+
+    # CAS B : Fin/Clôture ou Rejet définitif de la circulation globale
+    else:
+        if instance.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE, StatutCirculation.REJETE]:
+
+            is_succes = instance.statut in [StatutCirculation.CLOS, StatutCirculation.VALIDE]
+            titre_notif = "Circulation terminée avec succès" if is_succes else "Circulation interrompue (Rejet)"
+
             message_notif = (
                 f"Le circuit pour le document '{instance.document.titre}' est désormais complet et clôturé."
-                if instance.statut == StatutCirculation.CLOS else
-                f"Le circuit pour le document '{instance.document.titre}' a été interrompu suite à un rejet."
+                if is_succes else
+                f"Le circuit pour le document '{instance.document.titre}' a été définitivement interrompu suite à un rejet."
             )
 
             if instance.initie_par:
-                Notification.objects.create(
+                # Vérification anti-doublon basique (évite de générer 2 fois la notif de fin si mis à jour rapidement)
+                deja_notifie = Notification.objects.filter(
                     destinataire=instance.initie_par,
                     titre=titre_notif,
-                    message=message_notif,
-                    categorie=Notification.Category.CIRCULATION,
-                    content_object=instance,
-                    priorite=Notification.Priority.HIGH,
-                    url_action=f"/circulations/detail/{instance.id}/"
-                )
+                    content_type__model="circulationdocument",
+                    object_id=instance.id
+                ).exists()
+
+                if not deja_notifie:
+                    Notification.objects.create(
+                        destinataire=instance.initie_par,
+                        titre=titre_notif,
+                        message=message_notif,
+                        categorie=Notification.Category.CIRCULATION,
+                        priorite=Notification.Priority.HIGH,
+                        content_object=instance,
+                        url_action=f"/circulations/detail/{instance.id}/"
+                    )
 
 # -- TACHE --
 @receiver(post_save, sender=Tache)

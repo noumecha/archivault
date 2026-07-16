@@ -15,6 +15,8 @@ export const ThemeController = {
       const res = await ThemeService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       ThemeUi.renderTable(res);
+      $('.theme-checkbox').prop('checked', false);
+      toggleBulkButton('.theme-checkbox:checked', '#bulk-actions-container', '#check-all-themes');
     } catch (err) {
       console.error('Erreur:', err);
       ThemeUi.showError(err.data?.message || 'Erreur serveur');
@@ -30,11 +32,11 @@ export const ThemeController = {
     $(document).on('change', '#check-all-themes', function () {
       const isChecked = $(this).is(':checked');
       $('.theme-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.theme-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.theme-checkbox:checked', '#bulk-actions-container', '#check-all-themes');
     });
 
     $(document).on('change', '.theme-checkbox', function () {
-      toggleBulkButton('.theme-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.theme-checkbox:checked', '#bulk-actions-container', '#check-all-themes');
     });
 
     // Gestion des clics de pagination
@@ -120,6 +122,10 @@ export const ThemeController = {
             const res = await ThemeService.bulkDelete(ids);
             ThemeUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.theme-checkbox').prop('checked', false);
+            toggleBulkButton('.theme-checkbox:checked', '#bulk-actions-container', '#check-all-themes');
+
             const currentParams = ThemeController.getCurrentParams();
             await ThemeController.loadThemes(currentParams);
           } catch (err) {

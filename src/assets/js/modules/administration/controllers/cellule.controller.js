@@ -16,6 +16,9 @@ export const CelluleController = {
       const res = await CelluleService.fetchAll(params);
       res.current_page = parseInt(params.page) || 1;
       CelluleUi.renderTable(res);
+
+      $('.cellule-checkbox').prop('checked', false);
+      toggleBulkButton('.cellule-checkbox:checked', '#bulk-actions-container', '#check-all-cellules');
     } catch (err) {
       console.error('Erreur:', err);
       CelluleUi.showError(err.data?.message || 'Erreur serveur');
@@ -30,11 +33,11 @@ export const CelluleController = {
     $(document).on('change', '#check-all-cellules', function () {
       const isChecked = $(this).is(':checked');
       $('.cellule-checkbox').prop('checked', isChecked);
-      toggleBulkButton('.cellule-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.cellule-checkbox:checked', '#bulk-actions-container', '#check-all-cellules');
     });
 
     $(document).on('change', '.cellule-checkbox', function () {
-      toggleBulkButton('.cellule-checkbox:checked', '#bulk-actions-container');
+      toggleBulkButton('.cellule-checkbox:checked', '#bulk-actions-container', '#check-all-cellules');
     });
 
     // Gestion des clics de pagination
@@ -174,6 +177,10 @@ export const CelluleController = {
             const res = await CelluleService.bulkDelete(ids);
             CelluleUi.showSuccess(res.message);
             modalInstance.hide();
+
+            $('.cellule-checkbox').prop('checked', false);
+            toggleBulkButton('.cellule-checkbox:checked', '#bulk-actions-container', '#check-all-cellules');
+
             const currentParams = CelluleController.getCurrentParams();
             await CelluleController.loadDatas(currentParams);
           } catch (err) {
