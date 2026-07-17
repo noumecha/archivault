@@ -123,7 +123,8 @@ class UserAPIView(DRFRoleRequiredMixin, BaseAPIView):
     custom_actions = {
         'toggle_status': 'action_toggle_status',
         'bulk_delete': 'action_bulk_delete',
-        'bulk_toggle_status': 'action_bulk_toggle_status'
+        'bulk_toggle_status': 'action_bulk_toggle_status',
+        'assign_cellules': 'action_assign_cellules',  # <-- Nouvelle action
     }
 
     def action_bulk_toggle_status(self, request, *args, **kwargs):
@@ -241,3 +242,30 @@ class UserAPIView(DRFRoleRequiredMixin, BaseAPIView):
                 'success': False,
                 'message': f'Erreur lors de la suppression en masse : {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+    def action_assign_cellules(self, request, pk=None, *args, **kwargs):
+        """Affecter une liste de cellules à un superviseur."""
+        self.check_role_permission(request)
+        user = get_object_or_404(Utilisateur, pk=pk)
+
+        cellule_ids = request.data.get('cellule_ids', [])
+        if not isinstance(cellule_ids, list):
+            return Response({
+                'success': False,
+                'message': 'Le champ cellule_ids doit être une liste.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        user.cellules_supervisees.set(cellule_ids)
+
+        AuditService.log(
+            request,
+            action=ActionAudit.MODIFICATION,
+            obj=user,
+            details={"action": "affectation_cellules_supervision", "cellules": cellule_ids}
+        )
+
+        return Response({
+            'success': True,
+            'message': f'{len(cellule_ids)} cellule(s) affectée(s) au superviseur avec succès.',
+            'data': self.get_serializer(user).data
+        })

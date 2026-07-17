@@ -19,6 +19,7 @@ class UserService:
         elif is_superviseur(user):
             return qs.filter(
                 cellule=user.cellule,
+                cellules_ids = user.mes_cellules_ids,
                 role__in=[RoleUtilisateur.GESTIONNAIRE, RoleUtilisateur.RESPONSABLE]
             )
         return qs.none()
